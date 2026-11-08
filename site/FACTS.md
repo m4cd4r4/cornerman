@@ -40,7 +40,7 @@ F11 | page: "Saved handover "Cart totals rounding" (id 31c9af7)." | source: "Sav
 F12 | page: "After /clear, the next session in ~/code/widget-shop loads it automatically." | source: "After /clear, the next session in ~/code/widget-shop loads it automatically." | docs/HOW-IT-WORKS.md:41
 F14 | page: "cornerman: loaded handover "Cart totals rounding" (saved just now)." | source: "cornerman: loaded handover "Cart totals rounding" (saved just now)." | docs/HOW-IT-WORKS.md:47
 F15 | page: "A copy to read or share: ~/.cornerman/loaded/widget-shop-cart-totals-rounding-31c9af7.md" | source: "A copy to read or share: ~/.cornerman/loaded/widget-shop-cart-totals-rounding-31c9af7.md" | docs/HOW-IT-WORKS.md:48
-F16 | page: "# the README's example, in a widget-shop repo" | source: "Window 1, on widget-shop" | docs/HOW-IT-WORKS.md:102
+F16 | page: "# the example in How it works, in a widget-shop repo" | source: "Window 1, on widget-shop" | docs/HOW-IT-WORKS.md:102
 F17 | page: "# Claude carries on from the handover." | source: "The fresh chat loads the handover and carries on." | plugin/README.md:15
 F19 | page: "/cornerman:handover" | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17
 F6 | page: "/clear" | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17
@@ -146,10 +146,10 @@ F148 | page: "The loop" | source: "The loop runs on `/clear`." | CHANGELOG.md:28
 
 ## how-it-works.html: worked example (README's example, never called real)
 
-F150 | page: "The README's example: a handover in a widget-shop repo, saved, loaded after /clear, and the copy it leaves." | source: "Window 1, on widget-shop" | docs/HOW-IT-WORKS.md:102 | source: "Saved handover \"Cart totals rounding\" (id 31c9af7)." | docs/HOW-IT-WORKS.md:40 | source: "After /clear, the next session in ~/code/widget-shop loads it automatically." | docs/HOW-IT-WORKS.md:41 | source: "A copy to read or share:" | docs/HOW-IT-WORKS.md:48
+F150 | page: "The example in How it works: a handover in a widget-shop repo, saved, loaded after /clear, and the copy it leaves." | source: "Window 1, on widget-shop" | docs/HOW-IT-WORKS.md:102 | source: "Saved handover \"Cart totals rounding\" (id 31c9af7)." | docs/HOW-IT-WORKS.md:40 | source: "After /clear, the next session in ~/code/widget-shop loads it automatically." | docs/HOW-IT-WORKS.md:41 | source: "A copy to read or share:" | docs/HOW-IT-WORKS.md:48
 F151 | page: "The copy in ~/.cornerman/loaded/ stays for 30 days: reread what a session started from, or @-mention it in another session." | source: "Each loaded handover is also copied to `~/.cornerman/loaded/` for 30 days." | plugin/README.md:29 | source: "Open it to reread what the session started from, or @-mention it in another session." | docs/HOW-IT-WORKS.md:93
 F152 | page: "~/.cornerman/loaded/widget-shop-cart-totals-rounding-31c9af7.md" | source: "A copy to read or share: ~/.cornerman/loaded/widget-shop-cart-totals-rounding-31c9af7.md" | docs/HOW-IT-WORKS.md:48
-F153 | page: "# the copy, as the README's screenshot of it reads" | source: "An editor tab titled widget-shop-cart-totals-rounding-31c9af7.md, in ~/.cornerman/loaded. The file reads:" | docs/HOW-IT-WORKS.md:88
+F153 | page: "# the copy, as the screenshot of it in How it works reads" | source: "An editor tab titled widget-shop-cart-totals-rounding-31c9af7.md, in ~/.cornerman/loaded. The file reads:" | docs/HOW-IT-WORKS.md:88
 F154 | page: "# Cart totals rounding" | source: "The file reads: # Cart totals rounding." | docs/HOW-IT-WORKS.md:88
 F155 | page: "Repo: widget-shop. Branch: fix/cart-rounding." | source: "Repo: widget-shop. Branch: fix/cart-rounding." | docs/HOW-IT-WORKS.md:88
 F156 | page: "Goal: Cart totals must round to the cent the way the payment provider does, so the checkout total and the receipt always match." | source: "Goal: Cart totals must round to the cent the way the payment provider does, so the checkout total and the receipt always match." | docs/HOW-IT-WORKS.md:88
@@ -167,7 +167,7 @@ F168 | page: "/compact" | source: "| `/compact` | Its own summary of the chat | 
 F169 | page: "--resume" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/HOW-IT-WORKS.md:58
 F170 | page: "cornerman" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/HOW-IT-WORKS.md:60
 F171 | page: "Compared with /compact, --resume and /clear" | source: "How this compares with `/compact`, `--resume` and `/clear`" | docs/HOW-IT-WORKS.md:53
-F172 | page: "Source: the comparison table in the README." | source: "| | Claude keeps | You lose | Chat size after |" | docs/HOW-IT-WORKS.md:55
+F172 | page: "Source: the comparison table in How it works." | source: "| | Claude keeps | You lose | Chat size after |" | docs/HOW-IT-WORKS.md:55
 F158 | page: "Decisions already made: Round once, at the total, never per line: the payment provider does the same." | source: "Decisions already made: Round once, at the total, never per line: the payment provider does the same." | docs/HOW-IT-WORKS.md:88
 
 ## how-it-works.html: the model (slot values written by app.js)
@@ -223,11 +223,11 @@ F207 | page: "After install, Claude Code says, or asks about, seven options that
 F208 | page: "Nudge to save a handover" | source: "Nudge to save a handover" | plugin/.claude-plugin/plugin.json:17
 F209 | page: "Default: on" | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243
 F210 | page: "Turns the nudge on. Past the Nudge at size, the plugin asks Claude to save a handover, and prints a status line saying so." | source: "Nudge to save a handover" | plugin/.claude-plugin/plugin.json:17 | source: "`auto_nudge` or `CORNERMAN_AUTO` turns it off" | docs/HOW-IT-WORKS.md:243 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21 | source: "You see one status line" | docs/HOW-IT-WORKS.md:263
-F211 | page: "Source: the README." | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243
+F211 | page: "Source: How it works." | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243
 F212 | page: "Nudge at" | source: "(the default; change it with **Nudge at**" | plugin/README.md:11
 F213 | page: "Default: 250k tokens" | source: "When a chat passes 250k tokens (the default;" | plugin/README.md:11
 F214 | page: "The context size the nudge waits for. Claude Code keeps it between 50000 and 1000000 tokens." | source: "When a chat passes 250k tokens (the default; change it with **Nudge at**" | plugin/README.md:11 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
-F215 | page: "Source: the README (default), the CHANGELOG (range)." | source: "When a chat passes 250k tokens (the default;" | plugin/README.md:11 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
+F215 | page: "Source: How it works (default), the CHANGELOG (range)." | source: "Context size, in tokens, that triggers the nudge." | docs/HOW-IT-WORKS.md:208 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
 F216 | page: "relay" | source: "Set the `relay` option" | CHANGELOG.md:188
 F217 | page: "Default: 3 clears" | source: "`relay` is a number of clears per Claude Code window (3 by default)" | docs/HOW-IT-WORKS.md:269
 F218 | page: "A number of clears per Claude Code window, or unlimited. After Claude saves a handover, cornerman runs /clear when the turn ends and submits the prompt that continues from it. Needs Claude Code 2.1.275 or later; an older build ignores it." | source: "to a number of clears per Claude Code window, or `unlimited`. After Claude saves a handover, clear-resume runs `/clear` when the turn ends and submits the prompt that continues from it." | CHANGELOG.md:191 | source: "Needs Claude Code 2.1.275 or later; an older build ignores it" | CHANGELOG.md:193
@@ -235,7 +235,7 @@ F219 | page: "Source: the CHANGELOG." | source: "Set the `relay` option (in `/co
 F220 | page: "Set them with /plugin configure cornerman@cornerman, or in /config: the nudge settings need Claude Code 2.1.269 or later there. In the Claude Code panel in VS Code, set them from a terminal with claude plugin install cornerman@cornerman --config." | source: "Turn it on and set its size with `/plugin configure clear-resume@clear-resume`, or in `/config` in Claude Code 2.1.269 or later." | CHANGELOG.md:213 | source: "In the Claude Code panel in VS Code, set them from a terminal with `claude plugin install clear-resume@clear-resume --config`." | CHANGELOG.md:215 | source: "Set the `relay` option (in `/config` or `/plugin configure`)" | CHANGELOG.md:189
 F221 | page: "The environment variables still work: CORNERMAN_AUTO wins whenever it is set, and CORNERMAN_NUDGE_AT wins when it is a positive number." | source: "The environment variables still work: `CLEAR_RESUME_AUTO` wins whenever it is set, and `CLEAR_RESUME_NUDGE_AT` wins when it is a positive number." | CHANGELOG.md:217
 F222 | page: "Opt-in: sync (to your own private git remote) and web mode (for Claude Code on the web)." | source: "Two opt-in modes use git and nothing else:" | plugin/README.md:30 | source: "pushes and pulls the store to a private git remote that you set up" | plugin/README.md:31 | source: "for Claude Code on the web" | plugin/README.md:32
-F223 | page: "Source: the README." | source: "No telemetry, no analytics, no web requests." | plugin/README.md:30
+F223 | page: "Source: the plugin README." | source: "No telemetry, no analytics, no web requests." | plugin/README.md:30
 
 ## changelog.html: releases
 
