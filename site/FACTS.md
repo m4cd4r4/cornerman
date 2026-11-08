@@ -50,8 +50,8 @@ F18 | page: "Three steps: save a handover, /clear, carry on." | source: "**Save 
 ## index.html: fallback feed in the media box (with the relay on)
 
 F62 | page: "# with the relay on, context passes the nudge size" | source: "Claude saves a handover when the chat passes a size you choose" | docs/GUIDE.md:117
-F63 | page: "cornerman: context is about 182k tokens (nudge at 180k)." | source: "cornerman: context is about 182k tokens (nudge at 180k)." | docs/GUIDE.md:239
-F64 | page: "# Claude is asked to save a handover" | source: "Claude is asked to save a handover" | docs/GUIDE.md:239
+F63 | page: "cornerman: context is about 182k tokens (nudge at 180k)." | source: "cornerman: context is about 182k tokens (nudge at 180k)." | docs/GUIDE.md:248
+F64 | page: "# Claude is asked to save a handover" | source: "Claude is asked to save a handover" | docs/GUIDE.md:248
 F65 | page: "# the plugin runs /clear when the turn ends" | source: "the plugin runs `/clear` when the turn ends" | docs/GUIDE.md:117
 F60 | page: "Replay of the run that built this page." | source: "Caption under the box: "Replay of the run that built this page."" | TASK.md: Media box
 
@@ -81,8 +81,8 @@ F40 | page: "Source: STATUS.md. As of 2026-10-05, scripts/measure.mjs is on the 
 F42 | page: "Manual, relay and nudge off: /cornerman:handover, /clear, go." | source: "| Manual | `/cornerman:handover`, `/clear`, `go` | `auto_nudge=false`, `relay=off` |" | docs/GUIDE.md:115
 F413 | page: "claude plugin install cornerman@cornerman --config auto_nudge=false --config relay=off" | source: "`auto_nudge=false`, `relay=off`" | docs/GUIDE.md:115
 F43 | page: "Optional: VS Code extension; needs the plugin." | source: "**The VS Code sidebar** is a separate extension that needs the plugin." | docs/GUIDE.md:226
-F44 | page: "code --install-extension macdara.cornerman" | source: "code --install-extension macdara.cornerman" | docs/GUIDE.md:233
-F256 | page: "Marketplace, Open VSX, releases." | source: "It is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=macdara.cornerman), and on [Open VSX](https://open-vsx.org/extension/macdara/cornerman)" | docs/GUIDE.md:236 | source: "# Changelog" | CHANGELOG.md:1
+F44 | page: "code --install-extension macdara.cornerman" | source: "code --install-extension macdara.cornerman" | docs/GUIDE.md:242
+F256 | page: "Marketplace, Open VSX, releases." | source: "It is on the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=macdara.cornerman), and on [Open VSX](https://open-vsx.org/extension/macdara/cornerman)" | docs/GUIDE.md:245 | source: "# Changelog" | CHANGELOG.md:1
 F46 | page: "Handovers are plain text files on your disk, in ~/.cornerman. Nothing is sent anywhere unless you turn on sync (to your own private git remote) or web mode (for Claude Code on the web). Keep secrets out of them." | source: "Handovers are plain text files on your disk, in `~/.cornerman`. Nothing is sent anywhere unless you turn on" | docs/GUIDE.md:183 | source: "(to your own private git remote) or" | docs/GUIDE.md:183 | source: "(for Claude Code on the web). Keep secrets out of them." | docs/GUIDE.md:183
 F47 | page: "Node 18 or later and git. On Windows, Claude Code runs plugin hooks through Git Bash, which comes with Git for Windows." | source: "You need **Node 18 or later** and **git**." | docs/GUIDE.md:37 | source: "On Windows, Claude Code runs plugin hooks through **Git Bash**, which comes with Git for Windows." | docs/GUIDE.md:39
 F48 | page: "The relay needs Claude Code 2.1.275 or later and works in a terminal and in the VS Code chat panel." | source: "It needs Claude Code 2.1.275 or later, and works in a terminal and in the VS Code chat panel." | docs/GUIDE.md:119
@@ -91,16 +91,16 @@ F45 | page: "It stays out of the way for a subagent's save, a failed save, an in
 
 ## Nudge default and settings
 
-F24 | page: "The nudge is on by default. Past 250k tokens of context (the default; Nudge at changes it), the plugin asks Claude to save a handover." | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:242 | source: "Past 250k tokens of context (the default; **Nudge at** changes it), the plugin asks Claude to save a handover" | docs/GUIDE.md:242
+F24 | page: "The nudge is on by default. Past 250k tokens of context (the default; Nudge at changes it), the plugin asks Claude to save a handover." | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:251 | source: "Past 250k tokens of context (the default; **Nudge at** changes it), the plugin asks Claude to save a handover" | docs/GUIDE.md:251
 
 ## Comparison (README.md:115 to 122)
 
-F101 | page: "Its own summary of the chat" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:278
-F102 | page: "What the summary leaves out" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:278
-F103 | page: "The whole chat" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:279
-F104 | page: "Nothing" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:279
-F105 | page: "Everything, including where you were" | source: "| `/clear` | Nothing | Everything, including where you were | Empty |" | docs/GUIDE.md:280
-F106 | page: "A short handover it wrote on purpose" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:281
+F101 | page: "Its own summary of the chat" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:287
+F102 | page: "What the summary leaves out" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:287
+F103 | page: "The whole chat" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:288
+F104 | page: "Nothing" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:288
+F105 | page: "Everything, including where you were" | source: "| `/clear` | Nothing | Everything, including where you were | Empty |" | docs/GUIDE.md:289
+F106 | page: "A short handover it wrote on purpose" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:290
 
 ## how-it-works.html: the handover
 
@@ -126,20 +126,20 @@ F126 | page: "What it holds" | source: "Then it writes a short note about the wo
 
 F130 | page: "work" | source: "Claude carries on from the handover." | docs/GUIDE.md:154
 F131 | page: "the chat grows" | source: "When a chat grows long" | docs/GUIDE.md:43
-F132 | page: "nudge" | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:242
-F133 | page: "with the nudge on" | source: "To turn it off" | docs/GUIDE.md:248
-F134 | page: "asks Claude to save" | source: "the plugin asks Claude to save a handover" | docs/GUIDE.md:242
+F132 | page: "nudge" | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:251
+F133 | page: "with the nudge on" | source: "To turn it off" | docs/GUIDE.md:257
+F134 | page: "asks Claude to save" | source: "the plugin asks Claude to save a handover" | docs/GUIDE.md:251
 F135 | page: "save" | source: "**Save a handover.**" | docs/GUIDE.md:152
 F136 | page: "Claude writes a handover" | source: "Then it writes a short note about the work, called a handover" | docs/GUIDE.md:156
-F137 | page: "you ask, or the nudge does" | source: "| 1. **Save a handover.** | `/cornerman:handover` |" | docs/GUIDE.md:152 | source: "the plugin asks Claude to save a handover" | docs/GUIDE.md:242
+F137 | page: "you ask, or the nudge does" | source: "| 1. **Save a handover.** | `/cornerman:handover` |" | docs/GUIDE.md:152 | source: "the plugin asks Claude to save a handover" | docs/GUIDE.md:251
 F138 | page: "you type it" | source: "| 2. **Clear.** | `/clear` |" | docs/GUIDE.md:153
 F139 | page: "or the plugin, with the relay on" | source: "the plugin runs `/clear` when the turn ends" | docs/GUIDE.md:117
 F140 | page: "load" | source: "The fresh session starts with the handover already loaded." | docs/GUIDE.md:153
 F141 | page: "the fresh session loads it" | source: "The fresh session starts with the handover already loaded." | docs/GUIDE.md:153
 F142 | page: "carry on" | source: "**Carry on.**" | docs/GUIDE.md:154
 F143 | page: "Claude works and the chat grows." | source: "When a chat grows long" | docs/GUIDE.md:43
-F144 | page: "With the nudge on, past the size you set, the plugin asks Claude to save a handover." | source: "Claude saves a handover at the size you set." | docs/GUIDE.md:114 | source: "the plugin asks Claude to save a handover" | docs/GUIDE.md:242
-F145 | page: "Claude saves a handover: you type /cornerman:handover, or the nudge asks." | source: "| 1. **Save a handover.** | `/cornerman:handover` |" | docs/GUIDE.md:152 | source: "Claude is asked to save a handover" | docs/GUIDE.md:239
+F144 | page: "With the nudge on, past the size you set, the plugin asks Claude to save a handover." | source: "Claude saves a handover at the size you set." | docs/GUIDE.md:114 | source: "the plugin asks Claude to save a handover" | docs/GUIDE.md:251
+F145 | page: "Claude saves a handover: you type /cornerman:handover, or the nudge asks." | source: "| 1. **Save a handover.** | `/cornerman:handover` |" | docs/GUIDE.md:152 | source: "Claude is asked to save a handover" | docs/GUIDE.md:248
 F146 | page: "/clear: you type it, or the plugin runs it when the turn ends, with the relay on." | source: "| 2. **Clear.** | `/clear` |" | docs/GUIDE.md:153 | source: "the plugin runs `/clear` when the turn ends" | docs/GUIDE.md:117
 F147 | page: "The fresh session loads the handover, and Claude carries on." | source: "The fresh session starts with the handover already loaded." | docs/GUIDE.md:153 | source: "Claude carries on from the handover." | docs/GUIDE.md:154
 F148 | page: "The loop" | source: "The loop runs on `/clear`." | CHANGELOG.md:284
@@ -154,26 +154,26 @@ F154 | page: "# Cart totals rounding" | source: "The file reads: # Cart totals r
 F155 | page: "Repo: widget-shop. Branch: fix/cart-rounding." | source: "Repo: widget-shop. Branch: fix/cart-rounding." | docs/GUIDE.md:215
 F156 | page: "Goal: Cart totals must round to the cent the way the payment provider does, so the checkout total and the receipt always match." | source: "Goal: Cart totals must round to the cent the way the payment provider does, so the checkout total and the receipt always match." | docs/GUIDE.md:215
 F157 | page: "Next action: Run npm test -- cart and fix src/cart.js:2 so cartTotal rounds once at the end, half-up, to 2 decimal places." | source: "Next action: Run npm test -- cart and fix src/cart.js:2 so cartTotal rounds once at the end, half-up, to 2 decimal places." | docs/GUIDE.md:215
-F159 | page: "Claude keeps" | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:276
-F160 | page: "You lose" | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:276
-F161 | page: "Chat size after" | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:276
-F162 | page: "Smaller" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:278
-F163 | page: "Same as before" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:279
-F164 | page: "Nothing" | source: "| `/clear` | Nothing | Everything, including where you were | Empty |" | docs/GUIDE.md:280
-F165 | page: "Empty" | source: "| `/clear` | Nothing | Everything, including where you were | Empty |" | docs/GUIDE.md:280
-F166 | page: "The rest of the chat" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:281
-F167 | page: "Just the handover" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:281
-F168 | page: "/compact" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:278
-F169 | page: "--resume" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:279
-F170 | page: "cornerman" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:281
-F171 | page: "Compared with /compact, --resume and /clear" | source: "How this compares with <code>/compact</code>, <code>--resume</code> and <code>/clear</code>" | docs/GUIDE.md:273
-F172 | page: "Source: the comparison table in the README." | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:276
+F159 | page: "Claude keeps" | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:285
+F160 | page: "You lose" | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:285
+F161 | page: "Chat size after" | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:285
+F162 | page: "Smaller" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:287
+F163 | page: "Same as before" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:288
+F164 | page: "Nothing" | source: "| `/clear` | Nothing | Everything, including where you were | Empty |" | docs/GUIDE.md:289
+F165 | page: "Empty" | source: "| `/clear` | Nothing | Everything, including where you were | Empty |" | docs/GUIDE.md:289
+F166 | page: "The rest of the chat" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:290
+F167 | page: "Just the handover" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:290
+F168 | page: "/compact" | source: "| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |" | docs/GUIDE.md:287
+F169 | page: "--resume" | source: "| `--resume` | The whole chat | Nothing | Same as before |" | docs/GUIDE.md:288
+F170 | page: "cornerman" | source: "| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |" | docs/GUIDE.md:290
+F171 | page: "Compared with /compact, --resume and /clear" | source: "How this compares with <code>/compact</code>, <code>--resume</code> and <code>/clear</code>" | docs/GUIDE.md:282
+F172 | page: "Source: the comparison table in the README." | source: "| | Claude keeps | You lose | Chat size after |" | docs/GUIDE.md:285
 F158 | page: "Decisions already made: Round once, at the total, never per line: the payment provider does the same." | source: "Decisions already made: Round once, at the total, never per line: the payment provider does the same." | docs/GUIDE.md:215
 
 ## how-it-works.html: the model (slot values written by app.js)
 
 F173 | page: "The model" | source: "cornerman cost model." | site/model.js:1
-F174 | page: "A model, not a measurement. Claude rereads the whole context for every reply: set a task and see how much it rereads with cornerman and without it." | source: "A model, not a measurement." | site/model.js:1 | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:270
+F174 | page: "A model, not a measurement. Claude rereads the whole context for every reply: set a task and see how much it rereads with cornerman and without it." | source: "A model, not a measurement." | site/model.js:1 | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:279
 F175 | page: "Context window" | source: "The author uses a 1M-token context window." | docs/GUIDE.md:137
 F176 | page: "1M" | source: "The author uses a 1M-token context window" | docs/GUIDE.md:137
 F177 | page: "200k" | source: "On a 200k window" | docs/GUIDE.md:137
@@ -181,12 +181,12 @@ F178 | page: "Start size {mStart}" | source: "the size your sessions start at" |
 F179 | page: "Typical values: see Start size below" | source: "keep it well above the size your sessions start at" | docs/GUIDE.md:137
 F180 | page: "Clear at {mClearAt}" | source: "Claude saves a handover at the size you set." | docs/GUIDE.md:114 | source: "mClearAt: tok(clearAt)" | site/app.js:243
 F181 | page: "Task size {mWork}" | source: "mWork: tok(work)" | site/app.js:243 | source: "var add = Math.min(STEP, work - done);" | site/model.js:19
-F182 | page: "On a 200k window, the run without cornerman compacts on its own at {mCompact} (assumed)." | source: "If your model's context window is 200k tokens, set **Nudge at** below the size where Claude Code compacts on its own" | docs/GUIDE.md:260 | source: "mCompact: tok(M.compactAt(win))" | site/app.js:243
-F183 | page: "Reread over the task: {mClearReread} with cornerman, {mBaseReread} without it." | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:270 | source: "vals.mClearReread = tok(r.clear.reread);" | site/app.js:244 | source: "vals.mBaseReread = tok(r.base.reread);" | site/app.js:245
+F182 | page: "On a 200k window, the run without cornerman compacts on its own at {mCompact} (assumed)." | source: "If your model's context window is 200k tokens, set **Nudge at** below the size where Claude Code compacts on its own" | docs/GUIDE.md:269 | source: "mCompact: tok(M.compactAt(win))" | site/app.js:243
+F183 | page: "Reread over the task: {mClearReread} with cornerman, {mBaseReread} without it." | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:279 | source: "vals.mClearReread = tok(r.clear.reread);" | site/app.js:244 | source: "vals.mBaseReread = tok(r.base.reread);" | site/app.js:245
 F184 | page: "without it: Claude Code compacts on its own" | source: "the size where Claude Code compacts on its own" | docs/GUIDE.md:137
 F185 | page: "Resets" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32
 F186 | page: "Peak context" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32
-F187 | page: "Context reread" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32 | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:270
+F187 | page: "Context reread" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32 | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:279
 F188 | page: "{mClearResets}" | source: "vals.mClearResets = String(r.clear.resets);" | site/app.js:244
 F189 | page: "{mClearPeak}" | source: "vals.mClearPeak = tok(r.clear.peak);" | site/app.js:244
 F190 | page: "{mClearReread}" | source: "vals.mClearReread = tok(r.clear.reread);" | site/app.js:244
@@ -196,10 +196,10 @@ F193 | page: "{mBasePeak}" | source: "vals.mBasePeak = tok(r.base.peak);" | site
 F194 | page: "{mBaseReread}" | source: "vals.mBaseReread = tok(r.base.reread);" | site/app.js:245
 F195 | page: "Source: site/model.js, a model, not a measurement." | source: "A model, not a measurement." | site/model.js:1
 F196 | page: "Each reply adds 5000 new tokens to the context: assumed." | source: "var STEP = 5000;" | site/model.js:3
-F197 | page: "Claude rereads the whole context for every reply, so the reread figure is the context summed over every reply." | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:270 | source: "reread += ctx;" | site/model.js:27
+F197 | page: "Claude rereads the whole context for every reply, so the reread figure is the context summed over every reply." | source: "Claude rereads the whole context for every reply." | docs/GUIDE.md:279 | source: "reread += ctx;" | site/model.js:27
 F198 | page: "After a clear, the run restarts at the start size plus the handover: about 780 tokens in the handover, an estimate. Measured on the author's own 104 /clears, 20 to 28 Sep 2026, medians." | source: "clear: walk(opts.start, opts.work, opts.clearAt, opts.start + HANDOVER)," | site/model.js:37 | source: "About 780 tokens in the handover, an estimate" | docs/RESEARCH.md:36 | source: "Measured on the author's own 104 /clears, 20 to 28 Sep 2026, medians." | docs/RESEARCH.md:36
 F199 | page: "Without cornerman, the run compacts at nine tenths of the window and keeps an 8000-token summary: both assumed." | source: "var SUMMARY = 8000;" | site/model.js:5 | source: "var COMPACT_AT = 0.9;" | site/model.js:6
-F200 | page: "The model clears at or below the clear-at size. The plugin asks Claude to save once context is past the size you set, and Claude then saves, so in use, peaks pass it." | source: "if (ctx + add > limit) {" | site/model.js:20 | source: "Past 250k tokens of context (the default; **Nudge at** changes it), the plugin asks Claude to save a handover" | docs/GUIDE.md:242
+F200 | page: "The model clears at or below the clear-at size. The plugin asks Claude to save once context is past the size you set, and Claude then saves, so in use, peaks pass it." | source: "if (ctx + add > limit) {" | site/model.js:20 | source: "Past 250k tokens of context (the default; **Nudge at** changes it), the plugin asks Claude to save a handover" | docs/GUIDE.md:251
 
 ## Measured by hand (lines that cite the block above)
 
@@ -220,14 +220,14 @@ F205 | page: "Source: the author's own sessions." | source: "The author's sessio
 
 F206 | page: "Settings" | source: "seven options that are not set yet" | docs/GUIDE.md:41
 F207 | page: "After install, Claude Code says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default." | source: "Claude Code then says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default." | docs/GUIDE.md:41
-F208 | page: "Nudge to save a handover" | source: "switch off **Nudge to save a handover**" | docs/GUIDE.md:248
-F209 | page: "Default: on" | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:242
-F210 | page: "Turns the nudge on. Past the Nudge at size, the plugin asks Claude to save a handover, and prints a status line saying so." | source: "To turn it off, run this in Claude Code in a terminal and switch off **Nudge to save a handover**" | docs/GUIDE.md:248 | source: "Past 250k tokens of context (the default; **Nudge at** changes it), the plugin asks Claude to save a handover, and prints a status line saying so." | docs/GUIDE.md:242
-F211 | page: "Source: the README." | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:242
-F212 | page: "Nudge at" | source: "(the default; **Nudge at** changes it)" | docs/GUIDE.md:242
-F213 | page: "Default: 250k tokens" | source: "Past 250k tokens of context (the default;" | docs/GUIDE.md:242
-F214 | page: "The context size the nudge waits for. Claude Code keeps it between 50000 and 1000000 tokens." | source: "Past 250k tokens of context (the default; **Nudge at** changes it)" | docs/GUIDE.md:242 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
-F215 | page: "Source: the README (default), the CHANGELOG (range)." | source: "Past 250k tokens of context (the default;" | docs/GUIDE.md:242 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
+F208 | page: "Nudge to save a handover" | source: "switch off **Nudge to save a handover**" | docs/GUIDE.md:257
+F209 | page: "Default: on" | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:251
+F210 | page: "Turns the nudge on. Past the Nudge at size, the plugin asks Claude to save a handover, and prints a status line saying so." | source: "To turn it off, run this in Claude Code in a terminal and switch off **Nudge to save a handover**" | docs/GUIDE.md:257 | source: "Past 250k tokens of context (the default; **Nudge at** changes it), the plugin asks Claude to save a handover, and prints a status line saying so." | docs/GUIDE.md:251
+F211 | page: "Source: the README." | source: "**The nudge** (auto mode) is on by default." | docs/GUIDE.md:251
+F212 | page: "Nudge at" | source: "(the default; **Nudge at** changes it)" | docs/GUIDE.md:251
+F213 | page: "Default: 250k tokens" | source: "Past 250k tokens of context (the default;" | docs/GUIDE.md:251
+F214 | page: "The context size the nudge waits for. Claude Code keeps it between 50000 and 1000000 tokens." | source: "Past 250k tokens of context (the default; **Nudge at** changes it)" | docs/GUIDE.md:251 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
+F215 | page: "Source: the README (default), the CHANGELOG (range)." | source: "Past 250k tokens of context (the default;" | docs/GUIDE.md:251 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:214
 F216 | page: "relay" | source: "Set the `relay` option" | CHANGELOG.md:188
 F217 | page: "Default: 3 clears" | source: "`relay` is a number of clears per Claude Code window (3 by default)" | docs/HOW-IT-WORKS.md:214
 F218 | page: "A number of clears per Claude Code window, or unlimited. After Claude saves a handover, cornerman runs /clear when the turn ends and submits the prompt that continues from it. Needs Claude Code 2.1.275 or later; an older build ignores it." | source: "to a number of clears per Claude Code window, or `unlimited`. After Claude saves a handover, clear-resume runs `/clear` when the turn ends and submits the prompt that continues from it." | CHANGELOG.md:191 | source: "Needs Claude Code 2.1.275 or later; an older build ignores it" | CHANGELOG.md:193
@@ -296,7 +296,7 @@ F270 | page: "Source: the source files, the plugin README and How it works." | s
 ## Footer
 
 F31 | page: "Built in {sessions} sessions and {clears} automatic clears, {commits} commits, {first} to {last} AWST, {date}. Build log" | source: "run on this build's transcripts" | site/buildstats.mjs:6 | source: "const sessions = out.length;" | site/buildstats.mjs:127 | source: "const clears = sessions - 1;" | site/buildstats.mjs:128 | source: "const commits = lines.length;" | site/buildstats.mjs:147 | source: "const awst = (iso) => {" | site/buildstats.mjs:134 | source: "date: commits ? awstDate(lines[0]) : \"n/a\"" | site/buildstats.mjs:149
-F50 | page: "MIT licence. Independent, not made or endorsed by Anthropic." | source: "MIT licence</a>. cornerman is an independent project. It is not made or endorsed by Anthropic." | docs/GUIDE.md:328
+F50 | page: "MIT licence. Independent, not made or endorsed by Anthropic." | source: "MIT licence</a>. cornerman is an independent project. It is not made or endorsed by Anthropic." | docs/GUIDE.md:337
 
 ## Results method (copied from RESULTS.md as-is)
 
@@ -333,4 +333,4 @@ F407 | page: "API-equivalent; runs used a subscription." | source: "Figures are 
 F408 | page: "Predicted before the runs: {predictions.inside} of {predictions.total} results inside the range, {predictions.outside} outside." | source: "predictions written BEFORE the runs" | FACTS.md: Results method | source: "5" | results.json: predictions.inside | source: "8" | results.json: predictions.total | source: "3" | results.json: predictions.outside
 F409 | page: "Written {predictions.writtenTime} AWST on {predictions.dateLabel}, before the first test." | source: "drafted 2026-10-10 14:55 AWST" | FACTS.md: Results method | source: "P3 started 15:16 AWST" | FACTS.md: Results method | source: "14:55" | results.json: predictions.writtenTime | source: "10 Oct" | results.json: predictions.dateLabel
 F410 | page: "Idle test: cold return after {idle.latest.idleMin} minutes idle; handover written at {idle.latest.warmAtMin} minutes, then read by a fresh session. Sonnet 5.5. Compare cost within one date: cache reads were priced lower on {idle.latest.dateLabel} than {idle.earlier.dateLabel}." | source: "cold return at +65 min; warm handover at +55 min with identical prompt, then fresh read" | FACTS.md: Results method | source: "Sonnet 5.5, the same 390k-token site session" | FACTS.md: Results method | source: "65" | results.json: idle.latest.idleMin | source: "55" | results.json: idle.latest.warmAtMin | source: "The CLI priced the 2026-10-10 runs lower per token than the 10-07/10-08 runs: H11 read the same 780,784 cached tokens as the 10-09 H1" | FACTS.md: Results method | source: "10 Oct" | results.json: idle.latest.dateLabel | source: "9 Oct" | results.json: idle.earlier.dateLabel
-F411 | page: "After the 60-minute prompt cache expires, a cold return rewrites the whole chat. A handover saved before then lets a fresh session start from a short note." | source: "prompt cache lasts 60 minutes" | docs/GUIDE.md:289 | source: "the first message back rewrites the whole context" | docs/GUIDE.md:289 | source: "a fresh session reading it" | docs/GUIDE.md:289 | source: "short note about the work" | docs/GUIDE.md:156 | source: "cold return at +65 min" | FACTS.md: Results method
+F411 | page: "After the 60-minute prompt cache expires, a cold return rewrites the whole chat. A handover saved before then lets a fresh session start from a short note." | source: "prompt cache lasts 60 minutes" | docs/GUIDE.md:298 | source: "the first message back rewrites the whole context" | docs/GUIDE.md:298 | source: "a fresh session reading it" | docs/GUIDE.md:298 | source: "short note about the work" | docs/GUIDE.md:156 | source: "cold return at +65 min" | FACTS.md: Results method
