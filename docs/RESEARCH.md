@@ -16,6 +16,14 @@ cornerman, then called clear-resume, was tested before release. This page is the
 | Is 250k the best nudge size? | Unknown. It is the author's choice, supported only by a cost model | Judgement and model |
 | Does the prompt cache last 60 minutes? | On a subscription, yes. On an API key the default is 5 minutes | Measured, n=1 each |
 
+The short version:
+
+- **Coming back to an idle chat costs less.** Claude Code's prompt cache lasts 60 minutes on a subscription (5 minutes by default on an API key). After that, the first message back rewrites the whole context: US$1.56 on a 390k-token Sonnet 5.5 session, in each of 3 runs. A handover written while the cache was warm, plus a fresh session reading it, cost US$0.15 to US$0.17 in all (n=3, 10 Oct 2026). The saving exists only if you come back, and the fresh session continues from the note, not the full chat. The idle handover is on by default, so this needs no setting.
+- **It does not make a whole build cheaper.** On a 30-item site build with Sonnet 5.5, the relay and Claude Code's own auto-compaction cost the same (US$9.08 against US$9.19, n=5 each) and each finished 5 of 6 runs. Use the plugin for the convenience, idle returns and switching models, not to cut the bill on one long session.
+- **Switching models mid-task costs less.** Moving a 390k-token Sonnet 5.5 session to Opus cost US$3.13; a handover first, then a fresh Opus session, cost US$0.24, about 13x less (n=1, 8 Oct 2026).
+- **A fresh session did not remember more than the full chat.** In recall tests the plugin's note never overtook the full context at any size from 50k to 450k tokens. The saved note keeps the plan and the rules; the recent-activity trail added to it recovers the last commands and files (17 of 17 questions on 6 sessions, tuned on those questions).
+- **The 250k nudge size is a judgement,** not a result: [what supports it and what does not](#why-the-nudge-defaults-to-250k-tokens).
+
 ## Why the nudge defaults to 250k tokens
 
 **It is a judgement, not a result.** The author chose 250k from daily use. No published experiment compares a 250k nudge with a 180k one on cost or quality. An earlier changelog line said the A/B "found no cost benefit between 180k and 250k". That was wrong: every published relay arm used 180k, and the comparison was relay against auto-compaction against never compacting. The line has been corrected.

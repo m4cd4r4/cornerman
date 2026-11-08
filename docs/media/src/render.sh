@@ -8,7 +8,7 @@ media="$(cd "$here/.." && pwd)"
 brave="/c/Program Files/BraveSoftware/Brave-Browser/Application/brave.exe"
 prof="$(cygpath -m "$here/.brave-render")"
 src="file:///$(cygpath -m "$here/cards.html")"
-cards=("$@"); [ ${#cards[@]} -gt 0 ] || cards=(banner problem nudge numbers copy windows)
+cards=("$@"); [ ${#cards[@]} -gt 0 ] || cards=(banner problem numbers copy windows)
 
 for c in "${cards[@]}"; do
   out="$media/$c.png"; rm -f "$out"
