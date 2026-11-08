@@ -52,8 +52,8 @@ Node 18 or later and git. On Windows, Claude Code runs plugin hooks through Git 
 
 ## More
 
-- Full README, with the replay video and comparisons with `/compact` and `--resume`: https://github.com/m4cd4r4/cornerman
-- How it works, every setting and the opt-in modes: https://github.com/m4cd4r4/cornerman/blob/main/docs/HOW-IT-WORKS.md
+- README: https://github.com/m4cd4r4/cornerman
+- How it works, every setting, the opt-in modes and the comparison with `/compact` and `--resume`: https://github.com/m4cd4r4/cornerman/blob/main/docs/HOW-IT-WORKS.md
 - Site: https://m4cd4r4.github.io/cornerman
 
 MIT licence.
