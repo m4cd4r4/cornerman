@@ -4,6 +4,8 @@
 
 [Product page](https://macdaraomurchu.com/products/cornerman/) · [Install](#install) · [Features](#features) · [Full guide](docs/GUIDE.md) · [Changelog](CHANGELOG.md)
 
+The longer a Claude Code chat gets, the more each message costs, because Claude reads the whole chat again every time. Clearing it starts you fresh, but the new chat has no idea what you were working on.
+
 When a Claude Code chat gets long, Cornerman saves a handover, clears the chat and carries on by itself, up to the number of clears you set. Tables, lists, links and paths from the cleared chat stay one click away.
 
 <img src="docs/img/real-view.webp" alt="The whole run playing on a loop in VS Code: the chat fills, the handover is saved, Cornerman clears the chat, the fresh chat carries on, and the loaded handover opens onto what was left on screen." width="900">
@@ -26,6 +28,10 @@ code --install-extension macdara.cornerman
 ```
 
 It is also on [Open VSX](https://open-vsx.org/extension/macdara/cornerman) for VSCodium and Cursor.
+
+## What you'll see first
+
+A pie in the VS Code status bar shows how full the chat is. Nothing else happens until the chat reaches 250k tokens. To see a handover sooner, hover the pie and click Hand over now.
 
 ---
 
@@ -86,6 +92,10 @@ Opens a Claude Code tab with the handover typed into the prompt box.
 Lists the repo's git worktrees and opens each in its own window.
 
 <img src="docs/img/worktrees.webp" alt="The Worktrees view lists docs/readme-rebuild, feat/hide-research and main. The first row, outlined, shows its buttons on hover, with the tooltip Open worktree window." width="700">
+
+## Why not auto-compaction?
+
+When a chat gets full, Claude Code's auto-compaction squeezes it into a summary you never see, and carries on in the same chat. Cornerman writes a handover, a short note of the goal, what's done and what's next, that you can open and edit. It starts a fresh chat from that note and keeps the old chat's tables, lists, links and paths one click away.
 
 ---
 
