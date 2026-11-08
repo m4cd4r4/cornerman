@@ -32,6 +32,33 @@ The skill also has a `Do not` section for traps and approaches that already fail
 session is told to treat branch, file and status claims as a snapshot and check them before
 acting, because a branch or a file can move between sessions.
 
+### What the plugin prints at each step
+
+After the save:
+
+```text
+Saved handover "Cart totals rounding" (id 31c9af7).
+After /clear, the next session in ~/code/widget-shop loads it automatically.
+```
+
+After `/clear`, the plugin's load message reads:
+
+```text
+cornerman: loaded handover "Cart totals rounding" (saved just now).
+A copy to read or share: ~/.cornerman/loaded/widget-shop-cart-totals-rounding-31c9af7.md
+```
+
+Claude Code puts `SessionStart:clear says:` in front of the first line. If you do not see the message, press <kbd>ctrl</kbd>+<kbd>o</kbd> to show it. The handover loads either way.
+
+## How this compares with `/compact`, `--resume` and `/clear`
+
+| | Claude keeps | You lose | Chat size after |
+|:--|:--|:--|:--|
+| `/compact` | Its own summary of the chat | What the summary leaves out | Smaller |
+| `--resume` | The whole chat | Nothing | Same as before |
+| `/clear` | Nothing | Everything, including where you were | Empty |
+| **cornerman** | **A short handover it wrote on purpose** | **The rest of the chat** | **Just the handover** |
+
 ## Where handovers live
 
 One JSON file per handover in `~/.cornerman/handovers/`, named
@@ -57,6 +84,10 @@ and auto mode keeps one marker file per nudged session in `.nudged/`. Nothing pr
 
 ### The readable copy
 
+<p align="center">
+  <img src="media/copy.png" width="560" alt="An editor tab titled widget-shop-cart-totals-rounding-31c9af7.md, in ~/.cornerman/loaded. The file reads: # Cart totals rounding. Repo: widget-shop. Branch: fix/cart-rounding. Saved and Loaded times. Then the handover: Goal: Cart totals must round to the cent the way the payment provider does, so the checkout total and the receipt always match. Next action: Run npm test -- cart and fix src/cart.js:2 so cartTotal rounds once at the end, half-up, to 2 decimal places. Decisions already made: Round once, at the total, never per line: the payment provider does the same.">
+</p>
+
 Each time a handover loads, the plugin also writes it as plain markdown to
 `~/.cornerman/loaded/<repo>-<title>-<id>.md` (title, repo, branch, when it was saved and
 loaded, then the body) and prints the path on the line under the load message. Open it to reread
@@ -66,6 +97,29 @@ folder has a `.gitignore`, so sync never pushes the copies. If the copy cannot b
 handover still loads and no path is printed.
 
 ## Which handover loads
+
+<p align="center">
+  <img src="media/windows.png" width="560" alt="Window 1, on widget-shop, branch fix/cart-rounding, runs /cornerman:handover and prints: Saved handover &quot;Cart totals rounding&quot; (id 31c9af7). Then it runs /clear and prints: cornerman: loaded handover &quot;Cart totals rounding&quot; (saved just now). Window 2, open on the same project and branch, prints: cornerman: 1 handover waiting for this repo: &quot;Cart totals rounding&quot;. Say which to resume.">
+</p>
+
+The plugin checks for a waiting handover when a session starts, after `/clear` and after compaction (when `/compact`, or Claude Code on its own, shrinks the chat). When nothing is waiting, it prints nothing.
+
+**Each handover belongs to the Claude Code window that wrote it.** While that window is open, it is the only one that loads the handover after `/clear`. Other windows on the same project list it when they start, and load it only if you ask. Once that window closes, a session on the same branch loads it. A handover older than 7 days is listed, not loaded.
+
+```mermaid
+flowchart LR
+  A["A session starts,<br>new or after /clear"] --> B{"Handovers waiting<br>for this repo?"}
+  B -->|"none"| C["Prints nothing"]
+  B -->|"written by this window,<br>7 days old or less"| D["Loads it"]
+  B -->|"from a closed window,<br>on your branch,<br>7 days old or less"| D
+  B -->|"the only one waiting,<br>from a closed window,<br>any branch, 7 days old or less"| D
+  B -->|"written by another<br>open window"| E["Lists it, loads it<br>only if you ask"]
+  B -->|"older than 7 days"| F["Lists it"]
+  classDef load fill:#e5a743,stroke:#e5a743,color:#100e0b
+  class D load
+```
+
+These are the common cases. After compaction, only this window's own handover loads.
 
 At session start, `/clear` or compaction, the hook looks at the handovers waiting for this repo
 and applies the first rule that fits. "Fresh" means no more than 7 days old and not dated more than 5
@@ -176,6 +230,8 @@ Three more plugin options belong to the idle handover. `idle_handover` is `off`,
 (default 60; 5 is the default with an API key); `idle_min_tokens` is the smallest context size
 (default 100000) at which it acts. See [Idle handover](#idle-handover-before-the-cache-expires).
 
+After install, Claude Code says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default.
+
 The VS Code sidebar does not read Claude Code's settings. If you move the store, set the
 sidebar's `cornerman.storePath` to the same folder.
 
@@ -189,6 +245,8 @@ threshold (`nudge_at`, or `CORNERMAN_NUDGE_AT`), Claude
 is asked to write a handover, then the relay clears (with the relay off, it tells you to type `/clear`). The size is read
 from the tail of the session transcript on disk. Set the threshold well above your
 session-start size (rules, CLAUDE.md and tool schemas) or it fires on almost every session.
+
+**Pick the nudge size for your setup.** The default, 250k tokens, is a setting the author chose from ongoing use and experimentation, not a research result ([why, and what was measured](RESEARCH.md#why-the-nudge-defaults-to-250k-tokens)). It leaves about 180k tokens between handovers, which the author found a good sweet spot. If your sessions start with a smaller context, set **Nudge at** lower to keep a similar gap (a larger start, a higher setting). The author uses a 1M-token context window. More testing of the best handover window is planned. On a 200k window, set **Nudge at** below the size where Claude Code compacts on its own, or compaction comes first. Either way, keep it well above the size your sessions start at (your rules, CLAUDE.md and tool schemas), or every fresh session is nudged almost at once.
 
 The plugin checks the size after each tool call, where it warns and lets the turn continue, and when a turn
 ends, where it keeps the turn going so the handover gets written first. The first matters
@@ -216,7 +274,7 @@ handover, cornerman runs `/clear` when the turn ends and submits the prompt that
 it. It stays out of the way for a subagent's save, a failed save, an interrupted turn and headless
 runs. It stops, and says so, at its count, or when two continued sessions in a row make no new
 commit (outside a git repo, only the count applies). With the relay on, the nudge tells Claude to
-end without a handover when the task is finished, so a finished job is not resumed.
+end without a handover when the task is finished, so there is nothing to continue.
 
 It needs Claude Code 2.1.275 or later; an older build ignores it and the rest of cornerman works
 as before. It works in a terminal and in the VS Code chat panel.
@@ -255,6 +313,12 @@ with an API key and was not measured. Come back after it lapses and the first me
 full rewrite of the context. A handover written while the cache is still warm is read from the
 cache and costs less, but only if you do come back.
 
+| Setting | Default | What it does |
+|---|---|---|
+| `idle_handover` | `smart` | `off`, `toast`, `smart` or `auto`. `smart` is `auto` where Claude may decline: if the work is finished and no step remains it replies "Nothing to hand over.", and nothing is saved or cleared. A wrong "finished" costs the cold rewrite you would have paid anyway; no work is lost. Whether the model declines correctly was not measured. |
+| `cache_ttl_minutes` | `60` | Your prompt cache lifetime: 60 on a subscription. On an API key the default is 5 minutes (measured, n=1), or 60 with `ENABLE_PROMPT_CACHING_1H=1`. Set this to match. The mod acts 5 minutes before it (half of it, if shorter). `auto` needs 10 or more, else it acts as `toast`. |
+| `idle_min_tokens` | `100000` | Below this context size a cold rewrite is cheap, so nothing happens. |
+
 Measured on one 390k-token Sonnet 5.5 session, 60 minute cache, 10 Oct 2026: the first message
 back after the cache expired wrote about 390k tokens and cost US$1.56 (n=3). A handover written while
 the cache was warm, plus a fresh session reading it, cost US$0.15 to US$0.17 (n=3). On 9 Oct the CLI
@@ -271,7 +335,7 @@ all of these hold:
 - the context is at least `idle_min_tokens`. It is read only at that point, from
   `$.session.usage()`, else from the session transcript through `scripts/context-tokens.mjs`;
 - this session has not had its idle message yet. The mod keeps its own mark,
-  `<store>/.idle/<session id>`, so the 180k nudge (the `.nudged` mark) and this can each fire once.
+  `<store>/.idle/<session id>`, so the nudge (the `.nudged` mark) and this can each fire once.
 
 `toast` puts a message in the status line, which stays until your next turn starts, and shows a
 short toast too. `auto` asks Claude for the handover with a prompt that says you are away and that
@@ -558,12 +622,43 @@ machine (see [Running the tests](#running-the-tests)).
 
 ### Updating
 
+Plugins from a third-party marketplace do not update on their own by default. Run both lines, then restart Claude Code:
+
 ```bash
 claude plugin marketplace update cornerman
 claude plugin update cornerman@cornerman
 ```
 
-Restart Claude Code afterwards.
+### Upgrade from clear-resume
+
+This plugin used to be called clear-resume. Install it under the new name, then run the upgrade script **before** removing the old plugin, because removing it deletes its options:
+
+```bash
+claude plugin marketplace add https://github.com/m4cd4r4/cornerman
+claude plugin install cornerman@cornerman
+node ~/.claude/plugins/cache/cornerman/cornerman/*/scripts/upgrade.mjs
+claude plugin uninstall clear-resume@clear-resume
+claude plugin marketplace remove clear-resume
+```
+
+Then restart Claude Code. What happens to what you already have:
+
+- **Handovers:** the next session start moves `~/.clear-resume` to `~/.cornerman` in one step and leaves a link at the old path. Nothing is removed. If a VS Code window has the folder open, your handovers stay where they are and keep working, and the move finishes once every VS Code window has been closed.
+- **The link at `~/.clear-resume`:** leave it, or remove the link alone. On Windows use `cmd /c rmdir %USERPROFILE%\.clear-resume`: `Remove-Item -Recurse` follows the link and deletes your handovers.
+- **Plugin options:** the upgrade script copies them to the new name.
+- **`CLEAR_RESUME_` variables:** they keep working. A `CORNERMAN_` variable of the same name wins. The script lists the ones it finds.
+- **Permission rules:** a rule like `Skill(clear-resume:handover)` does not carry over. The script lists them for you to change.
+- **VS Code extension:** install the new one and uninstall the old one. Its settings are copied to the new names the first time it starts.
+- **Two machines with sync:** upgrade both when you can. Nothing is lost while only one has, but until then the old machine marks old handovers as archived again and the two trade a commit at each sync.
+
+### Uninstall
+
+```bash
+claude plugin uninstall cornerman@cornerman
+claude plugin marketplace remove cornerman
+```
+
+Your handovers stay in `~/.cornerman` until you delete that folder. If you added any `CORNERMAN_` lines to `~/.claude/settings.json`, remove them too.
 
 ### Trying it without installing
 
