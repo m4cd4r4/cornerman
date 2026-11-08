@@ -506,7 +506,7 @@ had loaded. Press ctrl+o to see it.
 
 ## What's inside
 
-The plugin is the `plugin/` folder: one skill, four hooks, one Claude Code mod and a shared
+The plugin is the `plugin/` folder: one skill, five hooks, one Claude Code mod and a shared
 store. The VS Code extension and the headless runner sit on top of the same store.
 
 | Part | Where | What it does |
@@ -515,6 +515,8 @@ store. The VS Code extension and the headless runner sit on top of the same stor
 | SessionStart hook | [`plugin/scripts/session-start.mjs`](../plugin/scripts/session-start.mjs) | Runs at startup, `/clear` and compaction. Loads the waiting handover, then archives it so it loads once. |
 | PostToolUse hook | [`plugin/scripts/post-tool.mjs`](../plugin/scripts/post-tool.mjs) | With the nudge on, warns once mid-turn past the Nudge at size. Compaction does not wait for a turn to end, so the Stop hook alone would miss it. |
 | Stop hook | [`plugin/scripts/stop.mjs`](../plugin/scripts/stop.mjs) | With the nudge on, asks Claude, at a turn end, to save a handover, and asks again (up to 3 asks) if it neither saved nor replied. |
+| SessionEnd hook | [`plugin/scripts/session-end.mjs`](../plugin/scripts/session-end.mjs) | Keeps the tables, lists, links and paths the session left on screen, so they can be listed under its handover. |
+| PreToolUse hook | [`plugin/scripts/pre-tool.mjs`](../plugin/scripts/pre-tool.mjs) | Allows the handover skill once, only right after the idle handover asked for it, because nobody is at the keyboard to answer its permission prompt. A deny rule of your own still wins. |
 | Claude Code mod | [`plugin/hooks/relay.ts`](../plugin/hooks/relay.ts) | The relay. Runs `/clear` after a save, then submits the prompt that continues from the handover. |
 | Store | [`plugin/packages/store/`](../plugin/packages/store/) | The one record schema and the one reader and writer every part goes through. |
 | VS Code extension | [`extension/src/`](../extension/src/) | The sidebar and status bar. Reads the same store. |
