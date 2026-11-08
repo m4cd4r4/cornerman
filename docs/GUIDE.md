@@ -225,7 +225,19 @@ These are the common cases. After compaction, only this window's own handover lo
 
 **The VS Code sidebar** is a separate extension that needs the plugin. It lists your handovers by repo, with the ones loaded in the last 24 hours at the top. **Resume** opens a Claude Code tab with the handover already typed into the prompt box, where it waits for you to send it.
 
-It also adds a context pie to the status bar, filling towards the nudge size (hover it to see which handover the tab loaded), and a relay item that shows the window's clears left and changes them with a click. A **Worktrees** view lists the repo's git worktrees and opens each in its own window. [Extension README](../extension/README.md)
+In the VS Code footer:
+
+- **Context pie:** how full the chat is, filling towards the nudge size. Hover it to see which handover the tab loaded.
+- **Relay:** the window's clears left. Click to change them.
+- **Idle handover:** what happens while you are away. Off, toast, smart or auto.
+
+In the VS Code sidebar:
+
+- **Pin** keeps a handover out of the Stale group.
+- **Left on screen** under each handover: tables, lists, links, paths and the last screen.
+- **Worktrees** lists the repo's git worktrees and opens each in its own window.
+
+[Extension README](../extension/README.md)
 
 Search for cornerman in the Extensions view, or run:
 
