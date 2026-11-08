@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.2 (not released yet)
+
+- **An old idle question no longer resumes on its own.** When an idle handover saved a question
+  that was waiting for you, and its session then closed, a later `/clear` could load it and carry
+  on with unrelated work. It is now retired when its session closes, and one that cannot be checked
+  is listed for you to pick instead of loaded. When your newest handover is for another folder, the
+  session start says which folder to open.
+- **A large store no longer freezes the Claude Code panel in VS Code.** The sidebar refresh, the
+  status bar check and the worktree lookup read files and ran git while holding VS Code's extension
+  host, which made the Claude Code panel report "stopped responding". They now run in the
+  background and reread only the files that changed.
+- **Old relay files are cleared away.** Once a day, a session start removes the relay's files for
+  windows idle 14 days or more, after writing one line per window to `~/.cornerman/ledger/`. A
+  window that is still open is never touched. The sidebar's Archived group is sent only while it
+  is open.
+
 ## 0.7.1
 
 - **The footer shows again for new Claude tabs.** Questlog 1.0.0 (formerly Session Compass) moved
@@ -54,7 +70,14 @@
 - **The notice after an idle clear says what happened.** It names the handover and says to type go,
   or says the handover did not load. A second `/clear` runs only if you have not come back.
 
-## Unreleased
+## 0.5.1
+
+- **No more extension-host freezes from a large handover store.** The handover tree, lanes view and
+  status re-read every handover file on each store change, in every window. With a large store that
+  blocked VS Code's extension host long enough for Claude Code's chat tab to report "stopped
+  responding". Unchanged files are now read once.
+
+## 0.5.0
 
 - **A list read just before `/clear` is no longer lost.** A new `SessionEnd` hook keeps the session's
   tables, lists, links, paths and last two replies from its transcript in `~/.clear-resume/artifacts/<session id>/`,

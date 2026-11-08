@@ -8,7 +8,7 @@
   <a href="../LICENSE"><img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-262626?style=flat-square&labelColor=0a0a0a"></a>
   <a href="https://github.com/m4cd4r4/cornerman/actions/workflows/test.yml"><img alt="Tests on Windows, macOS and Linux" src="https://img.shields.io/github/actions/workflow/status/m4cd4r4/cornerman/test.yml?branch=main&label=tests%3A%20Windows%2C%20macOS%2C%20Linux&style=flat-square&labelColor=0a0a0a&color=262626"></a>
   <img alt="Needs Node 18 or later" src="https://img.shields.io/badge/node-18%2B-262626?style=flat-square&labelColor=0a0a0a">
-  <a href="https://m4cd4r4.github.io/cornerman"><img alt="Website: m4cd4r4.github.io/cornerman" src="https://img.shields.io/badge/website-m4cd4r4.github.io%2Fcornerman-262626?style=flat-square&labelColor=0a0a0a"></a>
+  <a href="https://macdaraomurchu.com/products/cornerman/"><img alt="Website: macdaraomurchu.com/products/cornerman" src="https://img.shields.io/badge/website-macdaraomurchu.com%2Fproducts%2Fcornerman-262626?style=flat-square&labelColor=0a0a0a"></a>
 </p>
 
 <p align="center"><b>Clear a long Claude Code chat without losing your place.</b><br>Claude writes a short note, you type <code>/clear</code>, and the fresh session carries on from it.</p>
@@ -66,7 +66,7 @@ This plugin used to be called clear-resume. Install it under the new name, then 
 ```bash
 claude plugin marketplace add https://github.com/m4cd4r4/cornerman
 claude plugin install cornerman@cornerman
-node ~/.claude/plugins/cache/cornerman/cornerman/0.7.1/scripts/upgrade.mjs
+node ~/.claude/plugins/cache/cornerman/cornerman/*/scripts/upgrade.mjs
 claude plugin uninstall clear-resume@clear-resume
 claude plugin marketplace remove clear-resume
 ```
@@ -122,7 +122,7 @@ The relay stops, and says why, when it uses up its clears for that Claude Code w
 <summary><b>Relay controls, and picking the nudge size</b></summary>
 <br>
 
-To change it for one window only, type `/relay 5`, `/relay unlimited` or `/relay off`; a bare `/relay` says where the count is. The status line counts down the clears left. In the VS Code panel the count shows above the prompt box.
+To change it for one window only, type `/relay 5`, `/relay unlimited`, `/relay on` or `/relay off`; a bare `/relay` says where the count is. The status line counts down the clears left. In the VS Code panel the count shows above the prompt box.
 
 **Idle handover (optional, on by default).** Coming back to a long chat after the prompt cache has expired costs one full rewrite of the context; a handover written while the cache is still warm costs about a tenth of that ([the measurements](RESEARCH.md#idle-handover-against-a-cold-return)). With `idle_handover` set to `toast`, a message appears in the status line (and as a short toast) about 5 minutes before the cache expires and stays until your next turn starts. In the VS Code panel it shows as a card in the chat and as a line above the prompt box. With `auto`, Claude is asked to write the handover, the session is cleared, and the new session waits for you: it does not continue the work while you are away. With `smart`, the default, it works like `auto`, except that Claude may decline: if the work is finished and no step remains, it replies "Nothing to hand over.", nothing is saved, the session is not cleared, and a toast says so. It works with the relay off. It acts once per session, only in an interactive session, only when the context is at least `idle_min_tokens`, and never after the cache has already expired.
 
@@ -225,7 +225,19 @@ These are the common cases. After compaction, only this window's own handover lo
 
 **The VS Code sidebar** is a separate extension that needs the plugin. It lists your handovers by repo, with the ones loaded in the last 24 hours at the top. **Resume** opens a Claude Code tab with the handover already typed into the prompt box, where it waits for you to send it.
 
-It also adds a context pie to the status bar, filling towards the nudge size (hover it to see which handover the tab loaded), and a relay item that shows the window's clears left and changes them with a click. A **Worktrees** view lists the repo's git worktrees and opens each in its own window. [Extension README](../extension/README.md)
+In the VS Code footer:
+
+- **Context pie:** how full the chat is, filling towards the nudge size. Hover it to see which handover the tab loaded.
+- **Relay:** the window's clears left. Click to change them.
+- **Idle handover:** what happens while you are away. Off, toast, smart or auto.
+
+In the VS Code sidebar:
+
+- **Pin** keeps a handover out of the Stale group.
+- **Left on screen** under each handover: tables, lists, links, paths and the last screen.
+- **Worktrees** lists the repo's git worktrees and opens each in its own window.
+
+[Extension README](../extension/README.md)
 
 Search for cornerman in the Extensions view, or run:
 
@@ -298,12 +310,12 @@ Everything is in [docs/RESEARCH.md](RESEARCH.md), with each number's n, model an
 
 https://github.com/user-attachments/assets/03a746bb-a202-4f61-b21e-2856cfedb128
 
-<sub>The clip uses a 2-minute timer, sped up, so a reminder comes due on camera. The default is 45 minutes, and you can change it. The status bar is in the cornerman extension's next release. The Marketplace version, 0.4.1, does not have it yet.</sub>
+<sub>The clip uses a 2-minute timer, sped up, so a reminder comes due on camera. The default is 45 minutes, and you can change it. To show the timer in the status bar, turn on `cornerman.spareCycles` in the cornerman extension's settings. It needs the Spare Cycles plugin.</sub>
 
 ## What's inside
 
 - **One skill**, `/cornerman:handover`, that saves the handover.
-- **Four hooks**: one loads a waiting handover at startup, `/clear` and compaction; two nudge when the chat gets long; one keeps what the session left on screen.
+- **Five hooks**: one loads a waiting handover at startup, `/clear` and compaction; two nudge when the chat gets long; one keeps what the session left on screen; one lets the idle handover run the handover skill with nobody there to answer its permission prompt.
 - **One Claude Code mod**, the relay, that runs `/clear` after a save and continues from the handover.
 - **One store**, plain files in `~/.cornerman`, that the hooks and the VS Code extension read and write through the same code. [What's inside](HOW-IT-WORKS.md#whats-inside)
 
