@@ -203,7 +203,13 @@ export function makeSheet(init, order = "priority") {
     if (name !== null) engine.announce(name);
   }
 
-  const core = { valueOf, compute, relink, bind, key, writeAll, keys: () => inputs.keys() };
+  // cp37: a sheet of the workbook was renamed; rewrite(input) is each input's new text. Not undoable.
+  function renamed(rewrite) {
+    rebuild({ inputs: new Map([...inputs].map(([k, v]) => [k, rewrite(v)])), names: new Map(names) });
+    history.clear();
+  }
+
+  const core = { valueOf, compute, relink, bind, key, writeAll, renamed, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 
@@ -275,18 +281,10 @@ export function makeSheet(init, order = "priority") {
       setName(n, undefined);
       return true;
     },
-    insertRows(at, count = 1) {
-      restructure(insertRows(inputs, names, at, count));
-    },
-    deleteRows(at, count = 1) {
-      restructure(deleteRows(inputs, names, at, count));
-    },
-    insertCols(at, count = 1) {
-      restructure(insertCols(inputs, names, at, count));
-    },
-    deleteCols(at, count = 1) {
-      restructure(deleteCols(inputs, names, at, count));
-    },
+    insertRows: (at, count = 1) => restructure(insertRows(inputs, names, at, count)),
+    deleteRows: (at, count = 1) => restructure(deleteRows(inputs, names, at, count)),
+    insertCols: (at, count = 1) => restructure(insertCols(inputs, names, at, count)),
+    deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count)),
     names() {
       const out = {};
       for (const n of [...names.keys()].sort()) out[n] = nameText(names.get(n));

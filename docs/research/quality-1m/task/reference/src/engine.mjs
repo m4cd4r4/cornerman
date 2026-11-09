@@ -171,6 +171,13 @@ export function createEngine(errorOrder = "priority") {
         refresh(name.toUpperCase());
       }
     },
+    // cp37: the sheet called OLD (upper case) is now called name; the caller relinks formulas.
+    rename(OLD, name) {
+      const id = byName.get(OLD);
+      byName.delete(OLD);
+      byName.set(name.toUpperCase(), id);
+      sheets.get(id).name = name;
+    },
     resolve(name) {
       return byName.get(name.toUpperCase()) ?? null;
     },

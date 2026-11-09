@@ -20,6 +20,27 @@ export function parseRef(text) {
 export const refText = (p) => `${p.absCol ? "$" : ""}${colName(p.col)}${p.absRow ? "$" : ""}${p.row}`;
 export const onSheet = (p) => p.row >= 1 && p.row <= MAX_ROW && p.col >= 1 && p.col <= MAX_COL;
 
+// cp37: input with every `Old!` sheet prefix (matched ignoring case, OLD = upper-cased old name)
+// written as `next`. Other text, values and unparseable formulas are returned unchanged.
+export function renameRefs(input, OLD, next) {
+  if (!input.startsWith("=")) return input;
+  const src = input.slice(1);
+  try {
+    parseFormula(src);
+  } catch (e) {
+    if (e instanceof ParseError) return input;
+    throw e;
+  }
+  const toks = tokenize(src);
+  let out = src;
+  for (let i = toks.length - 2; i >= 0; i--) {
+    const t = toks[i];
+    const nx = toks[i + 1];
+    if (t.t === "word" && nx.t === "op" && nx.v === "!" && t.v.toUpperCase() === OLD) out = out.slice(0, t.s) + next + out.slice(t.e);
+  }
+  return "=" + out;
+}
+
 // A reference token: an address word that is not a function name.
 function refAt(toks, i) {
   const t = toks[i];

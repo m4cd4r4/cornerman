@@ -14,6 +14,10 @@ export function createHistory(limit = HISTORY_LIMIT) {
       if (done.length > limit) done.shift();
       undone.length = 0;
     },
+    clear() {
+      done.length = 0;
+      undone.length = 0;
+    },
     undo(apply) {
       const e = done.pop();
       if (!e) return false;
