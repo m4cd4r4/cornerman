@@ -88,7 +88,7 @@ const MUTANTS = [
   { name: "copy-reads-own-writes", file: "copy.mjs", target: "cp26", edits: [
     ["  const writes = [];", "  const writes = [];\n  const seen = new Map();"],
     ["      const raw = inputs.get(colName(c) + r) ?? \"\";", "      const raw = seen.get(colName(c) + r) ?? inputs.get(colName(c) + r) ?? \"\";"],
-    ["      writes.push([colName(c + dc) + (r + dr), out]);", "      writes.push([colName(c + dc) + (r + dr), out]);\n      seen.set(colName(c + dc) + (r + dr), out);"],
+    ["      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);", "      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);\n      seen.set(colName(c + dc) + (r + dr), out);"],
   ] },
   { name: "copy-skips-empty", file: "copy.mjs", find: "      const out = raw.startsWith", replace: "      if (raw === \"\") continue;\n      const out = raw.startsWith", target: "cp26" },
   { name: "copy-range-one-corner", file: "copy.mjs", find: "    return qx === null || qy === null ? null : [qx, qy];", replace: "    return qx === null && qy === null ? null : [qx || x, qy || y];", target: "cp26" },
@@ -101,7 +101,7 @@ const MUTANTS = [
   { name: "noop-structure-recorded", file: "sheet.mjs", find: "    if (!sameState(before, next)) history.record", replace: "    if (true) history.record", target: "cp27" },
   { name: "same-name-recorded", file: "sheet.mjs", find: "      if (before && JSON.stringify(before) === JSON.stringify(d)) return;\n", replace: "", target: "cp27" },
   { name: "removed-name-lost", file: "sheet.mjs", find: "      history.record({ name: n, before: names.get(n), after: undefined });", replace: "      history.record({ name: n, before: undefined, after: undefined });", target: "cp27" },
-  { name: "copy-step-per-cell", file: "sheet.mjs", find: "      writeAll(copyWrites(inputs, from, to));", replace: "      for (const w of copyWrites(inputs, from, to)) writeAll([w]);", target: "cp27" },
+  { name: "copy-step-per-cell", file: "sheet.mjs", find: "      history.group(() => { writeAll(w);", replace: "      for (const x of w) writeAll([x]);\n      history.group(() => {", target: "cp27" },
   { name: "undo-cells-rebuilds", file: "sheet.mjs", find: "      for (const [k, before, after] of list) write(k, side === \"before\" ? before : after);", replace: "      for (const [k, before, after] of list) write(k, side === \"before\" ? before : after);\n      rebuild(snapshot(inputs, names));", target: "cp27" },
   { name: "csv-quote-comma-only", file: "csv.mjs", find: "const NEEDS_QUOTES = /[,\"\\r\\n]|^ | $/;", replace: "const NEEDS_QUOTES = /,/;", target: "cp28" },
   { name: "csv-no-space-quote", file: "csv.mjs", find: "const NEEDS_QUOTES = /[,\"\\r\\n]|^ | $/;", replace: "const NEEDS_QUOTES = /[,\"\\r\\n]/;", target: "cp28" },
@@ -109,7 +109,7 @@ const MUTANTS = [
   { name: "csv-crlf", file: "csv.mjs", find: "  return lines.join(\"\\n\");", replace: "  return lines.join(\"\\r\\n\");", target: "cp28" },
   { name: "csv-ragged-rows", file: "csv.mjs", find: "    for (let c = 1; c <= cols; c++) out.push(field(text(colName(c) + r)));\n    lines.push(out.join(\",\"));", replace: "    for (let c = 1; c <= cols; c++) out.push(field(text(colName(c) + r)));\n    while (out.length && out[out.length - 1] === \"\") out.pop();\n    lines.push(out.join(\",\"));", target: "cp28" },
   { name: "csv-empty-quoted", file: "csv.mjs", find: "const field = (s) => (NEEDS_QUOTES.test(s)", replace: "const field = (s) => (s === \"\" || NEEDS_QUOTES.test(s)", target: "cp28" },
-  { name: "csv-formulas-evaluate", file: "sheet.mjs", find: "      const text = opts.formulas ? (k) => inputs.get(k) ?? \"\" : (k) => displayValue(valueOf(k));", replace: "      const text = opts.formulas ? (k) => { valueOf(k); return inputs.get(k) ?? \"\"; } : (k) => displayValue(valueOf(k));", target: "cp28" },
+  { name: "csv-formulas-evaluate", file: "sheet.mjs", find: "      const text = opts.formulas ? (k) => inputs.get(k) ?? \"\" : shown;", replace: "      const text = opts.formulas ? (k) => { valueOf(k); return inputs.get(k) ?? \"\"; } : shown;", target: "cp28" },
   { name: "csv-in-trailing-row", file: "csv.mjs", find: "    records.push(rec);\n    rec = [];\n    if (i >= n) return records;", replace: "    records.push(rec);\n    rec = [];\n    if (i >= n) { records.push([\"\"]); return records; }", target: "cp29" },
   { name: "csv-in-crlf-unknown", file: "csv.mjs", find: "    i += text[i] === \"\\r\" ? 2 : 1;", replace: "    i += 1;", target: "cp29" },
   { name: "csv-in-trims", file: "csv.mjs", find: "    rec.push(f);\n", replace: "    rec.push(text[i - 1] === '\"' ? f : f.trim());\n", target: "cp29" },
@@ -241,6 +241,19 @@ const MUTANTS = [
   { name: "changes-trailing-space", file: "../CHANGES.md", find: "- cp40: this file, one line per checkpoint.", replace: "- cp40: this file, one line per checkpoint. ", target: "cp40" },
   { name: "changes-stray-line", file: "../CHANGES.md", find: "# Changes\n", replace: "# Changes\n\nOne line per checkpoint.\n", target: "cp40" },
   { name: "col-names-not-moved", file: "structure.mjs", find: "    const m = range(ax.get(a), ax.get(b));", replace: "    const m = axis === \"col\" ? [ax.get(a), ax.get(b)] : range(ax.get(a), ax.get(b));", target: "cp25" },
+  // Block F. Excel-prior mutants first in each checkpoint, then plausible implementation slips.
+  { name: "fmt-tofixed", file: "numfmt.mjs", find: "  const r = roundText(Number(digits), f.decimals, \"even\");", replace: "  const r = Number(digits).toFixed(f.decimals);", target: "cp41" },
+  { name: "fmt-percent-float", file: "numfmt.mjs", find: "  if (f.percent) digits = times100(digits);", replace: "  if (f.percent) digits = plainDecimal(Math.abs(x) * 100);", target: "cp41" },
+  { name: "fmt-cleared-by-set", file: "sheet.mjs", find: "    if (input === \"\") {\n      inputs.delete(k);", replace: "    if (input === \"\") {\n      layers.L.formats.delete(k);\n      inputs.delete(k);", target: "cp41" },
+  { name: "fmt-negative-zero-sign", file: "numfmt.mjs", find: "  const sign = x < 0 && !zero ? \"-\" : \"\";", replace: "  const sign = x < 0 ? \"-\" : \"\";", target: "cp41" },
+  { name: "fmt-group-from-left", file: "numfmt.mjs", find: "const groups = (int) => int.replace(/\\B(?=(\\d{3})+$)/g, \",\");", replace: "const groups = (int) => int.replace(/(\\d{3})(?=\\d)/g, \"$1,\");", target: "cp41" },
+  { name: "fmt-zeros-unbounded", file: "numfmt.mjs", find: "0(?:\\.(0{1,10}))?", replace: "0(?:\\.(0+))?", target: "cp41" },
+  { name: "copy-skips-formats", file: "sheet.mjs", find: "      history.group(() => { writeAll(w); history.record(layers.write(\"formats\", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); });", replace: "      writeAll(w);", target: "cp41" },
+  { name: "copy-keeps-target-format", file: "sheet.mjs", find: "w.map(([t, , s]) => [t, layers.L.formats.get(s)])", replace: "w.filter(([, , s]) => layers.L.formats.has(s)).map(([t, , s]) => [t, layers.L.formats.get(s)])", target: "cp41" },
+  { name: "layer-deleted-kept", file: "layers.mjs", find: "      if (to !== null) out[n].set(to, v);", replace: "      out[n].set(to ?? k, v);", target: "cp41" },
+  { name: "layer-noop-recorded", file: "layers.mjs", find: "    return cells.length ? { layer, cells } : null;", replace: "    return { layer, cells };", target: "cp41" },
+  { name: "rename-drops-layers", file: "sheet.mjs", find: "rebuild({ ...state(), inputs:", replace: "rebuild({ names: new Map(names), inputs:", target: "cp41" },
+  { name: "fmt-check-before-target", file: "features.mjs", find: "      const t = parseTarget(target);\n      const f = checkFormat(format) ?? undefined;", replace: "      const f = checkFormat(format) ?? undefined;\n      const t = parseTarget(target);", target: "cp41" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

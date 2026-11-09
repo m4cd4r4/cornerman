@@ -2,6 +2,7 @@
 // Works on the raw inputs and names; index.mjs swaps the result in and rebuilds.
 import { makeError } from "./errors.mjs";
 import { parseRef, refText, rewriteRefs, MAX_ROW, MAX_COL } from "./refs.mjs";
+import { moveLayers } from "./layers.mjs";
 
 const AXES = {
   row: { max: MAX_ROW, word: "row", get: (p) => p.row, put: (p, v) => ({ ...p, row: v }) },
@@ -18,8 +19,8 @@ function position(axis, at, count) {
   return pos;
 }
 
-// Lift a mapping on one coordinate to whole references, cells and names.
-function apply(inputs, names, axis, one, range) {
+// Lift a mapping on one coordinate to whole references, cells, names and layers (cp41 on).
+function apply(inputs, names, axis, one, range, layers) {
   const ax = AXES[axis];
   const oneP = (p) => {
     const v = one(ax.get(p));
@@ -48,10 +49,14 @@ function apply(inputs, names, axis, one, range) {
     if (m === null) continue;
     nextNames.set(n, { a: refText(ax.put(a, m[0])), b: refText(ax.put(b, m[1])), range: d.range });
   }
-  return { inputs: nextInputs, names: nextNames };
+  const cell = (k) => {
+    const q = oneP(parseRef(k));
+    return q === null ? null : refText(q);
+  };
+  return { inputs: nextInputs, names: nextNames, ...moveLayers(layers, cell) };
 }
 
-function insert(axis, inputs, names, at, count) {
+function insert(axis, inputs, names, at, count, layers) {
   const ax = AXES[axis];
   const max = ax.max;
   const pos = position(axis, at, count);
@@ -69,10 +74,10 @@ function insert(axis, inputs, names, at, count) {
     const b = one(r2);
     return a === null || b === null ? null : [a, b];
   };
-  return apply(inputs, names, axis, one, range);
+  return apply(inputs, names, axis, one, range, layers);
 }
 
-function remove(axis, inputs, names, at, count) {
+function remove(axis, inputs, names, at, count, layers) {
   at = position(axis, at, count);
   const last = at + count - 1;
   const one = (r) => (r < at ? r : r > last ? r - count : null);
@@ -82,10 +87,11 @@ function remove(axis, inputs, names, at, count) {
     const b = r2 >= at && r2 <= last ? at - 1 : one(r2);
     return [a, b];
   };
-  return apply(inputs, names, axis, one, range);
+  return apply(inputs, names, axis, one, range, layers);
 }
 
-export const insertRows = (inputs, names, at, count) => insert("row", inputs, names, at, count);
-export const deleteRows = (inputs, names, at, count) => remove("row", inputs, names, at, count);
-export const insertCols = (inputs, names, at, count) => insert("col", inputs, names, at, count);
-export const deleteCols = (inputs, names, at, count) => remove("col", inputs, names, at, count);
+// layers = the sheet's layers snapshot (layers.mjs), moved like the cells.
+export const insertRows = (inputs, names, at, count, layers) => insert("row", inputs, names, at, count, layers);
+export const deleteRows = (inputs, names, at, count, layers) => remove("row", inputs, names, at, count, layers);
+export const insertCols = (inputs, names, at, count, layers) => insert("col", inputs, names, at, count, layers);
+export const deleteCols = (inputs, names, at, count, layers) => remove("col", inputs, names, at, count, layers);

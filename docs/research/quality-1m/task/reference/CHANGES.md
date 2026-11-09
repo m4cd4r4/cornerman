@@ -40,3 +40,4 @@
 - cp38: sheet.canonical prints a formula in upper case with no spaces and only the parentheses needed.
 - cp39: sheet.explain returns a cell and everything it reads as a tree, each cell expanded once.
 - cp40: this file, one line per checkpoint.
+- cp41: setFormat gives cells a number format such as 0.00, #,##0 or 0%, which changes only the text display shows.

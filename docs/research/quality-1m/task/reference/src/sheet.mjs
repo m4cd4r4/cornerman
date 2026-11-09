@@ -1,11 +1,9 @@
-// sheet.mjs: one sheet: its inputs, names, undo list and public methods (cp01-cp33). The graph and
-// value cache live in the engine the sheet is bound to (engine.mjs); a workbook rebinds it.
+// sheet.mjs: one sheet: its inputs, names, layers, undo list and public methods (cp01-cp33). The
+// graph and value cache live in the engine the sheet is bound to (engine.mjs); a workbook rebinds it.
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
 import { makeError, throwAddr, withErrorOrder, errorOrderOption } from "./errors.mjs";
-import { parseFormula, ParseError } from "./parser.mjs";
 import { evaluate } from "./evaluate.mjs";
-import { displayValue } from "./display.mjs";
-import { collectRefs, reachable, recalcOrder } from "./graph.mjs";
+import { parseEntry, reachable, recalcOrder } from "./graph.mjs";
 import { createEngine } from "./engine.mjs";
 import { checkName, parseNameRef, nameText } from "./names.mjs";
 import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
@@ -16,6 +14,8 @@ import { createHistory, snapshot, sameState } from "./history.mjs";
 import { toCSV, csvWrites } from "./csv.mjs";
 import { saveText, parseSave } from "./persist.mjs";
 import { addV2 } from "./api2.mjs";
+import { createLayers } from "./layers.mjs";
+import { addFeatures } from "./features.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -33,6 +33,7 @@ export function makeSheet(init, order = "priority") {
   const nameUsers = new Map(); // NAME -> Set of formula keys whose text uses it
   const stats = { evaluations: 0 };
   const history = createHistory();
+  const layers = createLayers(); // formats (cp41), keyed by cell
   let engine = null;
   let id = 0;
   const g = (k) => `${id}|${k}`;
@@ -123,17 +124,12 @@ export function makeSheet(init, order = "priority") {
   }
 
   function parseInto(k, input) {
-    if (!input.startsWith("=")) { parsed.delete(k); return; }
-    try {
-      const ast = parseFormula(input.slice(1));
-      parsed.set(k, { ast, refs: collectRefs(ast) });
-    } catch (e) {
-      if (!(e instanceof ParseError)) throw e;
-      parsed.set(k, { parseError: e.message });
-    }
+    const e = parseEntry(input);
+    if (e) parsed.set(k, e);
+    else parsed.delete(k);
   }
 
-  // After a structural change: swap in the moved inputs and names, rebuild every index.
+  // After a structural change: swap in the moved inputs, names and layers, rebuild every index.
   // Cells on other sheets that read this one are invalidated before and after the swap.
   function rebuild(next) {
     invalidate([...inputs.keys()]);
@@ -142,6 +138,7 @@ export function makeSheet(init, order = "priority") {
     names.clear();
     for (const [k, v] of next.inputs) inputs.set(k, v);
     for (const [n, d] of next.names) names.set(n, d);
+    layers.load(next);
     for (const m of [parsed, nameUsers]) m.clear();
     for (const [k, v] of inputs) parseInto(k, v);
     for (const k of inputs.keys()) { setNameUsers(k, true); relink(k); }
@@ -181,15 +178,17 @@ export function makeSheet(init, order = "priority") {
     nameChanged(n);
   }
 
-  // A structural op: next = { inputs, names } from structure.mjs.
+  // A structural op: next = { inputs, names, ...layers } from structure.mjs.
+  const state = () => snapshot(inputs, names, layers);
   function restructure(next) {
-    const before = snapshot(inputs, names);
+    const before = state();
     rebuild(next);
-    if (!sameState(before, next)) history.record({ state: { before, after: snapshot(inputs, names) } });
+    if (!sameState(before, next)) history.record({ state: { before, after: state() } });
   }
 
   function applyEntry(e, side) {
-    if (e.cells) {
+    if (e.layer) layers.applyEntry(e, side);
+    else if (e.cells) {
       const list = side === "before" ? [...e.cells].reverse() : e.cells;
       for (const [k, before, after] of list) write(k, side === "before" ? before : after);
     } else if (e.state) rebuild(e.state[side]);
@@ -207,11 +206,12 @@ export function makeSheet(init, order = "priority") {
 
   // cp37: a sheet of the workbook was renamed; rewrite(input) is each input's new text. Not undoable.
   function renamed(rewrite) {
-    rebuild({ inputs: new Map([...inputs].map(([k, v]) => [k, rewrite(v)])), names: new Map(names) });
+    rebuild({ ...state(), inputs: new Map([...inputs].map(([k, v]) => [k, rewrite(v)])) });
     history.clear();
   }
 
-  const core = { valueOf, compute, relink, bind, key, writeAll, renamed, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const shown = (k) => layers.show(k, valueOf(k));
+  const core = { valueOf, compute, relink, bind, key, writeAll, renamed, layers, history, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 
@@ -223,10 +223,11 @@ export function makeSheet(init, order = "priority") {
       writeAll([[key(address), input]]);
     },
     copy(from, to) {
-      writeAll(copyWrites(inputs, from, to));
+      const w = copyWrites(inputs, from, to);
+      history.group(() => { writeAll(w); history.record(layers.write("formats", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); });
     },
     toCSV(opts = {}) {
-      const text = opts.formulas ? (k) => inputs.get(k) ?? "" : (k) => displayValue(valueOf(k));
+      const text = opts.formulas ? (k) => inputs.get(k) ?? "" : shown;
       return toCSV(sorted(inputs.keys()), text);
     },
     fromCSV(text, at = "A1") {
@@ -247,7 +248,7 @@ export function makeSheet(init, order = "priority") {
     },
     explain: (address) => explainTree(engine, id, key(address)),
     canonical: (address) => canonicalInput(inputs.get(key(address)) ?? null),
-    display: (address) => displayValue(valueOf(key(address))),
+    display: (address) => shown(key(address)),
     cells: () => sorted(inputs.keys()),
     stats: () => ({ evaluations: stats.evaluations }),
     precedents(address, opts = {}) {
@@ -279,10 +280,10 @@ export function makeSheet(init, order = "priority") {
       setName(n, undefined);
       return true;
     },
-    insertRows: (at, count = 1) => restructure(insertRows(inputs, names, at, count)),
-    deleteRows: (at, count = 1) => restructure(deleteRows(inputs, names, at, count)),
-    insertCols: (at, count = 1) => restructure(insertCols(inputs, names, at, count)),
-    deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count)),
+    insertRows: (at, count = 1) => restructure(insertRows(inputs, names, at, count, state())),
+    deleteRows: (at, count = 1) => restructure(deleteRows(inputs, names, at, count, state())),
+    insertCols: (at, count = 1) => restructure(insertCols(inputs, names, at, count, state())),
+    deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count, state())),
     names() {
       const out = {};
       for (const n of [...names.keys()].sort()) out[n] = nameText(names.get(n));
@@ -290,5 +291,5 @@ export function makeSheet(init, order = "priority") {
     },
   };
   CORE.set(sheet, core);
-  return addV2(sheet, core);
+  return addV2(addFeatures(sheet, core), core);
 }

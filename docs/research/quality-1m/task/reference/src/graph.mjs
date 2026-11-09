@@ -1,5 +1,19 @@
-// graph.mjs: dependency graph helpers: references in a tree, cycles, recalc order (cp09-cp14).
+// graph.mjs: dependency graph helpers: parsed inputs, references in a tree, cycles, recalc order (cp09-cp14).
 import { rangeKeys, compareAddresses } from "./address.mjs";
+import { parseFormula, ParseError } from "./parser.mjs";
+
+// What a sheet keeps for an input: { ast, refs } for a formula, { parseError } for one that does
+// not parse, null for a value.
+export function parseEntry(input) {
+  if (!input.startsWith("=")) return null;
+  try {
+    const ast = parseFormula(input.slice(1));
+    return { ast, refs: collectRefs(ast) };
+  } catch (e) {
+    if (!(e instanceof ParseError)) throw e;
+    return { parseError: e.message };
+  }
+}
 
 // Cells, names and sheet names written in a formula tree. Bad or over-size ranges add no cells.
 // A cell on another sheet is "NAME!A1" (cp31).

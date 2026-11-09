@@ -3,7 +3,7 @@ import { parseAddress, rangeBox, rangeSize, colName, RANGE_LIMIT } from "./addre
 import { makeError, throwAddr } from "./errors.mjs";
 import { rewriteRefs, onSheet, MAX_ROW, MAX_COL } from "./refs.mjs";
 
-// [[key, input]] in row-major source order; input "" clears the target.
+// [[key, input, source key]] in row-major source order; input "" clears the target.
 export function copyWrites(inputs, from, to) {
   const parts = typeof from === "string" ? from.split(":") : [];
   const a = parts.length >= 1 && parts.length <= 2 ? parseAddress(parts[0]) : null;
@@ -31,7 +31,7 @@ export function copyWrites(inputs, from, to) {
     for (let c = c1; c <= c2; c++) {
       const raw = inputs.get(colName(c) + r) ?? "";
       const out = raw.startsWith("=") ? "=" + rewriteRefs(raw.slice(1), one, range) : raw;
-      writes.push([colName(c + dc) + (r + dr), out]);
+      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);
     }
   }
   return writes;
