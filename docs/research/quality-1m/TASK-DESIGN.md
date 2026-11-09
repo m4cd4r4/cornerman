@@ -235,9 +235,10 @@ Block E (cp33-40), design (fixture designer's calls, not yet reviewed by Macdara
   resolving, case-only rename allowed, #BADNAME/#SHEET as addSheet, unknown old = #SHEET.
   Not undoable: it clears every sheet's undo and redo lists.
 - cp38 `sheet.canonical(address)`: the formula printed from its parse: upper case, no spaces,
-  shortest number text, minimal parentheses by the stated precedence, string literals kept as typed (a few words here were lost to a paste error in a12f93e; settle them when cp38 is built). Non-formula input
-  returned as is, empty = "", unparseable formula returned as typed. set(canonical) gives the same
-  value.
+  shortest number text, minimal parentheses by the stated precedence, string literals kept as
+  typed. Non-formula input returned as is, empty = "", unparseable formula returned as typed.
+  set(canonical) gives the same value. (Settled when built: `$` kept, unary `+` kept, numbers
+  normalised from the typed digits so no float or exponent text appears.)
 - cp39 `sheet.explain(address)`: { address, input, value, from: [...] }, from = direct
   precedents in precedents() order and labels; each cell expanded once (depth-first, pre-order),
   later repeats have from: null.
@@ -264,8 +265,22 @@ Block E progress (2026-11-09):
   words it replaced are marked in that bullet.
 - check-tree cp01-35 green; smoke gate OK.
 
-Next: cp36-40. Known performance debt for cp36: valueOf recurses (deep chains) and cycle
-detection is a full pass after each graph change.
+- cp36 (engine.mjs): nested reads deeper than DEPTH_LIMIT 100 unwind to the top-level read and
+  resume; cycle membership memoised per node and dropped with the cache. Chain Z1 + A1..A9999 + B1
+  (rows stop at 9999); budgets 2 s chain read, 3 s for 2,000 set/get pairs. 7 mutants.
+- cp37 (workbook.mjs renameSheet, refs.mjs renameRefs, engine.rename, history.clear): check
+  order unknown old -> #SHEET, invalid new -> #BADNAME, taken -> #SHEET; exact same name is a
+  no-op that keeps undo; a removed sheet is not rewritten. 14 mutants.
+- cp38 (canonical.mjs; parser keeps the typed text of number and reference tokens): hidden tests
+  include 1,500 generated formulas checked for same value, idempotence and no spaces. 18 mutants.
+- cp39 (explain.mjs): addresses are labelled from the sheet `explain` was called on; each node's
+  children come in the order its own sheet's precedents() gives. Iterative walk; a recursive
+  mutant dies on the 9,999-deep chain test. 7 mutants.
+- cp40: reference/CHANGES.md; check-tree, mutants.mjs and smoke-gate copy it beside src/. Rules
+  beyond the design line: `#` and blank lines ignored, no leading/trailing space, a text equal to
+  the FEATURES.md title fails, no duplicate texts. 8 mutants.
+- sheet.mjs kept under 300 lines (row/col methods and display/cells/stats became one-liners);
+  `redo-kept-on-record` find text made unique after history.clear(). 222 mutants.
 
 ## Open
 

@@ -232,6 +232,14 @@ const MUTANTS = [
   { name: "explain-root-not-seen", file: "explain.mjs", find: "    seen.add(gk);\n", replace: "    if (into !== top) seen.add(gk);\n", target: "cp39" },
   { name: "explain-empty-undefined", file: "sheet.mjs", find: "input: (k) => inputs.get(k) ?? null,", replace: "input: (k) => inputs.get(k),", target: "cp39" },
   { name: "explain-recursive", file: "explain.mjs", find: "export function explainTree(engine, rootId, k) {", replace: "export function explainTree(engine, rootId, k) {\n  const seen = new Set();\n  const walk = (gk) => {\n    const [id, a] = split(gk);\n    const core = engine.coreOf(id);\n    const node = { address: engine.label([id, a], rootId), input: core.input(a), value: core.valueOf(a), from: null };\n    if (seen.has(gk)) return node;\n    seen.add(gk);\n    node.from = engine.ordered(engine.precs(gk), id).map(([i, b]) => walk(`${i}|${b}`));\n    return node;\n  };\n  return walk(`${rootId}|${k}`);\n}\nexport function unusedTree(engine, rootId, k) {", target: "cp39" },
+  { name: "changes-line-missing", file: "../CHANGES.md", find: "- cp17: IF, AND, OR and NOT, with IF evaluating only the branch it takes.\n", replace: "", target: "cp40" },
+  { name: "changes-out-of-order", file: "../CHANGES.md", find: "- cp02: formulas starting with = evaluate + - * / ^ and unary minus with the usual precedence.\n- cp03: formulas read other cells; an empty cell reads as 0.\n", replace: "- cp03: formulas read other cells; an empty cell reads as 0.\n- cp02: formulas starting with = evaluate + - * / ^ and unary minus with the usual precedence.\n", target: "cp40" },
+  { name: "changes-title-only", file: "../CHANGES.md", find: "- cp09: cycles give #CYCLE! on every cell on them; cells that read a cycle get its error.", replace: "- cp09: Cycles", target: "cp40" },
+  { name: "changes-too-long", file: "../CHANGES.md", find: "- cp05: display() gives the text shown for a value, including errors and rounded numbers.", replace: "- cp05: display() gives the text shown for a value, including errors and rounded numbers, and booleans, dates and long strings!!!", target: "cp40" },
+  { name: "changes-duplicate", file: "../CHANGES.md", find: "- cp25: insertCols and deleteCols do for columns what cp23 and cp24 do for rows.", replace: "- cp25: DELETEROWS removes rows; references into deleted rows become #REF!.", target: "cp40" },
+  { name: "changes-one-digit", file: "../CHANGES.md", find: "- cp01: ", replace: "- cp1: ", target: "cp40" },
+  { name: "changes-trailing-space", file: "../CHANGES.md", find: "- cp40: this file, one line per checkpoint.", replace: "- cp40: this file, one line per checkpoint. ", target: "cp40" },
+  { name: "changes-stray-line", file: "../CHANGES.md", find: "# Changes\n", replace: "# Changes\n\nOne line per checkpoint.\n", target: "cp40" },
   { name: "col-names-not-moved", file: "structure.mjs", find: "    const m = range(ax.get(a), ax.get(b));", replace: "    const m = axis === \"col\" ? [ax.get(a), ax.get(b)] : range(ax.get(a), ax.get(b));", target: "cp25" },
 ];
 
@@ -244,6 +252,7 @@ for (const m of MUTANTS) {
   const dir = join(work, m.name);
   mkdirSync(dir, { recursive: true });
   cpSync(join(REF, "src"), join(dir, "src"), { recursive: true });
+  cpSync(join(REF, "CHANGES.md"), join(dir, "CHANGES.md"));
   const f = join(dir, "src", m.file);
   let text = readFileSync(f, "utf8");
   const edits = m.edits || [[m.find, m.replace]];

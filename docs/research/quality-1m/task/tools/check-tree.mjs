@@ -41,6 +41,8 @@ if (existsSync(a.out) && readdirSync(a.out).length) throw new Error(`--out ${a.o
 mkdirSync(join(a.out, "test", "visible"), { recursive: true });
 mkdirSync(join(a.out, "test", "hidden"), { recursive: true });
 cpSync(join(a.src, "src"), join(a.out, "src"), { recursive: true });
+// cp40: the change log lives beside src/ and is read by its tests.
+if (existsSync(join(a.src, "CHANGES.md"))) cpSync(join(a.src, "CHANGES.md"), join(a.out, "CHANGES.md"));
 writeFileSync(join(a.out, "package.json"), '{"type":"module"}\n');
 
 const cps = readdirSync(CPS).filter((d) => /^cp\d\d$/.test(d)).sort()

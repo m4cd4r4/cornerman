@@ -34,6 +34,7 @@ try {
   r = gate("next");
   expect(r.status === 1 && /Not yet/.test(r.stdout), "stub is refused");
   cpSync(join(TASK, "reference", "src"), join(repo, "src"), { recursive: true });
+  cpSync(join(TASK, "reference", "CHANGES.md"), join(repo, "CHANGES.md"));
   const total = readdirSync(join(TASK, "checkpoints")).filter((d) => /^cp\d\d$/.test(d)).length;
   const probes = JSON.parse(readFileSync(join(HERE, "probes.json"), "utf8")).probes;
   const stops = [];

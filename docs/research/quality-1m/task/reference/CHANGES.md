@@ -1,0 +1,42 @@
+# Changes
+
+- cp01: createSheet with set, getInput and cells; addresses are normalised and invalid ones throw #ADDR.
+- cp02: formulas starting with = evaluate + - * / ^ and unary minus with the usual precedence.
+- cp03: formulas read other cells; an empty cell reads as 0.
+- cp04: error values carry code and cell, and the highest-priority error wins when several meet.
+- cp05: display() gives the text shown for a value, including errors and rounded numbers.
+- cp06: comparisons, TRUE and FALSE, and & joining text.
+- cp07: number and string literals inside formulas, with "" for a quote inside a string.
+- cp08: numbers compare equal within a relative 1e-9, and stats().evaluations counts formula evaluations.
+- cp09: cycles give #CYCLE! on every cell on them; cells that read a cycle get its error.
+- cp10: precedents() and dependents(), direct or transitive, in row-major order.
+- cp11: after a change only the changed cell and its dependents are evaluated again.
+- cp12: recalc() evaluates what needs it and returns the addresses in dependency order.
+- cp13: function call syntax, ranges like A1:B3, and SUM.
+- cp14: defineName and removeName for ranges a formula can use by name.
+- cp15: AVERAGE, MIN, MAX and COUNT over values and ranges.
+- cp16: ROUND (half to even, like display), ROUNDUP and ROUNDDOWN.
+- cp17: IF, AND, OR and NOT, with IF evaluating only the branch it takes.
+- cp18: the text functions LEN, UPPER, LOWER, LEFT, RIGHT, MID and TRIM.
+- cp19: dates as serial numbers with DATE, YEAR, MONTH and DAY.
+- cp20: ISERROR and IFERROR catch an error value instead of passing it on.
+- cp21: VLOOKUP with exactly three arguments, always an exact match.
+- cp22: SUMIF with a criterion such as ">5" or a plain value.
+- cp23: insertRows shifts cells and rewrites every reference and name that points below.
+- cp24: deleteRows removes rows; references into deleted rows become #REF!.
+- cp25: insertCols and deleteCols do for columns what cp23 and cp24 do for rows.
+- cp26: $ marks absolute parts of a reference, and copy() pastes formulas with relative moves.
+- cp27: undo() and redo() for every change, keeping at most 100 steps.
+- cp28: toCSV() writes the displayed values as CSV text with quoting.
+- cp29: fromCSV() reads CSV text into cells, as numbers or text.
+- cp30: save() writes the sheet as version 1 JSON, and loadSheet reads it back with checked errors.
+- cp31: createWorkbook holds named sheets, and formulas read other sheets as Name!A1.
+- cp32: cycles, precedents, recalculation and evaluation counts all work across sheets.
+- cp33: API v2 names (setCell, value, text, formula, addresses) plus setMany; the old names still work.
+- cp34: an errorOrder option so the first error in reading order can win instead of priority.
+- cp35: book.save() writes a version 2 workbook, and loadWorkbook reads it or a version 1 sheet.
+- cp36: 10,000-cell chains read without a stack overflow, inside fixed time budgets.
+- cp37: book.renameSheet renames a sheet and rewrites the formulas that name it, clearing undo.
+- cp38: sheet.canonical prints a formula in upper case with no spaces and only the parentheses needed.
+- cp39: sheet.explain returns a cell and everything it reads as a tree, each cell expanded once.
+- cp40: this file, one line per checkpoint.
