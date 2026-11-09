@@ -1,0 +1,19 @@
+{
+  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. Probe 1 holds block A questions only; add cp09-cp14 questions when block B specs exist. Probes 2 and 3 are filled when blocks C and E are written. Frozen with the rest of the task before the pilot.",
+  "probes": [
+    {
+      "id": "P1",
+      "after": "cp15",
+      "questions": [
+        { "id": "P1.1", "ask": "Which checkpoint introduced the error priority order? Answer cpNN.", "kind": "checkpoint", "answer": "cp04" },
+        { "id": "P1.2", "ask": "List the four error codes in priority order, highest first, exactly as checkpoint 4 first stated it, comma-separated.", "kind": "ordered", "answer": ["#REF!", "#NAME?", "#VALUE!", "#DIV/0!"] },
+        { "id": "P1.3", "ask": "What is the relative tolerance used when comparing two numbers for equality? Answer a number.", "kind": "number", "answer": 1e-9 },
+        { "id": "P1.4", "ask": "What exact text does display() return for a number whose absolute value is 1e15 or more?", "kind": "text", "answer": "##########" },
+        { "id": "P1.5", "ask": "Which checkpoint introduced the evaluation counter? Answer cpNN.", "kind": "checkpoint", "answer": "cp08" },
+        { "id": "P1.6", "ask": "Which files under src/ did your cp08 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp08" }
+      ]
+    },
+    { "id": "P2", "after": "cp25", "questions": [] },
+    { "id": "P3", "after": "cp35", "questions": [] }
+  ]
+}

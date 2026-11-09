@@ -1,0 +1,44 @@
+# Features
+
+Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next` reveals the next one.
+
+- [ ] cp01: cell store
+- [ ] cp02: arithmetic formulas
+- [ ] cp03: cell references
+- [ ] cp04: error propagation and priority
+- [ ] cp05: display text
+- [ ] cp06: comparison, booleans, concatenation
+- [ ] cp07: literals inside formulas
+- [ ] cp08: number tolerance and the evaluation counter
+- [ ] cp09: cycles
+- [ ] cp10: precedents and dependents
+- [ ] cp11: incremental recalculation
+- [ ] cp12: recalculation order log
+- [ ] cp13: function syntax and SUM over ranges
+- [ ] cp14: named ranges
+- [ ] cp15: AVERAGE, MIN, MAX, COUNT
+- [ ] cp16: ROUND, ROUNDUP, ROUNDDOWN
+- [ ] cp17: IF, AND, OR, NOT
+- [ ] cp18: text functions
+- [ ] cp19: dates
+- [ ] cp20: ISERROR and IFERROR
+- [ ] cp21: VLOOKUP
+- [ ] cp22: SUMIF
+- [ ] cp23: insert rows
+- [ ] cp24: delete rows
+- [ ] cp25: insert and delete columns
+- [ ] cp26: absolute references and copy
+- [ ] cp27: undo and redo
+- [ ] cp28: CSV export
+- [ ] cp29: CSV import
+- [ ] cp30: save and load
+- [ ] cp31: workbooks and sheet references
+- [ ] cp32: cross-sheet cycles and recalculation
+- [ ] cp33: API v2
+- [ ] cp34: optional Excel error order
+- [ ] cp35: save format v2 and migration
+- [ ] cp36: performance budget
+- [ ] cp37: sheet rename
+- [ ] cp38: canonical formula text
+- [ ] cp39: explain
+- [ ] cp40: change log

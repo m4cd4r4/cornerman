@@ -147,8 +147,19 @@ in the order; 22 SUMIF criteria grammar; 23 insert rows; 24 delete rows (refs to
 budget, 10k-cell chain; 37 sheet rename rewrites refs; 38 canonical formula text; 39 explain(addr)
 trace; 40 CHANGES.md, one line per checkpoint, checked.
 
-Next in Stage 0: FEATURES.md + START-PROMPT.md (the five rules), rule checker and probe checker,
-then blocks B-E in slices of about 8 with the same spec / reference / tests / mutants loop.
+Built after block A:
+- `starter/FEATURES.md` (40 unticked titles) and `harness/START-PROMPT.md` (the five rules).
+- `tools/check-rules.mjs` + `tools/rule-negatives.mjs`: 16 cases, each rule 1-4 caught alone, and
+  no false hit on eval in a comment, an `evaluate(` call, a 299-line file or an own test file.
+  Rule 5 proven by the gate smoke run (missing cpNN commits caught).
+- `tools/check-probes.mjs` + `harness/probes.json` (key, never copied into the run repo) +
+  `tools/probe-selftest.mjs`: right answers in varied formatting 6/6, wrong 0/6, absent 0/6.
+  `git-files` answers are keyed from the run's own history. Probe 1 holds block A questions only.
+
+Next in Stage 0: blocks B-E in slices of about 8 with the same spec / reference / tests / mutants
+loop; add cp09-14 questions to probe 1 and fill probes 2-3 as their blocks land; then wire the
+probe prompt into the gate after cp15, cp25 and cp35 (refuse `next` until PROBES.md has a line
+per question; record tokens since the last clear per probe).
 
 ## Open
 
