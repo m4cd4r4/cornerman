@@ -2,7 +2,7 @@
 import { compareAddresses } from "./address.mjs";
 
 // Highest priority first.
-export const PRIORITY = ["#CYCLE!", "#REF!", "#NAME?", "#VALUE!", "#DIV/0!"];
+export const PRIORITY = ["#CYCLE!", "#REF!", "#NAME?", "#N/A", "#VALUE!", "#DIV/0!"];
 
 export function makeError(code, cell, message) {
   return { code, cell, message: message || code };

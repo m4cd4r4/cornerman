@@ -66,6 +66,7 @@ export function parseFormula(src) {
     if (!t) throw new ParseError("unexpected end");
     if (t.t === "num") return { k: "num", v: t.v };
     if (t.t === "str") return { k: "str", v: t.v };
+    if (t.t === "referr") return { k: "badref", v: "#REF!" };
     if (t.t === "op" && t.v === "(") {
       const e = comparison();
       if (!isOp(")")) throw new ParseError("missing )");

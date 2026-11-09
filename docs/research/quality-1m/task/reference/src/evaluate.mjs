@@ -1,7 +1,8 @@
 // evaluate.mjs: formula evaluation (cp02-cp08; ranges cp13, names cp14).
 import { makeError, isError, pickError } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
-import { callFunction, rangeCells } from "./functions.mjs";
+import { callFunction } from "./functions.mjs";
+import { rangeCells } from "./args.mjs";
 
 const TOL = 1e-9;
 
