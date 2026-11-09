@@ -2,6 +2,7 @@
 // comparison < & < + - < * / < unary +- < ^ (right) < postfix %.
 import { tokenize, ParseError } from "./lexer.mjs";
 import { parseAddress } from "./address.mjs";
+import { checkName } from "./names.mjs";
 
 const CMP = new Set(["=", "<>", "<", ">", "<=", ">="]);
 const REFLIKE = /^\$?([A-Za-z]+)\$?(\d+)$/; // $ marks an absolute part (cp26)
@@ -75,13 +76,16 @@ export function parseFormula(src) {
     }
     if (t.t === "word") {
       if (isOp("(")) return call(t.v);
-      const node = word(t.v);
+      const sheet = isOp("!") ? sheetPrefix(t) : null;
+      const node = word(sheet ? take().v : t.v);
+      if (sheet) node.sheet = sheet;
       if ((node.k === "ref" || node.k === "badref") && isOp(":")) {
         take();
         const u = take();
         if (!u || u.t !== "word" || !REFLIKE.test(u.v)) throw new ParseError("bad range");
         const end = word(u.v);
-        return { k: "range", a: node, b: end };
+        if (sheet) end.sheet = sheet;
+        return sheet ? { k: "range", a: node, b: end, sheet } : { k: "range", a: node, b: end };
       }
       return node;
     }
@@ -98,6 +102,16 @@ export function parseFormula(src) {
       if (isOp(")")) { take(); return { k: "call", fn: w.toUpperCase(), args }; }
       throw new ParseError("bad argument list");
     }
+  }
+  // cp31: NAME!A1. The name follows the defined-name rule; no spaces around "!"; a cell must follow.
+  function sheetPrefix(t) {
+    const bang = take();
+    const u = peek();
+    try { checkName(t.v); } catch { throw new ParseError(`bad sheet name ${t.v}`); }
+    if (!u || u.t !== "word" || !REFLIKE.test(u.v) || t.e !== bang.s || bang.e !== u.s) throw new ParseError("expected a cell after !");
+    const after = toks[p + 1];
+    if (after && after.t === "op" && after.v === "(") throw new ParseError("expected a cell after !");
+    return t.v.toUpperCase();
   }
   function word(w) {
     const up = w.toUpperCase();

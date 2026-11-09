@@ -76,7 +76,7 @@ export function evaluate(node, ctx) {
     case "num": return node.v;
     case "str": return node.v;
     case "bool": return node.v;
-    case "ref": return ctx.read(node.addr);
+    case "ref": return ctx.read(node.sheet ? `${node.sheet}!${node.addr}` : node.addr);
     case "badref": return makeError("#REF!", ctx.cell, `invalid reference ${node.v}`);
     case "name": {
       const n = ctx.name(node.v);

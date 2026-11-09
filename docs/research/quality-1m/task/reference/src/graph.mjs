@@ -1,17 +1,21 @@
 // graph.mjs: dependency graph helpers: references in a tree, cycles, recalc order (cp09-cp14).
 import { rangeKeys, compareAddresses } from "./address.mjs";
 
-// Cells and names written in a formula tree. Bad or over-size ranges add no cells.
+// Cells, names and sheet names written in a formula tree. Bad or over-size ranges add no cells.
+// A cell on another sheet is "NAME!A1" (cp31).
 export function collectRefs(ast) {
   const cells = new Set();
   const names = new Set();
+  const sheets = new Set();
+  const at = (n, k) => (n.sheet ? `${n.sheet}!${k}` : k);
   (function walk(n) {
+    if (n.sheet) sheets.add(n.sheet);
     switch (n.k) {
-      case "ref": cells.add(n.addr); break;
+      case "ref": cells.add(at(n, n.addr)); break;
       case "range":
         if (n.a.k === "ref" && n.b.k === "ref") {
           const ks = rangeKeys(n.a.addr, n.b.addr);
-          if (ks) for (const k of ks) cells.add(k);
+          if (ks) for (const k of ks) cells.add(at(n, k));
         }
         break;
       case "name": names.add(n.v); break;
@@ -20,7 +24,7 @@ export function collectRefs(ast) {
       case "call": n.args.forEach(walk); break;
     }
   })(ast);
-  return { cells: [...cells], names: [...names] };
+  return { cells: [...cells], names: [...names], sheets: [...sheets] };
 }
 
 // Strongly connected components (iterative Tarjan). succ(n) returns successors inside the graph.

@@ -32,7 +32,8 @@ function refAt(toks, i) {
 // one(p) -> p | null, range(a, b) -> [a, b] | null, with a and b as typed. null writes #REF!
 // (for a range, over both corners and the colon). A reference that changes is written upper
 // case; everything else keeps its typed text. Unparseable formulas are returned unchanged.
-export function rewriteRefs(src, one, range) {
+// With qualified false, references with a sheet name (Data!A1, cp31) are left as typed.
+export function rewriteRefs(src, one, range, qualified = true) {
   try {
     parseFormula(src);
   } catch (e) {
@@ -45,17 +46,25 @@ export function rewriteRefs(src, one, range) {
   for (let i = 0; i < toks.length; i++) {
     const a = refAt(toks, i);
     if (!a) continue;
+    const prev = toks[i - 1];
+    const named = prev && prev.t === "op" && prev.v === "!";
+    if (!qualified && named) {
+      const nx = toks[i + 1];
+      if (nx && nx.t === "op" && nx.v === ":") i += 2;
+      continue;
+    }
+    const from = named ? toks[i - 2].s : toks[i].s; // #REF! replaces the sheet name too
     const colon = toks[i + 1];
     const b = colon && colon.t === "op" && colon.v === ":" ? refAt(toks, i + 2) : null;
     if (!b) {
       const q = one(a);
-      if (q === null) edits.push([toks[i].s, toks[i].e, "#REF!"]);
+      if (q === null) edits.push([from, toks[i].e, "#REF!"]);
       else if (moved(a, q)) edits.push([toks[i].s, toks[i].e, refText(q)]);
       continue;
     }
     const end = toks[i + 2];
     const m = range(a, b);
-    if (m === null) edits.push([toks[i].s, end.e, "#REF!"]);
+    if (m === null) edits.push([from, end.e, "#REF!"]);
     else {
       if (moved(a, m[0])) edits.push([toks[i].s, toks[i].e, refText(m[0])]);
       if (moved(b, m[1])) edits.push([end.s, end.e, refText(m[1])]);

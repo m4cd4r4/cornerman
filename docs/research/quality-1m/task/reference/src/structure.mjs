@@ -38,7 +38,7 @@ function apply(inputs, names, axis, one, range) {
   for (const [k, raw] of inputs) {
     const q = oneP(parseRef(k));
     if (q === null) continue;
-    nextInputs.set(refText(q), raw.startsWith("=") ? "=" + rewriteRefs(raw.slice(1), oneP, rangeP) : raw);
+    nextInputs.set(refText(q), raw.startsWith("=") ? "=" + rewriteRefs(raw.slice(1), oneP, rangeP, false) : raw);
   }
   const nextNames = new Map();
   for (const [n, d] of names) {

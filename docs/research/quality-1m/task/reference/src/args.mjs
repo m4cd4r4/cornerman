@@ -17,6 +17,7 @@ export const isRangeArg = (n) => n.k === "ref" || n.k === "range" || n.k === "na
 export function rangeGrid(node, ctx) {
   let a;
   let b;
+  if (node.sheet && !ctx.sheet(node.sheet)) return { err: makeError("#REF!", ctx.cell, `no sheet named ${node.sheet}`) };
   if (node.k === "ref") a = b = node.addr;
   else if (node.k === "range") {
     const r = rangeCells(node, ctx);
@@ -30,7 +31,8 @@ export function rangeGrid(node, ctx) {
     b = n.b;
   } else return { err: makeError("#VALUE!", ctx.cell, "expected a range") };
   const { r1, r2, c1, c2 } = rangeBox(a, b);
-  return { keys: rangeKeys(a, b), width: c2 - c1 + 1, height: r2 - r1 + 1 };
+  const keys = rangeKeys(a, b).map((k) => (node.sheet ? `${node.sheet}!${k}` : k));
+  return { keys, width: c2 - c1 + 1, height: r2 - r1 + 1 };
 }
 
 // A range argument (bare reference, range, or name): its cell values, or a structural error.
