@@ -60,7 +60,8 @@ for (const name of readdirSync(DIR)) {
 }
 const order = ["default", "compact250", "cm180", "cm250", "cm350", "cm500"].filter((a) => byArm.has(a));
 const base = byArm.get("default");
-const lines = [`Late segment cp${String(K).padStart(2, "0")}-cp40, ${MODEL}.`, "",
+const lastCp = Math.max(0, ...[...byArm.values()].flat().map((r) => K - 1 + r.late.length));
+const lines = [`Late segment cp${String(K).padStart(2, "0")}-cp${String(lastCp).padStart(2, "0")}, ${MODEL}.`, "",
   "| Arm | Runs | Late pass | vs Default (95% interval) | Regressions | Rule violations | Probes right | Peak context | Work tokens |",
   "|:--|--:|--:|:--|--:|--:|--:|--:|--:|"];
 for (const a of order) {

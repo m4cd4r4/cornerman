@@ -398,3 +398,20 @@ about 258k), peak 258,437, work 582,518, US$8.30. Hidden 38/40 (fails cp21, cp30
   csv-formulas-evaluate, csv-in-skip-empty, csv-in-step-per-cell, save-evaluates. 300 mutants.
 - Not saved yet (left for cp56): formats, validation rules, merges. The cp41/46/47 specs say so;
   no test asserts it, so cp56 can add them without breaking a hidden test.
+
+## Block G progress (2026-11-10)
+
+Written by the Block G agent; its final report was lost to a session clear, so this note was
+assembled by the orchestrator from the commits and the agent's mutant log. Departures are stated
+in each cpNN/spec.md.
+- cp49 hidden rows and columns (hiding.mjs, namedefs.mjs, layers.mjs, structure.mjs, csv.mjs). 8 mutants.
+- cp50 SUBTOTAL (subtotal.mjs, functions.mjs, engine.mjs). 9 mutants. Probe P4 (blocks A-D) after cp50.
+- cp51 find and replace in inputs (findreplace.mjs). 10 mutants.
+- cp52 named constants (names.mjs, namedefs.mjs, persist.mjs). 6 mutants.
+- cp53 workbook names, sheet names win (booknames.mjs, bookio.mjs, workbook.mjs). 8 mutants.
+- cp54 deleting a sheet, references and names become #REF! (refs.mjs, workbook.mjs). 8 mutants.
+- cp55 undo across a workbook (history.mjs, workbook.mjs, booknames.mjs). 8 mutants.
+- cp56 save format v3 with migration (save3.mjs, bookio.mjs). 10 mutants.
+- Verified by the orchestrator 2026-11-10: check-tree cp01-56 green, mutants 367/367 killed,
+  probe-selftest right 40/40 wrong 0/40 absent 0/40, SMOKE OK. cp50 spec: dropped a
+  "checkpoint 3:" cross-reference (the agent's last edit).

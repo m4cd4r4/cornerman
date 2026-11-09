@@ -14,8 +14,8 @@ inside a range are not counted twice.
 | `5` | MIN |
 | `9` | SUM |
 
-- `code` is read as a number as arithmetic reads it (checkpoint 3: an empty cell is 0, a boolean
-  1 or 0, text is `#VALUE!`) and truncated toward zero, so `1.9` is `1`.
+- `code` is read as a number as arithmetic reads it (an empty cell is 0, a boolean 1 or 0, text is
+  `#VALUE!`) and truncated toward zero, so `1.9` is `1`.
 - Any other code is `#VALUE!` (`cell` = the formula cell). That includes `3`, `0`, and `101` to
   `111`: there is no second set of codes. This is NOT what Excel does.
 
