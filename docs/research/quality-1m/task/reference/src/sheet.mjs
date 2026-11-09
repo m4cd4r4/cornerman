@@ -11,6 +11,7 @@ import { checkName, parseNameRef, nameText } from "./names.mjs";
 import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
 import { copyWrites } from "./copy.mjs";
 import { canonicalInput } from "./canonical.mjs";
+import { explainTree } from "./explain.mjs";
 import { createHistory, snapshot, sameState } from "./history.mjs";
 import { toCSV, csvWrites } from "./csv.mjs";
 import { saveText, parseSave } from "./persist.mjs";
@@ -210,7 +211,7 @@ export function makeSheet(init, order = "priority") {
     history.clear();
   }
 
-  const core = { valueOf, compute, relink, bind, key, writeAll, renamed, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll, renamed, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 
@@ -244,16 +245,11 @@ export function makeSheet(init, order = "priority") {
       const raw = inputs.get(key(address));
       return raw === undefined ? null : raw;
     },
+    explain: (address) => explainTree(engine, id, key(address)),
     canonical: (address) => canonicalInput(inputs.get(key(address)) ?? null),
-    display(address) {
-      return displayValue(valueOf(key(address)));
-    },
-    cells() {
-      return sorted(inputs.keys());
-    },
-    stats() {
-      return { evaluations: stats.evaluations };
-    },
+    display: (address) => displayValue(valueOf(key(address))),
+    cells: () => sorted(inputs.keys()),
+    stats: () => ({ evaluations: stats.evaluations }),
     precedents(address, opts = {}) {
       const k = g(key(address));
       return engine.labels(opts.transitive ? reachable(k, engine.precs) : engine.precs(k), id);

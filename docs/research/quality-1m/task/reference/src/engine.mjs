@@ -119,11 +119,13 @@ export function createEngine(errorOrder = "priority") {
   }
 
   // Own-sheet addresses first (row-major), then "Name!A1" for other sheets in creation order.
-  function labels(keys, ownId) {
+  function ordered(keys, ownId) {
     const rows = [...keys].map(split);
     rows.sort(([i, a], [j, b]) => (i === j ? compareAddresses(a, b) : i === ownId ? -1 : j === ownId ? 1 : i - j));
-    return rows.map(([i, a]) => (i === ownId ? a : `${sheets.get(i).name}!${a}`));
+    return rows;
   }
+  const label = ([i, a], ownId) => (i === ownId ? a : `${sheets.get(i).name}!${a}`);
+  const labels = (keys, ownId) => ordered(keys, ownId).map((r) => label(r, ownId));
 
   // Own-sheet cells that id|k waits for in recalc order, following paths through other sheets.
   function ownPrecs(id, k) {
@@ -151,6 +153,9 @@ export function createEngine(errorOrder = "priority") {
     unlink,
     invalidate,
     labels,
+    ordered,
+    label,
+    coreOf: (id) => sheets.get(id).core,
     register(core, name) {
       const id = nextId++;
       sheets.set(id, { core, name });

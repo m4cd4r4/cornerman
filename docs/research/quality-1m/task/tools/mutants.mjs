@@ -225,6 +225,13 @@ const MUTANTS = [
   { name: "canon-arg-space", file: "canonical.mjs", find: "n.args.map(print).join(\",\")", replace: "n.args.map(print).join(\", \")", target: "cp38" },
   { name: "canon-text-trimmed", file: "canonical.mjs", find: "  if (!input.startsWith(\"=\")) return input;", replace: "  if (!input.startsWith(\"=\")) return input.trim();", target: "cp38" },
   { name: "canon-empty-null", file: "canonical.mjs", find: "  if (input === null) return \"\";", replace: "  if (input === null) return null;", target: "cp38" },
+  { name: "explain-repeat-empty", file: "explain.mjs", find: "core.valueOf(a), from: null };", replace: "core.valueOf(a), from: [] };", target: "cp39" },
+  { name: "explain-label-own-sheet", file: "explain.mjs", find: "engine.label([id, a], rootId)", replace: "engine.label([id, a], id)", target: "cp39" },
+  { name: "explain-order-root-sheet", file: "explain.mjs", find: "engine.ordered(engine.precs(gk), id)", replace: "engine.ordered(engine.precs(gk), rootId)", target: "cp39" },
+  { name: "explain-children-reversed", file: "explain.mjs", find: "for (let i = kids.length - 1; i >= 0; i--)", replace: "for (let i = 0; i < kids.length; i++)", target: "cp39" },
+  { name: "explain-root-not-seen", file: "explain.mjs", find: "    seen.add(gk);\n", replace: "    if (into !== top) seen.add(gk);\n", target: "cp39" },
+  { name: "explain-empty-undefined", file: "sheet.mjs", find: "input: (k) => inputs.get(k) ?? null,", replace: "input: (k) => inputs.get(k),", target: "cp39" },
+  { name: "explain-recursive", file: "explain.mjs", find: "export function explainTree(engine, rootId, k) {", replace: "export function explainTree(engine, rootId, k) {\n  const seen = new Set();\n  const walk = (gk) => {\n    const [id, a] = split(gk);\n    const core = engine.coreOf(id);\n    const node = { address: engine.label([id, a], rootId), input: core.input(a), value: core.valueOf(a), from: null };\n    if (seen.has(gk)) return node;\n    seen.add(gk);\n    node.from = engine.ordered(engine.precs(gk), id).map(([i, b]) => walk(`${i}|${b}`));\n    return node;\n  };\n  return walk(`${rootId}|${k}`);\n}\nexport function unusedTree(engine, rootId, k) {", target: "cp39" },
   { name: "col-names-not-moved", file: "structure.mjs", find: "    const m = range(ax.get(a), ax.get(b));", replace: "    const m = axis === \"col\" ? [ax.get(a), ax.get(b)] : range(ax.get(a), ax.get(b));", target: "cp25" },
 ];
 
