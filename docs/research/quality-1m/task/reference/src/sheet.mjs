@@ -10,6 +10,7 @@ import { createEngine } from "./engine.mjs";
 import { checkName, parseNameRef, nameText } from "./names.mjs";
 import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
 import { copyWrites } from "./copy.mjs";
+import { canonicalInput } from "./canonical.mjs";
 import { createHistory, snapshot, sameState } from "./history.mjs";
 import { toCSV, csvWrites } from "./csv.mjs";
 import { saveText, parseSave } from "./persist.mjs";
@@ -243,6 +244,7 @@ export function makeSheet(init, order = "priority") {
       const raw = inputs.get(key(address));
       return raw === undefined ? null : raw;
     },
+    canonical: (address) => canonicalInput(inputs.get(key(address)) ?? null),
     display(address) {
       return displayValue(valueOf(key(address)));
     },

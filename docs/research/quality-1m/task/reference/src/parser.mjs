@@ -65,7 +65,7 @@ export function parseFormula(src) {
   function primary() {
     const t = take();
     if (!t) throw new ParseError("unexpected end");
-    if (t.t === "num") return { k: "num", v: t.v };
+    if (t.t === "num") return { k: "num", v: t.v, text: src.slice(t.s, t.e) };
     if (t.t === "str") return { k: "str", v: t.v };
     if (t.t === "referr") return { k: "badref", v: "#REF!" };
     if (t.t === "op" && t.v === "(") {
@@ -121,7 +121,7 @@ export function parseFormula(src) {
     if (m) {
       if (m[1].length > 2) throw new ParseError(`bad reference ${w}`);
       const a = parseAddress(w.replace(/\$/g, ""));
-      return a ? { k: "ref", addr: a.key } : { k: "badref", v: w };
+      return a ? { k: "ref", addr: a.key, text: w } : { k: "badref", v: w };
     }
     if (NAME.test(w)) return { k: "name", v: up };
     throw new ParseError(`bad word ${w}`);
