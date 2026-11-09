@@ -1,4 +1,4 @@
-// index.mjs: the sheet object and public API (cp01-cp25).
+// index.mjs: the sheet object and public API (cp01-cp27).
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";
@@ -7,6 +7,8 @@ import { displayValue } from "./display.mjs";
 import { collectRefs, cycleNodes, reachable, recalcOrder } from "./graph.mjs";
 import { checkName, parseNameRef, nameText } from "./names.mjs";
 import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
+import { copyWrites } from "./copy.mjs";
+import { createHistory, snapshot, sameState } from "./history.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -21,6 +23,7 @@ export function createSheet() {
   const nameUsers = new Map(); // NAME -> Set of formula keys whose text uses it
   const stats = { evaluations: 0 };
   let cycles = null;
+  const history = createHistory();
 
   function key(address) {
     const k = normalise(address);
@@ -130,21 +133,66 @@ export function createSheet() {
     cycles = null;
   }
 
+  // One cell's new input; false when it already held it.
+  function write(k, input) {
+    if ((inputs.get(k) ?? "") === input) return false;
+    setNameUsers(k, false);
+    if (input === "") {
+      inputs.delete(k);
+      parsed.delete(k);
+    } else {
+      inputs.set(k, input);
+      parseInto(k, input);
+    }
+    setNameUsers(k, true);
+    relink(k);
+    invalidate([k]);
+    return true;
+  }
+
+  // Apply [key, input] writes as one undo step; only cells that changed are recorded.
+  function writeAll(writes) {
+    const diffs = [];
+    for (const [k, input] of writes) {
+      const before = inputs.get(k) ?? "";
+      if (write(k, input)) diffs.push([k, before, input]);
+    }
+    if (diffs.length) history.record({ cells: diffs });
+  }
+
+  function setName(n, d) {
+    if (d === undefined) names.delete(n);
+    else names.set(n, d);
+    nameChanged(n);
+  }
+
+  // A structural op: next = { inputs, names } from structure.mjs.
+  function restructure(next) {
+    const before = snapshot(inputs, names);
+    rebuild(next);
+    if (!sameState(before, next)) history.record({ state: { before, after: snapshot(inputs, names) } });
+  }
+
+  function applyEntry(e, side) {
+    if (e.cells) {
+      const list = side === "before" ? [...e.cells].reverse() : e.cells;
+      for (const [k, before, after] of list) write(k, side === "before" ? before : after);
+    } else if (e.state) rebuild(e.state[side]);
+    else setName(e.name, e[side]);
+  }
+
   return {
     set(address, input) {
-      const k = key(address);
-      if ((inputs.get(k) ?? "") === input) return;
-      setNameUsers(k, false);
-      if (input === "") {
-        inputs.delete(k);
-        parsed.delete(k);
-      } else {
-        inputs.set(k, input);
-        parseInto(k, input);
-      }
-      setNameUsers(k, true);
-      relink(k);
-      invalidate([k]);
+      writeAll([[key(address), input]]);
+    },
+    copy(from, to) {
+      writeAll(copyWrites(inputs, from, to));
+    },
+    undo() {
+      return history.undo(applyEntry);
+    },
+    redo() {
+      return history.redo(applyEntry);
     },
     get(address) {
       return valueOf(key(address));
@@ -179,27 +227,30 @@ export function createSheet() {
     },
     defineName(name, ref) {
       const n = checkName(name);
-      names.set(n, parseNameRef(ref));
-      nameChanged(n);
+      const d = parseNameRef(ref);
+      const before = names.get(n);
+      if (before && JSON.stringify(before) === JSON.stringify(d)) return;
+      setName(n, d);
+      history.record({ name: n, before, after: d });
     },
     removeName(name) {
       const n = typeof name === "string" ? name.toUpperCase() : "";
       if (!names.has(n)) return false;
-      names.delete(n);
-      nameChanged(n);
+      history.record({ name: n, before: names.get(n), after: undefined });
+      setName(n, undefined);
       return true;
     },
     insertRows(at, count = 1) {
-      rebuild(insertRows(inputs, names, at, count));
+      restructure(insertRows(inputs, names, at, count));
     },
     deleteRows(at, count = 1) {
-      rebuild(deleteRows(inputs, names, at, count));
+      restructure(deleteRows(inputs, names, at, count));
     },
     insertCols(at, count = 1) {
-      rebuild(insertCols(inputs, names, at, count));
+      restructure(insertCols(inputs, names, at, count));
     },
     deleteCols(at, count = 1) {
-      rebuild(deleteCols(inputs, names, at, count));
+      restructure(deleteCols(inputs, names, at, count));
     },
     names() {
       const out = {};

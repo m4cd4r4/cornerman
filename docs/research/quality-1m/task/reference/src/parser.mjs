@@ -1,10 +1,10 @@
-// parser.mjs: formula parser (cp02, cp03, cp06, cp07, cp13, cp14). Precedence, lowest first:
+// parser.mjs: formula parser (cp02, cp03, cp06, cp07, cp13, cp14, cp26). Precedence, lowest first:
 // comparison < & < + - < * / < unary +- < ^ (right) < postfix %.
 import { tokenize, ParseError } from "./lexer.mjs";
 import { parseAddress } from "./address.mjs";
 
 const CMP = new Set(["=", "<>", "<", ">", "<=", ">="]);
-const REFLIKE = /^([A-Za-z]+)(\d+)$/;
+const REFLIKE = /^\$?([A-Za-z]+)\$?(\d+)$/; // $ marks an absolute part (cp26)
 const NAME = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const FUNC = /^[A-Za-z][A-Za-z0-9.]*$/;
 
@@ -106,7 +106,7 @@ export function parseFormula(src) {
     const m = REFLIKE.exec(w);
     if (m) {
       if (m[1].length > 2) throw new ParseError(`bad reference ${w}`);
-      const a = parseAddress(w);
+      const a = parseAddress(w.replace(/\$/g, ""));
       return a ? { k: "ref", addr: a.key } : { k: "badref", v: w };
     }
     if (NAME.test(w)) return { k: "name", v: up };

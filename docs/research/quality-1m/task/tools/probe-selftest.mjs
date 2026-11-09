@@ -25,10 +25,13 @@ writeFileSync(join(repo, "src", "stats.mjs"), "// stats.mjs: counter\n");
 writeFileSync(join(repo, "NOTES.md"), "x\n");
 git("add", "."); git("commit", "-q", "-m", "cp08: tolerance and counter");
 writeFileSync(join(repo, "src", "b.mjs"), "// b.mjs: b\n"); git("add", "."); git("commit", "-q", "-m", "cp09: cycles");
+writeFileSync(join(repo, "src", "structure.mjs"), "// structure.mjs: rows\n");
+writeFileSync(join(repo, "src", "b.mjs"), "// b.mjs: b v2\n");
+git("add", "."); git("commit", "-q", "-m", "cp23: insert rows");
 
 const files = {
-  "right.md": "## Probe 1\nP1.1: cp2\n- **P1.2**: `#REF!`, #NAME?, #VALUE!, #DIV/0!\nP1.3: 0.000000001\nP1.4: `##########`\np1.5 = checkpoint 13\nP1.6: ./src/stats.mjs, src\\a.mjs\nP1.7: #CYCLE!\nP1.8: 10,000\nP1.9: B1, C1, A1\nP1.10: `TAX2024`\n",
-  "wrong.md": "P1.1: cp04\nP1.2: #NAME?, #REF!, #VALUE!, #DIV/0!\nP1.3: 1e-6\nP1.4: #########\nP1.5: cp14\nP1.6: src/a.mjs\nP1.7: #REF!\nP1.8: 1000\nP1.9: C1, B1, A1\nP1.10: T2X\n",
+  "right.md": "## Probe 1\nP1.1: cp2\n- **P1.2**: `#REF!`, #NAME?, #VALUE!, #DIV/0!\nP1.3: 0.000000001\nP1.4: `##########`\np1.5 = checkpoint 13\nP1.6: ./src/stats.mjs, src\\a.mjs\nP1.7: #CYCLE!\nP1.8: 10,000\nP1.9: B1, C1, A1\nP1.10: `TAX2024`\n## Probe 2\nP2.1: Checkpoint 23\nP2.2: 61\n- **P2.3**: `#REF!`\nP2.4: \"FALSE\"\nP2.5: src/structure.mjs; src/b.mjs\nP2.6: 2,921,940\nP2.7: #CYCLE!\nP2.8: cp1\nP2.9: #CYCLE!, #REF!, #NAME?, #N/A, #VALUE!, #DIV/0!\nP2.10: `=SUM(A1:D1)`\n",
+  "wrong.md": "P1.1: cp04\nP1.2: #NAME?, #REF!, #VALUE!, #DIV/0!\nP1.3: 1e-6\nP1.4: #########\nP1.5: cp14\nP1.6: src/a.mjs\nP1.7: #REF!\nP1.8: 1000\nP1.9: C1, B1, A1\nP1.10: T2X\nP2.1: cp24\nP2.2: 36586\nP2.3: #VALUE!\nP2.4: false\nP2.5: src/structure.mjs\nP2.6: 2958465\nP2.7: 0\nP2.8: cp02\nP2.9: #CYCLE!, #REF!, #N/A, #NAME?, #VALUE!, #DIV/0!\nP2.10: =SUM(A1:C1)\n",
 };
 for (const [n, t] of Object.entries(files)) writeFileSync(join(work, n), t);
 
