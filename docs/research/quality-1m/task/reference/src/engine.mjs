@@ -2,23 +2,31 @@
 // workbook (cp31-cp32). A sheet made by createSheet() has an engine of its own with no names in it.
 // Graph keys are "<sheet id>|<address>"; sheet ids count up in creation order.
 import { compareAddresses } from "./address.mjs";
-import { cycleNodes, reachable } from "./graph.mjs";
+import { sccs } from "./graph.mjs";
 
 export const split = (g) => {
   const i = g.indexOf("|");
   return [Number(g.slice(0, i)), g.slice(i + 1)];
 };
 
+// cp36: nested formula reads deeper than this unwind to the top-level read, which evaluates the
+// deep cell first and then resumes, so a long chain never overflows the JS stack.
+export const DEPTH_LIMIT = 100;
+class Unwind {
+  constructor(core, k) { this.core = core; this.k = k; }
+}
+
 export function createEngine(errorOrder = "priority") {
   const sheets = new Map(); // id -> { core, name }
   const byName = new Map(); // NAME -> id
   const cache = new Map(); // graph key -> value
+  const onCycleMemo = new Map(); // graph key -> on a cycle?, dropped with the cache (cp36)
   const edges = new Map(); // formula key -> precedent keys
   const rdeps = new Map(); // key -> Set of formula keys that read it
   const mentions = new Map(); // formula key -> sheet NAMEs its text uses
   const sheetUsers = new Map(); // NAME -> Set of formula keys whose text uses it
-  let cycles = null;
   let nextId = 1;
+  let depth = 0;
 
   const precs = (g) => edges.get(g) || [];
   const deps = (g) => [...(rdeps.get(g) || [])];
@@ -28,7 +36,47 @@ export function createEngine(errorOrder = "priority") {
     edges.delete(g);
     for (const n of mentions.get(g) || []) sheetUsers.get(n)?.delete(g);
     mentions.delete(g);
-    cycles = null;
+  }
+
+  // Whether g is on a cycle. One Tarjan pass over what g reaches memoises every node it finds:
+  // a node's answer depends only on edges it reaches, and any change there drops it (invalidate).
+  function onCycle(g) {
+    if (!onCycleMemo.has(g)) {
+      for (const c of sccs([g], precs)) {
+        const on = c.length > 1 || precs(c[0]).includes(c[0]);
+        for (const k of c) onCycleMemo.set(k, on);
+      }
+    }
+    return onCycleMemo.get(g);
+  }
+
+  // core.compute(k) for a formula not in the cache. Nested reads past DEPTH_LIMIT throw Unwind;
+  // the top-level read keeps a stack of cells waiting and evaluates the deepest first.
+  function evaluateCell(core, k) {
+    if (depth > 0) {
+      if (depth >= DEPTH_LIMIT) throw new Unwind(core, k);
+      depth++;
+      try {
+        return core.compute(k);
+      } finally {
+        depth--;
+      }
+    }
+    const waiting = [[core, k]];
+    for (;;) {
+      const [c, a] = waiting[waiting.length - 1];
+      depth = 1;
+      try {
+        const v = c.compute(a);
+        waiting.pop();
+        if (!waiting.length) return v;
+      } catch (e) {
+        if (!(e instanceof Unwind)) throw e;
+        waiting.push([e.core, e.k]);
+      } finally {
+        depth = 0;
+      }
+    }
   }
 
   // g's precedents and the sheet names its formula text uses (whether or not they exist).
@@ -46,10 +94,17 @@ export function createEngine(errorOrder = "priority") {
     }
   }
 
+  // Drop the keys and everything that reads them, in one pass however many keys there are.
   function invalidate(keys) {
-    for (const g of keys) {
+    const seen = new Set();
+    const todo = [...keys];
+    while (todo.length) {
+      const g = todo.pop();
+      if (seen.has(g)) continue;
+      seen.add(g);
       cache.delete(g);
-      for (const d of reachable(g, deps)) cache.delete(d);
+      onCycleMemo.delete(g);
+      for (const d of rdeps.get(g) || []) if (!seen.has(d)) todo.push(d);
     }
   }
 
@@ -122,9 +177,7 @@ export function createEngine(errorOrder = "priority") {
     valueAt(id, addr) {
       return sheets.get(id).core.valueOf(addr);
     },
-    cycleSet() {
-      if (!cycles) cycles = cycleNodes([...edges.keys()], precs);
-      return cycles;
-    },
+    onCycle,
+    evaluateCell,
   };
 }

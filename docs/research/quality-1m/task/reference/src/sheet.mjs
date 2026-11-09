@@ -66,7 +66,6 @@ export function makeSheet(init, order = "priority") {
   }
 
   const invalidate = (keys) => engine.invalidate(keys.map(g));
-
   const edgesOf = (k) => engine.ownPrecs(id, k);
 
   // A cell reference in a formula: own cell, or "NAME!A1" on another sheet.
@@ -74,8 +73,7 @@ export function makeSheet(init, order = "priority") {
     const i = a.indexOf("!");
     if (i < 0) return valueOf(a);
     const sid = engine.resolve(a.slice(0, i));
-    if (sid === null) return makeError("#REF!", k, `no sheet named ${a.slice(0, i)}`);
-    return engine.valueAt(sid, a.slice(i + 1));
+    return sid === null ? makeError("#REF!", k, `no sheet named ${a.slice(0, i)}`) : engine.valueAt(sid, a.slice(i + 1));
   }
 
   function valueOf(k) {
@@ -88,19 +86,22 @@ export function makeSheet(init, order = "priority") {
       }
       return raw;
     }
-    const cache = engine.cache;
-    if (cache.has(g(k))) return cache.get(g(k));
-    stats.evaluations++;
+    return engine.cache.has(g(k)) ? engine.cache.get(g(k)) : engine.evaluateCell(core, k);
+  }
+
+  // Evaluate the formula at k now; engine.evaluateCell calls it, and an unwind (cp36) leaves no count.
+  function compute(k) {
     const p = parsed.get(k);
     let v;
     if (p.parseError) v = makeError("#PARSE!", k, p.parseError);
-    else if (engine.cycleSet().has(g(k))) v = makeError("#CYCLE!", k, "circular reference");
+    else if (engine.onCycle(g(k))) v = makeError("#CYCLE!", k, "circular reference");
     else {
       const ctx = { cell: k, read: (a) => read(k, a), name: (n) => names.get(n) || null, sheet: (n) => engine.resolve(n) !== null };
       v = withErrorOrder(engine.errorOrder, () => evaluate(p.ast, ctx));
     }
     const out = v === null ? 0 : typeof v === "number" && v === 0 ? 0 : v;
-    cache.set(g(k), out);
+    stats.evaluations++;
+    engine.cache.set(g(k), out);
     return out;
   }
 
@@ -202,7 +203,7 @@ export function makeSheet(init, order = "priority") {
     if (name !== null) engine.announce(name);
   }
 
-  const core = { valueOf, relink, bind, key, writeAll, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 
