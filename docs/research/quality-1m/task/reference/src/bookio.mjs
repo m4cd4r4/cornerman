@@ -1,6 +1,8 @@
-// bookio.mjs: loadWorkbook(text) - a v2 workbook save, or a v1 sheet save migrated to one sheet (cp35).
+// bookio.mjs: loadWorkbook(text) - a v2 workbook save, or a v1 sheet save migrated to one sheet (cp35),
+// with the workbook names after the sheets (cp53).
 import { parseDoc, parseSheetDoc, parseBody, bad, isPlain } from "./persist.mjs";
 import { checkName } from "./names.mjs";
+import { loadBookTarget } from "./booknames.mjs";
 import { buildWorkbook } from "./workbook.mjs";
 
 export const MIGRATED_NAME = "Sheet_1";
@@ -25,5 +27,21 @@ export function loadWorkbook(json) {
     seen.add(s.name.toUpperCase());
     return { name: s.name, init: parseBody(s, `${at}.`) };
   });
-  return buildWorkbook(doc.errorOrder, sheets);
+  return buildWorkbook(doc.errorOrder, sheets, bookNames(doc.names));
+}
+
+// cp53: the optional top-level names of a workbook save, checked after every sheet.
+function bookNames(names) {
+  const out = new Map();
+  if (names === undefined) return out;
+  if (!isPlain(names)) throw bad("names", "names must be an object");
+  for (const [n, text] of Object.entries(names)) {
+    try {
+      if (checkName(n) !== n) throw new Error("case");
+      out.set(n, loadBookTarget(text));
+    } catch {
+      throw bad(`names.${n}`, `${n} is not a valid workbook name and target`);
+    }
+  }
+  return out;
 }

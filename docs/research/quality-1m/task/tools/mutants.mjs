@@ -176,7 +176,7 @@ const MUTANTS = [
   { name: "book-save-key-order", file: "workbook.mjs", find: "return { name: e.name, cells, names };", replace: "return { cells, names, name: e.name };", target: "cp35" },
   { name: "load-sheets-reversed", file: "workbook.mjs", find: "for (const { name, init } of loaded) add(name, init);", replace: "for (const { name, init } of [...loaded].reverse()) add(name, init);", target: "cp35" },
   { name: "load-order-optional", file: "bookio.mjs", find: "if (doc.errorOrder !== \"priority\" && doc.errorOrder !== \"first\") throw", replace: "if (doc.errorOrder !== undefined && doc.errorOrder !== \"priority\" && doc.errorOrder !== \"first\") throw", target: "cp35" },
-  { name: "load-ignores-order", file: "bookio.mjs", find: "return buildWorkbook(doc.errorOrder, sheets);", replace: "return buildWorkbook(\"priority\", sheets);", target: "cp35" },
+  { name: "load-ignores-order", file: "bookio.mjs", find: "return buildWorkbook(doc.errorOrder, sheets, bookNames(doc.names));", replace: "return buildWorkbook(\"priority\", sheets, bookNames(doc.names));", target: "cp35" },
   { name: "load-version-loose", file: "bookio.mjs", find: "if (doc.version !== 2) throw", replace: "if (doc.version != 2) throw", target: "cp35" },
   { name: "load-order-after-sheets", file: "bookio.mjs", edits: [["  if (doc.errorOrder !== \"priority\" && doc.errorOrder !== \"first\") throw bad(\"errorOrder\", `errorOrder is ${JSON.stringify(doc.errorOrder)}`);\n  if (!Array.isArray(doc.sheets)) throw bad(\"sheets\", \"sheets must be an array\");","  if (!Array.isArray(doc.sheets)) throw bad(\"sheets\", \"sheets must be an array\");\n  if (doc.errorOrder !== \"priority\" && doc.errorOrder !== \"first\") throw bad(\"errorOrder\", `errorOrder is ${JSON.stringify(doc.errorOrder)}`);"]], target: "cp35" },
   { name: "migrated-name-upper", file: "bookio.mjs", find: "export const MIGRATED_NAME = \"Sheet_1\";", replace: "export const MIGRATED_NAME = \"SHEET_1\";", target: "cp35" },
@@ -354,6 +354,14 @@ const MUTANTS = [
   { name: "delete-drops-constants", file: "structure.mjs", find: "    if (!d.a) { nextNames.set(n, d); continue; }", replace: "    if (!d.a) continue;", target: "cp52" },
   { name: "constant-text-unquoted", file: "names.mjs", find: "  if (typeof v === \"string\") return `=\"${v.replaceAll('\"', '\"\"')}\"`;", replace: "  if (typeof v === \"string\") return `=${v}`;", target: "cp52" },
   { name: "load-constant-not-roundtripped", file: "persist.mjs", find: "    if (nameText(d) !== ref) throw", replace: "    if (!(\"value\" in d) && nameText(d) !== ref) throw", target: "cp52" },
+  { name: "book-name-unqualified-ok", file: "booknames.mjs", find: "  if (parts.length !== 2) bad();", replace: "  if (parts.length === 1) return parseNameRef(ref);\n  if (parts.length !== 2) bad();", target: "cp53" },
+  { name: "book-name-before-own", file: "sheet.mjs", find: "  const nameOf = (n) => names.get(n) || engine.bookName(n);", replace: "  const nameOf = (n) => engine.bookName(n) || names.get(n) || null;", target: "cp53" },
+  { name: "book-target-sheet-upper", file: "names.mjs", find: "  return d.sheet ? `${d.sheet}!${cells}` : cells;", replace: "  return d.sheet ? `${d.sheet.toUpperCase()}!${cells}` : cells;", target: "cp53" },
+  { name: "rename-keeps-book-targets", file: "engine.mjs", find: "      for (const [n, d] of bookNames) if (d.sheet && d.sheet.toUpperCase() === OLD) bookNames.set(n, { ...d, sheet: name });\n", replace: "", target: "cp53" },
+  { name: "book-name-no-recalc", file: "engine.mjs", find: "      else bookNames.set(n, d);\n      bookNameChanged(n);", replace: "      else bookNames.set(n, d);", target: "cp53" },
+  { name: "book-range-missing-sheet-read", file: "args.mjs", find: "    if (n.sheet && !ctx.sheet(n.sheet)) return { err: makeError(\"#REF!\", ctx.cell, `no sheet named ${n.sheet}`) };\n", replace: "", target: "cp53" },
+  { name: "book-names-always-saved", file: "workbook.mjs", find: "      if (!Object.keys(names).length) return JSON.stringify(", replace: "      if (false) return JSON.stringify(", target: "cp53" },
+  { name: "add-sheet-no-book-refresh", file: "engine.mjs", find: "    for (const [n, d] of bookNames) if (d.sheet && d.sheet.toUpperCase() === name) bookNameChanged(n);\n", replace: "", target: "cp53" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

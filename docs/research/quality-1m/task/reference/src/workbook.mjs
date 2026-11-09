@@ -4,11 +4,13 @@ import { checkName } from "./names.mjs";
 import { createEngine } from "./engine.mjs";
 import { makeSheet, CORE } from "./sheet.mjs";
 import { renameRefs } from "./refs.mjs";
+import { addBookNames } from "./booknames.mjs";
 
 export const createWorkbook = (opts) => buildWorkbook(errorOrderOption(opts), []);
 
-// order = "priority" | "first"; loaded = [{ name, init }] from a workbook save (cp35), already checked.
-export function buildWorkbook(order, loaded) {
+// order = "priority" | "first"; loaded = [{ name, init }] and bookNames = Map NAME -> target from a
+// workbook save (cp35, cp53), already checked.
+export function buildWorkbook(order, loaded, bookNames = new Map()) {
   const engine = createEngine(order);
   const list = []; // { name, sheet } in creation order, name as typed
   const find = (name) => (typeof name === "string" ? list.findIndex((e) => e.name.toUpperCase() === name.toUpperCase()) : -1);
@@ -65,9 +67,12 @@ export function buildWorkbook(order, loaded) {
         if (notes) return { name: e.name, cells, names, notes };
         return { name: e.name, cells, names };
       });
-      return JSON.stringify({ format: "workbook", version: 2, errorOrder: engine.errorOrder, sheets });
+      const names = book.names();
+      if (!Object.keys(names).length) return JSON.stringify({ format: "workbook", version: 2, errorOrder: engine.errorOrder, sheets });
+      return JSON.stringify({ format: "workbook", version: 2, errorOrder: engine.errorOrder, sheets, names });
     },
   };
   for (const { name, init } of loaded) add(name, init);
-  return book;
+  for (const [n, d] of bookNames) engine.setBookName(n, d);
+  return addBookNames(book, engine);
 }

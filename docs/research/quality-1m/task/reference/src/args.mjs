@@ -17,6 +17,7 @@ export const isRangeArg = (n) => n.k === "ref" || n.k === "range" || n.k === "na
 export function rangeGrid(node, ctx) {
   let a;
   let b;
+  let sheet = node.sheet;
   if (node.sheet && !ctx.sheet(node.sheet)) return { err: makeError("#REF!", ctx.cell, `no sheet named ${node.sheet}`) };
   if (node.k === "ref") a = b = node.addr;
   else if (node.k === "range") {
@@ -28,11 +29,13 @@ export function rangeGrid(node, ctx) {
     const n = ctx.name(node.v);
     if (!n) return { err: makeError("#NAME?", ctx.cell, `unknown name ${node.v}`) };
     if ("value" in n) return { err: makeError("#VALUE!", ctx.cell, `constant ${node.v} used as a range`) };
+    if (n.sheet && !ctx.sheet(n.sheet)) return { err: makeError("#REF!", ctx.cell, `no sheet named ${n.sheet}`) };
+    sheet = n.sheet;
     a = n.a;
     b = n.b;
   } else return { err: makeError("#VALUE!", ctx.cell, "expected a range") };
   const { r1, r2, c1, c2 } = rangeBox(a, b);
-  const keys = rangeKeys(a, b).map((k) => (node.sheet ? `${node.sheet}!${k}` : k));
+  const keys = rangeKeys(a, b).map((k) => (sheet ? `${sheet}!${k}` : k));
   return { keys, width: c2 - c1 + 1, height: r2 - r1 + 1 };
 }
 

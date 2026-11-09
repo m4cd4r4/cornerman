@@ -83,7 +83,7 @@ export function evaluate(node, ctx) {
       if (!n) return makeError("#NAME?", ctx.cell, `unknown name ${node.v}`);
       if ("value" in n) return n.value; // cp52: a named constant
       if (n.range) return makeError("#VALUE!", ctx.cell, `range name ${node.v} used as a value`);
-      return ctx.read(n.a);
+      return ctx.read(n.sheet ? `${n.sheet}!${n.a}` : n.a); // cp53: a workbook name names its sheet
     }
     case "range": {
       const r = rangeCells(node, ctx);

@@ -25,6 +25,7 @@ export function createEngine(errorOrder = "priority") {
   const rdeps = new Map(); // key -> Set of formula keys that read it
   const mentions = new Map(); // formula key -> sheet NAMEs its text uses
   const sheetUsers = new Map(); // NAME -> Set of formula keys whose text uses it
+  const bookNames = new Map(); // cp53: NAME -> { sheet, a, b, range } | { value }
   let nextId = 1;
   let depth = 0;
 
@@ -108,7 +109,8 @@ export function createEngine(errorOrder = "priority") {
     }
   }
 
-  // A sheet name appeared or went away: every formula that names it re-resolves.
+  // A sheet name appeared or went away: every formula that names it re-resolves, and so does every
+  // formula using a workbook name whose target is on that sheet (cp53).
   function refresh(name) {
     const users = [...(sheetUsers.get(name) || [])];
     for (const g of users) {
@@ -116,7 +118,9 @@ export function createEngine(errorOrder = "priority") {
       sheets.get(id).core.relink(addr);
     }
     invalidate(users);
+    for (const [n, d] of bookNames) if (d.sheet && d.sheet.toUpperCase() === name) bookNameChanged(n);
   }
+  const bookNameChanged = (n) => { for (const { core } of sheets.values()) core.nameChanged(n); };
 
   // Own-sheet addresses first (row-major), then "Name!A1" for other sheets in creation order.
   function ordered(keys, ownId) {
@@ -178,8 +182,17 @@ export function createEngine(errorOrder = "priority") {
         refresh(name.toUpperCase());
       }
     },
+    bookNames,
+    bookName: (n) => bookNames.get(n) || null,
+    setBookName(n, d) {
+      if (d === undefined) bookNames.delete(n);
+      else bookNames.set(n, d);
+      bookNameChanged(n);
+    },
     // cp37: the sheet called OLD (upper case) is now called name; the caller relinks formulas.
+    // Workbook names whose target is on that sheet now name it as typed (cp53).
     rename(OLD, name) {
+      for (const [n, d] of bookNames) if (d.sheet && d.sheet.toUpperCase() === OLD) bookNames.set(n, { ...d, sheet: name });
       const id = byName.get(OLD);
       byName.delete(OLD);
       byName.set(name.toUpperCase(), id);

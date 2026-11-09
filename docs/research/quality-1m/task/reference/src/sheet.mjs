@@ -59,8 +59,9 @@ export function makeSheet(init, order = "priority") {
       if (sid !== null) out.add(`${sid}|${c.slice(i + 1)}`);
     }
     for (const n of p.refs.names) {
-      const d = names.get(n);
-      if (d && d.a) for (const c of rangeKeys(d.a, d.b)) out.add(g(c));
+      const d = nameOf(n);
+      const sid = d && d.sheet ? engine.resolve(d.sheet) : id;
+      if (d && d.a && sid !== null) for (const c of rangeKeys(d.a, d.b)) out.add(`${sid}|${c}`);
     }
     return [...out];
   }
@@ -73,6 +74,7 @@ export function makeSheet(init, order = "priority") {
   }
 
   const invalidate = (keys) => engine.invalidate(keys.map(g));
+  const nameOf = (n) => names.get(n) || engine.bookName(n); // cp53: own names hide workbook names
   const edgesOf = (k) => engine.ownPrecs(id, k);
 
   // A cell reference in a formula: own cell, or "NAME!A1" on another sheet.
@@ -103,7 +105,7 @@ export function makeSheet(init, order = "priority") {
     if (p.parseError) v = makeError("#PARSE!", k, p.parseError);
     else if (engine.onCycle(g(k))) v = makeError("#CYCLE!", k, "circular reference");
     else {
-      const ctx = { cell: k, read: (a) => read(k, a), name: (n) => names.get(n) || null, sheet: (n) => engine.resolve(n) !== null, skip };
+      const ctx = { cell: k, read: (a) => read(k, a), name: nameOf, sheet: (n) => engine.resolve(n) !== null, skip };
       v = withErrorOrder(engine.errorOrder, () => evaluate(p.ast, ctx));
     }
     const out = v === null ? 0 : typeof v === "number" && v === 0 ? 0 : v;
@@ -224,7 +226,7 @@ export function makeSheet(init, order = "priority") {
   }
 
   const shown = (k) => layers.show(k, valueOf(k));
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 

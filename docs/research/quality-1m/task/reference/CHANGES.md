@@ -52,3 +52,4 @@
 - cp50: SUBTOTAL(code, ranges) sums, counts, averages or finds the min or max, leaving out hidden rows and subtotals.
 - cp51: find and replace search cell inputs as plain text, skip covered cells and count the cells they change.
 - cp52: defineConstant names a number, text or boolean; a constant is a value, never a range argument.
+- cp53: book.defineName and defineConstant add names every sheet can use; a sheet's own name of that name wins.

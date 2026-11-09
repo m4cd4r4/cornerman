@@ -54,3 +54,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp50: SUBTOTAL
 - [ ] cp51: find and replace
 - [ ] cp52: named constants
+- [ ] cp53: workbook names

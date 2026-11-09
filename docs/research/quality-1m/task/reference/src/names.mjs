@@ -30,7 +30,8 @@ export function parseNameRef(ref) {
 
 export function nameText(d) {
   if ("value" in d) return constantText(d.value);
-  return d.range ? `${d.a}:${d.b}` : d.a;
+  const cells = d.range ? `${d.a}:${d.b}` : d.a;
+  return d.sheet ? `${d.sheet}!${cells}` : cells; // cp53: a workbook name's target names its sheet
 }
 
 // cp52: { value } for a defineConstant value: a finite number, a string or a boolean. Throws #ARG.
