@@ -219,10 +219,13 @@ export function makeSheet(init, order = "priority") {
     if (name !== null) engine.announce(name);
   }
 
-  // cp37: a sheet of the workbook was renamed; rewrite(input) is each input's new text. Not undoable.
+  // cp37: a sheet of the workbook was renamed (or deleted, cp54); rewrite(input) is each input's new
+  // text. Not undoable. Returns how many inputs changed.
   function renamed(rewrite) {
+    const changed = [...inputs.values()].filter((v) => rewrite(v) !== v).length;
     rebuild({ ...state(), inputs: new Map([...inputs].map(([k, v]) => [k, rewrite(v)])) });
     history.clear();
+    return changed;
   }
 
   const shown = (k) => layers.show(k, valueOf(k));

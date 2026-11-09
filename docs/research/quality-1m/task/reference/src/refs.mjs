@@ -41,6 +41,29 @@ export function renameRefs(input, OLD, next) {
   return "=" + out;
 }
 
+// cp54: input with every reference whose sheet prefix is OLD (upper case, matched ignoring case)
+// written as #REF!: a cell, or a whole range with its prefix, corners and colon.
+export function dropSheetRefs(input, OLD) {
+  if (!input.startsWith("=")) return input;
+  const src = input.slice(1);
+  try {
+    parseFormula(src);
+  } catch (e) {
+    if (e instanceof ParseError) return input;
+    throw e;
+  }
+  const toks = tokenize(src);
+  let out = src;
+  for (let i = toks.length - 3; i >= 0; i--) {
+    const t = toks[i];
+    if (t.t !== "word" || toks[i + 1].t !== "op" || toks[i + 1].v !== "!" || t.v.toUpperCase() !== OLD) continue;
+    const colon = toks[i + 3];
+    const end = colon && colon.t === "op" && colon.v === ":" ? toks[i + 4] : toks[i + 2];
+    out = out.slice(0, t.s) + "#REF!" + out.slice(end.e);
+  }
+  return "=" + out;
+}
+
 // A reference token: an address word that is not a function name.
 function refAt(toks, i) {
   const t = toks[i];

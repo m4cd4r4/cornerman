@@ -362,6 +362,14 @@ const MUTANTS = [
   { name: "book-range-missing-sheet-read", file: "args.mjs", find: "    if (n.sheet && !ctx.sheet(n.sheet)) return { err: makeError(\"#REF!\", ctx.cell, `no sheet named ${n.sheet}`) };\n", replace: "", target: "cp53" },
   { name: "book-names-always-saved", file: "workbook.mjs", find: "      if (!Object.keys(names).length) return JSON.stringify(", replace: "      if (false) return JSON.stringify(", target: "cp53" },
   { name: "add-sheet-no-book-refresh", file: "engine.mjs", find: "    for (const [n, d] of bookNames) if (d.sheet && d.sheet.toUpperCase() === name) bookNameChanged(n);\n", replace: "", target: "cp53" },
+  { name: "delete-keeps-book-names", file: "workbook.mjs", find: "      for (const [n, d] of [...engine.bookNames]) if (d.sheet && d.sheet.toUpperCase() === OLD) engine.setBookName(n, undefined);\n", replace: "", target: "cp54" },
+  { name: "delete-last-refused", file: "workbook.mjs", find: "      if (i < 0) throw makeError(\"#SHEET\", String(name), `no sheet named ${name}`);\n      const OLD", replace: "      if (i < 0 || list.length === 1) throw makeError(\"#SHEET\", String(name), `no sheet named ${name}`);\n      const OLD", target: "cp54" },
+  { name: "delete-like-remove", file: "workbook.mjs", find: "      return list.reduce((count, x) => count + CORE.get(x.sheet).renamed((v) => dropSheetRefs(v, OLD)), 0);", replace: "      return 0;", target: "cp54" },
+  { name: "delete-range-first-corner", file: "refs.mjs", find: "    const end = colon && colon.t === \"op\" && colon.v === \":\" ? toks[i + 4] : toks[i + 2];", replace: "    const end = toks[i + 2];", target: "cp54" },
+  { name: "delete-case-sensitive", file: "refs.mjs", find: "toks[i + 1].v !== \"!\" || t.v.toUpperCase() !== OLD) continue;", replace: "toks[i + 1].v !== \"!\" || t.v !== OLD) continue;", target: "cp54" },
+  { name: "delete-keeps-own-undo", file: "workbook.mjs", find: "      CORE.get(e.sheet).history.clear();\n", replace: "", target: "cp54" },
+  { name: "delete-counts-all-cells", file: "sheet.mjs", find: "    const changed = [...inputs.values()].filter((v) => rewrite(v) !== v).length;", replace: "    const changed = inputs.size;", target: "cp54" },
+  { name: "delete-rewrites-deleted-sheet", file: "workbook.mjs", find: "      return list.reduce((count, x) =>", replace: "      CORE.get(e.sheet).renamed((v) => dropSheetRefs(v, OLD));\n      return list.reduce((count, x) =>", target: "cp54" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

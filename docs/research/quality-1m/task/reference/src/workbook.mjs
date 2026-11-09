@@ -3,7 +3,7 @@ import { makeError, errorOrderOption } from "./errors.mjs";
 import { checkName } from "./names.mjs";
 import { createEngine } from "./engine.mjs";
 import { makeSheet, CORE } from "./sheet.mjs";
-import { renameRefs } from "./refs.mjs";
+import { renameRefs, dropSheetRefs } from "./refs.mjs";
 import { addBookNames } from "./booknames.mjs";
 
 export const createWorkbook = (opts) => buildWorkbook(errorOrderOption(opts), []);
@@ -45,6 +45,18 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
       const [e] = list.splice(i, 1);
       CORE.get(e.sheet).bind(createEngine(engine.errorOrder), null);
       return true;
+    },
+    // cp54: remove the sheet as removeSheet does, rewrite every reference to it as #REF!, drop the
+    // workbook names on it, and clear every undo list. Returns how many inputs were rewritten.
+    deleteSheet(name) {
+      const i = find(name);
+      if (i < 0) throw makeError("#SHEET", String(name), `no sheet named ${name}`);
+      const OLD = list[i].name.toUpperCase();
+      const [e] = list.splice(i, 1);
+      CORE.get(e.sheet).bind(createEngine(engine.errorOrder), null);
+      CORE.get(e.sheet).history.clear();
+      for (const [n, d] of [...engine.bookNames]) if (d.sheet && d.sheet.toUpperCase() === OLD) engine.setBookName(n, undefined);
+      return list.reduce((count, x) => count + CORE.get(x.sheet).renamed((v) => dropSheetRefs(v, OLD)), 0);
     },
     // cp37: rename a sheet and rewrite every formula in the book that names it. Clears every
     // sheet's undo and redo; renaming to the exact same name does nothing.
