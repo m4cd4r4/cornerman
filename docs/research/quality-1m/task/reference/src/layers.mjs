@@ -1,5 +1,6 @@
 // layers.mjs: what a sheet keeps beside its inputs (formats cp41, notes cp42, validation rules
-// cp46, merges cp47), how it moves with insert and delete, its undo entries, its snapshot.
+// cp46, merges cp47, hidden rows and columns cp49), how it moves with insert and delete, its undo
+// entries, its snapshot.
 import { parseAddress, rangeKeys, rangeBox, rangeSize, colName, RANGE_LIMIT } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
@@ -9,6 +10,9 @@ import { coveredBy, moveMerges, sortMerges } from "./merges.mjs";
 
 // Layers keyed by cell address. A value is a string (format text, note text) or a rule object.
 export const CELL_LAYERS = ["formats", "notes", "rules"];
+// cp49: layers keyed by row number ("rows") or column number ("cols"); the value is true.
+export const LINE_LAYERS = ["rows", "cols"];
+const ALL = [...CELL_LAYERS, ...LINE_LAYERS];
 
 // cp42: note text as setNote stores it (trimmed, 1 to NOTE_LIMIT characters).
 export const NOTE_LIMIT = 200;
@@ -27,13 +31,13 @@ export function parseTarget(text) {
 }
 
 // The layers of a snapshot moved by a structural change: cell(k) -> new key | null (dropped),
-// box(merge) -> moved merge | null.
-export function moveLayers(state, cell, box) {
+// box(merge) -> moved merge | null, line(layer, n) -> new row or column number | null.
+export function moveLayers(state, cell, box, line) {
   const out = { merges: moveMerges(state.merges || [], box) };
-  for (const n of CELL_LAYERS) {
+  for (const n of ALL) {
     out[n] = new Map();
     for (const [k, v] of state[n] || []) {
-      const to = cell(k);
+      const to = CELL_LAYERS.includes(n) ? cell(k) : line(n, k);
       if (to !== null) out[n].set(to, v);
     }
   }
@@ -42,12 +46,12 @@ export function moveLayers(state, cell, box) {
 
 const sameMap = (a, b) => a.size === b.size && [...a].every(([k, v]) => b.has(k) && JSON.stringify(v) === JSON.stringify(b.get(k)));
 export const sameLayers = (x, y) =>
-  CELL_LAYERS.every((n) => sameMap(x[n] || new Map(), y[n] || new Map())) && JSON.stringify(x.merges || []) === JSON.stringify(y.merges || []);
+  ALL.every((n) => sameMap(x[n] || new Map(), y[n] || new Map())) && JSON.stringify(x.merges || []) === JSON.stringify(y.merges || []);
 
 // onCovered(keys): cells that became or stopped being covered by a merge, to recalculate.
 export function createLayers(onCovered) {
   const L = { merges: [], covered: new Set() };
-  for (const n of CELL_LAYERS) L[n] = new Map();
+  for (const n of ALL) L[n] = new Map();
   function setMerges(list) {
     const before = L.covered;
     L.merges = sortMerges(list);
@@ -71,9 +75,9 @@ export function createLayers(onCovered) {
   return {
     L,
     write,
-    state: () => ({ ...Object.fromEntries(CELL_LAYERS.map((n) => [n, new Map(L[n])])), merges: [...L.merges] }),
+    state: () => ({ ...Object.fromEntries(ALL.map((n) => [n, new Map(L[n])])), merges: [...L.merges] }),
     load(next) {
-      for (const n of CELL_LAYERS) L[n] = new Map(next[n] || []);
+      for (const n of ALL) L[n] = new Map(next[n] || []);
       L.merges = sortMerges(next.merges || []);
       L.covered = coveredBy(L.merges);
     },

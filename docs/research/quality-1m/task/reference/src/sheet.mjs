@@ -5,7 +5,6 @@ import { makeError, throwAddr, withErrorOrder, errorOrderOption } from "./errors
 import { evaluate } from "./evaluate.mjs";
 import { parseEntry, reachable, recalcOrder } from "./graph.mjs";
 import { createEngine } from "./engine.mjs";
-import { checkName, parseNameRef, nameText } from "./names.mjs";
 import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
 import { copyWrites } from "./copy.mjs";
 import { canonicalInput } from "./canonical.mjs";
@@ -16,6 +15,8 @@ import { saveText, parseSave } from "./persist.mjs";
 import { addV2 } from "./api2.mjs";
 import { createLayers } from "./layers.mjs";
 import { addFeatures } from "./features.mjs";
+import { addNames } from "./namedefs.mjs";
+import { addHiding } from "./hiding.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -211,7 +212,7 @@ export function makeSheet(init, order = "priority") {
   }
 
   const shown = (k) => layers.show(k, valueOf(k));
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 
@@ -228,7 +229,7 @@ export function makeSheet(init, order = "priority") {
     },
     toCSV(opts = {}) {
       const text = opts.formulas ? (k) => (layers.L.covered.has(k) ? "" : inputs.get(k) ?? "") : shown;
-      return toCSV(sorted(inputs.keys()), text);
+      return toCSV(sorted(inputs.keys()), text, layers.L);
     },
     fromCSV(text, at = "A1") {
       writeAll(layers.check(csvWrites(text, at)));
@@ -265,31 +266,11 @@ export function makeSheet(init, order = "priority") {
       for (const k of order) valueOf(k);
       return order;
     },
-    defineName(name, ref) {
-      const n = checkName(name);
-      const d = parseNameRef(ref);
-      const before = names.get(n);
-      if (before && JSON.stringify(before) === JSON.stringify(d)) return;
-      setName(n, d);
-      history.record({ name: n, before, after: d });
-    },
-    removeName(name) {
-      const n = typeof name === "string" ? name.toUpperCase() : "";
-      if (!names.has(n)) return false;
-      history.record({ name: n, before: names.get(n), after: undefined });
-      setName(n, undefined);
-      return true;
-    },
     insertRows: (at, count = 1) => restructure(insertRows(inputs, names, at, count, state())),
     deleteRows: (at, count = 1) => restructure(deleteRows(inputs, names, at, count, state())),
     insertCols: (at, count = 1) => restructure(insertCols(inputs, names, at, count, state())),
     deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count, state())),
-    names() {
-      const out = {};
-      for (const n of [...names.keys()].sort()) out[n] = nameText(names.get(n));
-      return out;
-    },
   };
   CORE.set(sheet, core);
-  return addV2(addFeatures(sheet, core), core);
+  return addV2(addHiding(addNames(addFeatures(sheet, core), core), core), core);
 }

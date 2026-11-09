@@ -6,8 +6,9 @@ import { MAX_ROW, MAX_COL } from "./refs.mjs";
 const NEEDS_QUOTES = /[,"\r\n]|^ | $/;
 const field = (s) => (NEEDS_QUOTES.test(s) ? `"${s.replace(/"/g, '""')}"` : s);
 
-// keys = non-empty cell keys; text(key) = the field's text. "" for an empty sheet.
-export function toCSV(keys, text) {
+// keys = non-empty cell keys; text(key) = the field's text. "" for an empty sheet. hidden.rows and
+// hidden.cols (cp49): row and column numbers left out of the text entirely.
+export function toCSV(keys, text, hidden = { rows: new Map(), cols: new Map() }) {
   let rows = 0;
   let cols = 0;
   for (const k of keys) {
@@ -15,11 +16,13 @@ export function toCSV(keys, text) {
     rows = Math.max(rows, p.row);
     cols = Math.max(cols, p.col);
   }
+  const shown = [];
+  for (let c = 1; c <= cols; c++) if (!hidden.cols.has(c)) shown.push(c);
+  if (!shown.length) return "";
   const lines = [];
   for (let r = 1; r <= rows; r++) {
-    const out = [];
-    for (let c = 1; c <= cols; c++) out.push(field(text(colName(c) + r)));
-    lines.push(out.join(","));
+    if (hidden.rows.has(r)) continue;
+    lines.push(shown.map((c) => field(text(colName(c) + r))).join(","));
   }
   return lines.join("\n");
 }

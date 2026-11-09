@@ -9,8 +9,8 @@ const AXES = {
   col: { max: MAX_COL, word: "column", get: (p) => p.col, put: (p, v) => ({ ...p, col: v }) },
 };
 
-// Rows are numbers; columns are given as letters ("C", case-insensitive).
-function position(axis, at, count) {
+// Rows are numbers; columns are given as letters ("C", case-insensitive). Also cp49 hide and show.
+export function position(axis, at, count) {
   const ax = AXES[axis];
   let pos = at;
   if (axis === "col") pos = typeof at === "string" && /^[A-Za-z]{1,2}$/.test(at) ? parseRef(at + "1").col : NaN;
@@ -59,7 +59,8 @@ function apply(inputs, names, axis, one, range, layers) {
     const r = range(ax.get(p), ax.get(q));
     return r === null ? null : { a: refText(ax.put(p, r[0])), b: refText(ax.put(q, r[1])) };
   };
-  return { inputs: nextInputs, names: nextNames, ...moveLayers(layers, cell, box) };
+  const line = (layer, n) => (layer === (axis === "row" ? "rows" : "cols") ? one(n) : n);
+  return { inputs: nextInputs, names: nextNames, ...moveLayers(layers, cell, box, line) };
 }
 
 function insert(axis, inputs, names, at, count, layers) {

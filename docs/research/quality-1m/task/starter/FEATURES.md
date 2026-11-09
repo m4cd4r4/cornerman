@@ -50,3 +50,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp46: data validation
 - [ ] cp47: merged ranges
 - [ ] cp48: sorting a range
+- [ ] cp49: hidden rows and columns

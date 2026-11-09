@@ -48,3 +48,4 @@
 - cp46: setValidation rules (whole numbers or a list) make set, setMany and fromCSV refuse bad inputs with #INVALID.
 - cp47: merge joins a range into its top-left cell; covered cells keep hidden inputs, read as empty and refuse set.
 - cp48: sort reorders the rows of a range by one column, stably; formulas move as typed and notes stay put.
+- cp49: hideRows and hideCols hide lines by number; toCSV leaves them out, inserted lines are never hidden.
