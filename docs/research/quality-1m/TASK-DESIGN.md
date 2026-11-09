@@ -306,3 +306,49 @@ a change after the pilot is a retune and re-freezes PREDICTIONS.md.
 - `harness/arm.mjs`: setup / smoke / run / score for one arm under I:/Scratch/_q1m/<name>.
   Smoke: floor 46,736 (Default) and 46,882 (CM-250), window 1,000,000.
 - `tools/freeze.mjs`: sha256 manifest `task/frozen.sha256.json`, written before the pilot.
+
+## Pilot 1 result and the extension (2026-11-09)
+
+Default pilot (Sonnet 5.5, default-sonnet-r1): all 40 checkpoints in 31 minutes, one session, no
+compaction, peak and work 414,151 tokens, US$7.19 API-equivalent. Hidden: 35/40 checkpoints pass
+(fails cp06, cp13, cp21, cp36, cp39), 0 regressions, 0 rule violations, probes 29/30. So the task
+is too short (never near 1M) and near the ceiling. Tokens per checkpoint grew from about 10k
+(cp01-31) to about 16k (cp31-40) as the code grew.
+
+Decision (Claude, under Macdara's delegation): extend to 80 checkpoints, cp41-80, five blocks of
+eight, written with the same discipline (spec, reference, visible, strict hidden tests, mutants
+killed, every earlier hidden test still green). Aim: Default work past 1.2M, late pass 40-80%.
+To pull pass rates down, each new checkpoint states 2-3 rules once that differ from the obvious or
+Excel behaviour, and its hidden tests also exercise how it meets earlier features (undo, insert
+and delete, rename, save/load, workbooks, error priority, display). cp40's test is relaxed so
+lines for cp41+ may follow in order; every later checkpoint adds its CHANGES.md line.
+
+Outline (titles go into starter/FEATURES.md; specs may refine them):
+- Block F, cp41-48: 41 number formats on display (`0.00`, `#,##0`, `0%`, stated rounding);
+  42 cell notes (moved by insert/delete/copy, kept by undo, saved); 43 COUNTIF and AVERAGEIF
+  (cp22 criteria); 44 INDEX and MATCH (stated match types); 45 SUMPRODUCT (same-shape rule);
+  46 data validation (whole number, list; set() refuses with a stated error); 47 merged ranges
+  (reads of covered cells, insert/delete through a merge); 48 sort a range by a column (stable,
+  formulas move as values or text per a stated rule).
+- Block G, cp49-56: 49 hidden rows and columns; 50 SUBTOTAL (skips hidden rows, nested
+  SUBTOTALs); 51 find and replace in inputs; 52 named constants; 53 sheet-scoped names over
+  workbook names; 54 delete sheet (references become #REF!, names too); 55 workbook-wide undo
+  across sheets; 56 save format v3 (formats, notes, validation, merges, hidden) and migration.
+  Probe P4 after cp50 (blocks A-D details, git-files).
+- Block H, cp57-64: 57 TEXT(value, format) reusing cp41; 58 EDATE, EOMONTH, WEEKDAY (stated
+  conventions); 59 NETWORKDAYS with holidays; 60 CHOOSE and SWITCH; 61 SUBSTITUTE, FIND, SEARCH
+  (stated wildcard rule); 62 LET (local names, shadowing rules); 63 a decimal-comma locale option
+  for display and CSV; 64 fill down and fill right (relative moves as cp26, series rule).
+- Block I, cp65-72: 65 change events (onChange, batched by setMany); 66 book.batch(fn) atomic
+  with rollback on throw; 67 formula length and nesting limits (stated error); 68 copy across
+  sheets (sheet-prefix rewrite); 69 CSV import options (delimiter, header row, types);
+  70 diff of two saved workbooks; 71 protected cells (locked cells refuse set, undo unaffected);
+  72 error audit (all error cells in a stated order). Probe P5 after cp65 (blocks A-G).
+- Block J, cp73-80: 73 lint (unused names, references to empty cells); 74 performance budget 2
+  (large fan-out recalc); 75 API v3 with deprecation log; 76 history labels and an undo-stack
+  query; 77 range export to JSON with formats; 78 rename names (rewrite formulas); 79 cell styles
+  copied with copy/fill; 80 final consistency: CHANGES.md through cp80 and a stated API index.
+
+CM-250 pilot (cm250-sonnet-r1, cornerman 0.7.2): all 40 in 38 minutes, 3 sessions (2 clears at
+about 258k), peak 258,437, work 582,518, US$8.30. Hidden 38/40 (fails cp21, cp30), 0 regressions,
+0 rule violations, probes 30/30. n = 1 per arm: calibration only, not a comparison.
