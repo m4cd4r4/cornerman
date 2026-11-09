@@ -109,7 +109,7 @@ const MUTANTS = [
   { name: "csv-crlf", file: "csv.mjs", find: "  return lines.join(\"\\n\");", replace: "  return lines.join(\"\\r\\n\");", target: "cp28" },
   { name: "csv-ragged-rows", file: "csv.mjs", find: "    for (let c = 1; c <= cols; c++) out.push(field(text(colName(c) + r)));\n    lines.push(out.join(\",\"));", replace: "    for (let c = 1; c <= cols; c++) out.push(field(text(colName(c) + r)));\n    while (out.length && out[out.length - 1] === \"\") out.pop();\n    lines.push(out.join(\",\"));", target: "cp28" },
   { name: "csv-empty-quoted", file: "csv.mjs", find: "const field = (s) => (NEEDS_QUOTES.test(s)", replace: "const field = (s) => (s === \"\" || NEEDS_QUOTES.test(s)", target: "cp28" },
-  { name: "csv-formulas-evaluate", file: "sheet.mjs", find: "      const text = opts.formulas ? (k) => inputs.get(k) ?? \"\" : shown;", replace: "      const text = opts.formulas ? (k) => { valueOf(k); return inputs.get(k) ?? \"\"; } : shown;", target: "cp28" },
+  { name: "csv-formulas-evaluate", file: "sheet.mjs", find: "      const text = opts.formulas ? (k) => (layers.L.covered.has(k) ? \"\" : inputs.get(k) ?? \"\") : shown;", replace: "      const text = opts.formulas ? (k) => { valueOf(k); return layers.L.covered.has(k) ? \"\" : inputs.get(k) ?? \"\"; } : shown;", target: "cp28" },
   { name: "csv-in-trailing-row", file: "csv.mjs", find: "    records.push(rec);\n    rec = [];\n    if (i >= n) return records;", replace: "    records.push(rec);\n    rec = [];\n    if (i >= n) { records.push([\"\"]); return records; }", target: "cp29" },
   { name: "csv-in-crlf-unknown", file: "csv.mjs", find: "    i += text[i] === \"\\r\" ? 2 : 1;", replace: "    i += 1;", target: "cp29" },
   { name: "csv-in-trims", file: "csv.mjs", find: "    rec.push(f);\n", replace: "    rec.push(text[i - 1] === '\"' ? f : f.trim());\n", target: "cp29" },
@@ -300,6 +300,16 @@ const MUTANTS = [
   { name: "whole-bounds-exclusive", file: "validation.mjs", find: "n >= rule.min && n <= rule.max;", replace: "n > rule.min && n <= rule.max;", target: "cp46" },
   { name: "rule-stored-as-given", file: "validation.mjs", find: "    return { type: \"list\", items: [...rule.items] };", replace: "    return rule;", target: "cp46" },
   { name: "get-validation-shared", file: "features.mjs", find: "      return r ? copyRule(r) : null;", replace: "      return r ?? null;", target: "cp46" },
+  { name: "merge-clears-covered", file: "features.mjs", find: "      history.record(layers.merges([...layers.L.merges, { a: t.a, b: t.b }]));", replace: "      history.group(() => { core.writeAll(t.keys.slice(1).map((k) => [k, \"\"])); history.record(layers.merges([...layers.L.merges, { a: t.a, b: t.b }])); });", target: "cp47" },
+  { name: "covered-reads-input", file: "sheet.mjs", find: "    if (raw === undefined || layers.L.covered.has(k)) return null;", replace: "    if (raw === undefined) return null;", target: "cp47" },
+  { name: "set-into-covered", file: "layers.mjs", find: "        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);\n", replace: "", target: "cp47" },
+  { name: "one-cell-merge-kept", file: "merges.mjs", find: "    if (n !== null && n.a !== n.b) out.push(n);", replace: "    if (n !== null) out.push(n);", target: "cp47" },
+  { name: "merge-overlap-allowed", file: "features.mjs", find: "      if (layers.L.merges.some((m) => overlaps(m, t))) throw", replace: "      if (false) throw", target: "cp47" },
+  { name: "merge-check-after-rule", file: "layers.mjs", find: "        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);\n        const r = L.rules.get(k);\n        if (r && !passes(r, input)) throw makeError(\"#INVALID\", k, `${k} refuses ${JSON.stringify(input)}`);", replace: "        const r = L.rules.get(k);\n        if (r && !passes(r, input)) throw makeError(\"#INVALID\", k, `${k} refuses ${JSON.stringify(input)}`);\n        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);", target: "cp47" },
+  { name: "csv-formulas-show-hidden", file: "sheet.mjs", find: "(k) => (layers.L.covered.has(k) ? \"\" : inputs.get(k) ?? \"\")", replace: "(k) => inputs.get(k) ?? \"\"", target: "cp47" },
+  { name: "recalc-lists-covered", file: "sheet.mjs", find: " && !layers.L.covered.has(k));", replace: ");", target: "cp47" },
+  { name: "merge-no-invalidate", file: "layers.mjs", find: "    onCovered([...new Set([...before, ...L.covered])]);", replace: "", target: "cp47" },
+  { name: "copy-refuses-covered", file: "sheet.mjs", find: "      history.group(() => { writeAll(w);", replace: "      history.group(() => { writeAll(layers.check(w));", target: "cp47" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

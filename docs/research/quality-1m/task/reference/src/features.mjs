@@ -1,10 +1,11 @@
-// features.mjs: the sheet methods for its per-cell layers: number formats (cp41), notes (cp42),
-// validation (cp46).
+// features.mjs: the sheet methods for its layers: number formats (cp41), notes (cp42),
+// validation (cp46), merged ranges (cp47).
 import { parseTarget, NOTE_LIMIT } from "./layers.mjs";
 import { checkFormat } from "./numfmt.mjs";
 import { makeError } from "./errors.mjs";
 import { compareAddresses } from "./address.mjs";
 import { checkRule, copyRule, passes } from "./validation.mjs";
+import { mergeText, overlaps, mergeAt } from "./merges.mjs";
 
 export function addFeatures(sheet, core) {
   const { layers, history } = core;
@@ -40,6 +41,20 @@ export function addFeatures(sheet, core) {
       const r = layers.L.rules.get(core.key(address));
       return r ? copyRule(r) : null;
     },
+    // cp47: two or more cells, overlapping no merge. Inputs of covered cells are kept, hidden.
+    merge(target) {
+      const t = parseTarget(target);
+      if (t.keys.length < 2) throw makeError("#MERGE", String(target), "a merge needs two or more cells");
+      if (layers.L.merges.some((m) => overlaps(m, t))) throw makeError("#MERGE", String(target), `${target} overlaps a merge`);
+      history.record(layers.merges([...layers.L.merges, { a: t.a, b: t.b }]));
+    },
+    unmerge(address) {
+      const m = mergeAt(layers.L.merges, core.key(address));
+      if (!m) return false;
+      history.record(layers.merges(layers.L.merges.filter((x) => x !== m)));
+      return true;
+    },
+    merges: () => layers.L.merges.map(mergeText),
     invalidCells: () => [...layers.L.rules].filter(([k, r]) => !passes(r, core.input(k) ?? "")).map(([k]) => k).sort(compareAddresses),
   });
   return sheet;

@@ -33,7 +33,7 @@ export function makeSheet(init, order = "priority") {
   const nameUsers = new Map(); // NAME -> Set of formula keys whose text uses it
   const stats = { evaluations: 0 };
   const history = createHistory();
-  const layers = createLayers(); // formats (cp41), notes (cp42), validation (cp46), keyed by cell
+  const layers = createLayers((keys) => invalidate(keys)); // formats, notes, rules, merges (cp41-cp47)
   let engine = null;
   let id = 0;
   const g = (k) => `${id}|${k}`;
@@ -81,7 +81,7 @@ export function makeSheet(init, order = "priority") {
 
   function valueOf(k) {
     const raw = inputs.get(k);
-    if (raw === undefined) return null;
+    if (raw === undefined || layers.L.covered.has(k)) return null;
     if (!raw.startsWith("=")) {
       if (NUMBER.test(raw)) {
         const n = Number(raw);
@@ -227,7 +227,7 @@ export function makeSheet(init, order = "priority") {
       history.group(() => { writeAll(w); history.record(layers.write("formats", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); });
     },
     toCSV(opts = {}) {
-      const text = opts.formulas ? (k) => inputs.get(k) ?? "" : shown;
+      const text = opts.formulas ? (k) => (layers.L.covered.has(k) ? "" : inputs.get(k) ?? "") : shown;
       return toCSV(sorted(inputs.keys()), text);
     },
     fromCSV(text, at = "A1") {
@@ -260,7 +260,7 @@ export function makeSheet(init, order = "priority") {
       return engine.labels(opts.transitive ? reachable(k, engine.deps) : engine.deps(k), id);
     },
     recalc() {
-      const dirty = sorted(parsed.keys()).filter((k) => !engine.cache.has(g(k)));
+      const dirty = sorted(parsed.keys()).filter((k) => !engine.cache.has(g(k)) && !layers.L.covered.has(k));
       const order = recalcOrder(dirty, edgesOf);
       for (const k of order) valueOf(k);
       return order;

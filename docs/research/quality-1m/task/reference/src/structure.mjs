@@ -53,7 +53,13 @@ function apply(inputs, names, axis, one, range, layers) {
     const q = oneP(parseRef(k));
     return q === null ? null : refText(q);
   };
-  return { inputs: nextInputs, names: nextNames, ...moveLayers(layers, cell) };
+  const box = (m) => {
+    const p = parseRef(m.a);
+    const q = parseRef(m.b);
+    const r = range(ax.get(p), ax.get(q));
+    return r === null ? null : { a: refText(ax.put(p, r[0])), b: refText(ax.put(q, r[1])) };
+  };
+  return { inputs: nextInputs, names: nextNames, ...moveLayers(layers, cell, box) };
 }
 
 function insert(axis, inputs, names, at, count, layers) {

@@ -46,3 +46,4 @@
 - cp44: INDEX reads a cell of a range by row and column; MATCH finds a position, exact unless asked.
 - cp45: SUMPRODUCT multiplies same-shape ranges position by position and adds the products; booleans count 1 or 0.
 - cp46: setValidation rules (whole numbers or a list) make set, setMany and fromCSV refuse bad inputs with #INVALID.
+- cp47: merge joins a range into its top-left cell; covered cells keep hidden inputs, read as empty and refuse set.

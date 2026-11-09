@@ -48,3 +48,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp44: INDEX and MATCH
 - [ ] cp45: SUMPRODUCT
 - [ ] cp46: data validation
+- [ ] cp47: merged ranges

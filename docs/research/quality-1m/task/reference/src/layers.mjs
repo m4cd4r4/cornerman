@@ -1,10 +1,11 @@
-// layers.mjs: what a sheet keeps per cell beside its inputs (formats cp41, notes cp42, validation
-// rules cp46), how it moves with insert and delete, its undo entries, its structural snapshot.
+// layers.mjs: what a sheet keeps beside its inputs (formats cp41, notes cp42, validation rules
+// cp46, merges cp47), how it moves with insert and delete, its undo entries, its snapshot.
 import { parseAddress, rangeKeys, rangeBox, rangeSize, colName, RANGE_LIMIT } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
 import { parseFormat, formatNumber } from "./numfmt.mjs";
 import { passes } from "./validation.mjs";
+import { coveredBy, moveMerges, sortMerges } from "./merges.mjs";
 
 // Layers keyed by cell address. A value is a string (format text, note text) or a rule object.
 export const CELL_LAYERS = ["formats", "notes", "rules"];
@@ -25,9 +26,10 @@ export function parseTarget(text) {
   return { a: colName(c1) + r1, b: colName(c2) + r2, keys: rangeKeys(a.key, b.key), r1, r2, c1, c2 };
 }
 
-// The layers of a snapshot moved by a structural change: cell(k) -> new key | null (dropped).
-export function moveLayers(state, cell) {
-  const out = {};
+// The layers of a snapshot moved by a structural change: cell(k) -> new key | null (dropped),
+// box(merge) -> moved merge | null.
+export function moveLayers(state, cell, box) {
+  const out = { merges: moveMerges(state.merges || [], box) };
   for (const n of CELL_LAYERS) {
     out[n] = new Map();
     for (const [k, v] of state[n] || []) {
@@ -39,11 +41,19 @@ export function moveLayers(state, cell) {
 }
 
 const sameMap = (a, b) => a.size === b.size && [...a].every(([k, v]) => b.has(k) && JSON.stringify(v) === JSON.stringify(b.get(k)));
-export const sameLayers = (x, y) => CELL_LAYERS.every((n) => sameMap(x[n] || new Map(), y[n] || new Map()));
+export const sameLayers = (x, y) =>
+  CELL_LAYERS.every((n) => sameMap(x[n] || new Map(), y[n] || new Map())) && JSON.stringify(x.merges || []) === JSON.stringify(y.merges || []);
 
-export function createLayers() {
-  const L = {};
+// onCovered(keys): cells that became or stopped being covered by a merge, to recalculate.
+export function createLayers(onCovered) {
+  const L = { merges: [], covered: new Set() };
   for (const n of CELL_LAYERS) L[n] = new Map();
+  function setMerges(list) {
+    const before = L.covered;
+    L.merges = sortMerges(list);
+    L.covered = coveredBy(L.merges);
+    onCovered([...new Set([...before, ...L.covered])]);
+  }
 
   // pairs: [[key, value | undefined]]; returns the undo entry for the ones that change, or null.
   function write(layer, pairs) {
@@ -61,11 +71,20 @@ export function createLayers() {
   return {
     L,
     write,
-    state: () => Object.fromEntries(CELL_LAYERS.map((n) => [n, new Map(L[n])])),
+    state: () => ({ ...Object.fromEntries(CELL_LAYERS.map((n) => [n, new Map(L[n])])), merges: [...L.merges] }),
     load(next) {
       for (const n of CELL_LAYERS) L[n] = new Map(next[n] || []);
+      L.merges = sortMerges(next.merges || []);
+      L.covered = coveredBy(L.merges);
+    },
+    // cp47: the undo entry for replacing the merge list.
+    merges(list) {
+      const before = L.merges;
+      setMerges(list);
+      return { layer: "merges", before, after: L.merges };
     },
     applyEntry(e, side) {
+      if (e.layer === "merges") return setMerges(e[side]);
       const list = side === "before" ? [...e.cells].reverse() : e.cells;
       for (const [k, before, after] of list) {
         const v = side === "before" ? before : after;
@@ -73,9 +92,10 @@ export function createLayers() {
         else L[e.layer].set(k, v);
       }
     },
-    // cp46: throws #INVALID for the first [key, input] its cell's rule refuses; writes nothing.
+    // cp46, cp47: throws #MERGE or #INVALID for the first [key, input] its cell refuses.
     check(writes) {
       for (const [k, input] of writes) {
+        if (L.covered.has(k)) throw makeError("#MERGE", k, `${k} is covered by a merge`);
         const r = L.rules.get(k);
         if (r && !passes(r, input)) throw makeError("#INVALID", k, `${k} refuses ${JSON.stringify(input)}`);
       }
