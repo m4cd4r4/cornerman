@@ -338,6 +338,16 @@ const MUTANTS = [
   { name: "subtotal-undo-no-recalc", file: "layers.mjs", find: "      if (LINE_LAYERS.includes(e.layer)) onLines();\n", replace: "", target: "cp50" },
   { name: "subtotal-other-sheet-own-rows", file: "sheet.mjs", find: "    return sid !== null && engine.coreOf(sid).skipped(a.slice(i + 1));", replace: "    return sid !== null && skipped(a.slice(i + 1));", target: "cp50" },
   { name: "subtotal-count-counts-errors", file: "subtotal.mjs", find: "      else if (isError(v) && fn !== \"COUNT\") errors.push(v);", replace: "      else if (isError(v)) errors.push(v);", target: "cp50" },
+  { name: "find-star-matches-all", file: "findreplace.mjs", find: "  if (o.whole) return fold(input) === fold(text) ? [0] : [];", replace: "  if (text === \"*\") return input.length ? [0] : [];\n  if (o.whole) return fold(input) === fold(text) ? [0] : [];", target: "cp51" },
+  { name: "find-question-any-char", file: "findreplace.mjs", find: "    if (fold(input.slice(i, i + text.length)) === t) {", replace: "    if ([...fold(input.slice(i, i + text.length))].every((ch, j) => t[j] === \"?\" || ch === t[j])) {", target: "cp51" },
+  { name: "replace-counts-occurrences", file: "findreplace.mjs", edits: [["        if (out !== input) writes.push([k, out]);", "        if (out !== input) writes.push([k, out, at.length]);"], ["      return writes.length;", "      return writes.reduce((n, w) => n + w[2], 0);"]], target: "cp51" },
+  { name: "find-covered-cells", file: "findreplace.mjs", find: "[...core.keys()].filter((k) => !core.layers.L.covered.has(k))", replace: "[...core.keys()]", target: "cp51" },
+  { name: "find-skips-hidden-rows", file: "findreplace.mjs", find: ".filter((k) => !core.layers.L.covered.has(k))", replace: ".filter((k) => !core.layers.L.covered.has(k) && !core.layers.L.rows.has(Number(k.replace(/^[A-Z]+/, \"\"))))", target: "cp51" },
+  { name: "find-case-sensitive", file: "findreplace.mjs", edits: [["  if (opts === undefined) return { matchCase: false, whole: false };", "  if (opts === undefined) return { matchCase: true, whole: false };"], ["  return { matchCase: opts.matchCase === true,", "  return { matchCase: opts.matchCase !== false,"]], target: "cp51" },
+  { name: "replace-overlapping", file: "findreplace.mjs", find: "      i += text.length;", replace: "      i += 1;", target: "cp51" },
+  { name: "replace-unchecked", file: "findreplace.mjs", find: "      core.writeAll(writes);", replace: "      core.writeRaw(writes);", target: "cp51" },
+  { name: "replace-counts-unchanged", file: "findreplace.mjs", find: "        if (out !== input) writes.push([k, out]);", replace: "        writes.push([k, out]);", target: "cp51" },
+  { name: "replace-step-per-cell", file: "findreplace.mjs", find: "      core.writeAll(writes);", replace: "      for (const w of writes) core.writeAll([w]);", target: "cp51" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

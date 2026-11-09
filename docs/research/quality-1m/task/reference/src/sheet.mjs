@@ -18,6 +18,7 @@ import { addFeatures } from "./features.mjs";
 import { addNames } from "./namedefs.mjs";
 import { addHiding } from "./hiding.mjs";
 import { leftOut } from "./subtotal.mjs";
+import { addFindReplace } from "./findreplace.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -283,5 +284,5 @@ export function makeSheet(init, order = "priority") {
     deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count, state())),
   };
   CORE.set(sheet, core);
-  return addV2(addHiding(addNames(addFeatures(sheet, core), core), core), core);
+  return addV2(addFindReplace(addHiding(addNames(addFeatures(sheet, core), core), core), core), core);
 }

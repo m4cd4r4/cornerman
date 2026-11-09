@@ -52,3 +52,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp48: sorting a range
 - [ ] cp49: hidden rows and columns
 - [ ] cp50: SUBTOTAL
+- [ ] cp51: find and replace
