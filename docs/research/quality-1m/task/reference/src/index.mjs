@@ -1,4 +1,4 @@
-// index.mjs: the sheet object and public API (cp01-cp27).
+// index.mjs: the sheet object and public API (cp01-cp29).
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";
@@ -9,6 +9,7 @@ import { checkName, parseNameRef, nameText } from "./names.mjs";
 import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
 import { copyWrites } from "./copy.mjs";
 import { createHistory, snapshot, sameState } from "./history.mjs";
+import { toCSV, csvWrites } from "./csv.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -187,6 +188,13 @@ export function createSheet() {
     },
     copy(from, to) {
       writeAll(copyWrites(inputs, from, to));
+    },
+    toCSV(opts = {}) {
+      const text = opts.formulas ? (k) => inputs.get(k) ?? "" : (k) => displayValue(valueOf(k));
+      return toCSV(sorted(inputs.keys()), text);
+    },
+    fromCSV(text, at = "A1") {
+      writeAll(csvWrites(text, at));
     },
     undo() {
       return history.undo(applyEntry);
