@@ -6,6 +6,7 @@ import { makeSheet, CORE } from "./sheet.mjs";
 import { renameRefs, dropSheetRefs } from "./refs.mjs";
 import { addBookNames } from "./booknames.mjs";
 import { createHistory } from "./history.mjs";
+import { hasV3Layers, sheetEntry } from "./save3.mjs";
 
 export const createWorkbook = (opts) => buildWorkbook(errorOrderOption(opts), []);
 
@@ -94,15 +95,14 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
       return x ? x.run("redo") : false;
     },
     // cp35: the whole workbook as v2 save text; each sheet's cells and names as its own save writes them.
+    // cp56: version 3 (every layer key in every sheet, names always) when a sheet has a v3 layer.
     save() {
-      const sheets = list.map((e) => {
-        const { cells, names, notes } = JSON.parse(e.sheet.save());
-        if (notes) return { name: e.name, cells, names, notes };
-        return { name: e.name, cells, names };
-      });
+      const v3 = list.some((e) => hasV3Layers(CORE.get(e.sheet).layers.L));
+      const sheets = list.map((e) => sheetEntry(e.name, JSON.parse(e.sheet.save()), CORE.get(e.sheet).layers.L, v3));
       const names = book.names();
-      if (!Object.keys(names).length) return JSON.stringify({ format: "workbook", version: 2, errorOrder: engine.errorOrder, sheets });
-      return JSON.stringify({ format: "workbook", version: 2, errorOrder: engine.errorOrder, sheets, names });
+      const doc = { format: "workbook", version: v3 ? 3 : 2, errorOrder: engine.errorOrder, sheets };
+      if (v3 || Object.keys(names).length) doc.names = names;
+      return JSON.stringify(doc);
     },
   };
   for (const { name, init } of loaded) add(name, init);
