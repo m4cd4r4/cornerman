@@ -289,3 +289,20 @@ Block E progress (2026-11-09):
   too short; extend block E before Stage 3, not after.
 - Probes at fixed checkpoints may land just after a CM clear in one run and mid-session in another.
   Record, per probe, tokens since the last clear or compaction, and report probe accuracy against it.
+
+## Fixture decisions (settled 2026-11-09)
+
+Macdara delegated these (2026-11-09 21:13 AWST, "make the decisions on my behalf"); Claude kept
+every one as built: the rename-to-same-name no-op that keeps undo (cp37), explain labels relative
+to the sheet it is called on (cp39), the extra CHANGES.md rules (cp40), probe answers from memory
+without running code, and the scored snapshot = the first passing tree. He may revisit any of them;
+a change after the pilot is a retune and re-freezes PREDICTIONS.md.
+
+## Stage 1 tooling (2026-11-09)
+
+- `tools/score-run.mjs` + `tools/tokens.mjs`: one run's score (per checkpoint, late segment,
+  regressions, rules, probes, work tokens). `tools/score-selftest.mjs` 16/16 on the reference
+  smoke run and a broken copy.
+- `harness/arm.mjs`: setup / smoke / run / score for one arm under I:/Scratch/_q1m/<name>.
+  Smoke: floor 46,736 (Default) and 46,882 (CM-250), window 1,000,000.
+- `tools/freeze.mjs`: sha256 manifest `task/frozen.sha256.json`, written before the pilot.
