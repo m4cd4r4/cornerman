@@ -145,7 +145,7 @@ const MUTANTS = [
   { name: "error-cell-qualified", file: "sheet.mjs", find: "    return engine.valueAt(sid, a.slice(i + 1));", replace: "    const v = engine.valueAt(sid, a.slice(i + 1));\n    return v && typeof v === \"object\" ? { ...v, cell: a } : v;", target: "cp31" },
   { name: "remove-keeps-links", file: "engine.mjs", find: "        byName.delete(name.toUpperCase());\n        refresh(name.toUpperCase());", replace: "        byName.delete(name.toUpperCase());", target: "cp31" },
   { name: "add-not-announced", file: "sheet.mjs", find: "    if (name !== null) engine.announce(name);", replace: "", target: "cp31" },
-  { name: "removed-sheet-still-bound", file: "workbook.mjs", find: "      CORE.get(e.sheet).bind(createEngine(), null);", replace: "", target: "cp31" },
+  { name: "removed-sheet-still-bound", file: "workbook.mjs", find: "      CORE.get(e.sheet).bind(createEngine(engine.errorOrder), null);", replace: "", target: "cp31" },
   { name: "rebuild-keeps-reader-cache", file: "sheet.mjs", find: "    invalidate([...inputs.keys()]);\n    for (const k of inputs.keys()) engine.unlink(g(k));", replace: "    for (const k of inputs.keys()) engine.unlink(g(k));", target: "cp31" },
   { name: "rebuild-no-final-invalidate", file: "sheet.mjs", find: "    for (const k of inputs.keys()) { setNameUsers(k, true); relink(k); }\n    invalidate([...inputs.keys()]);", replace: "    for (const k of inputs.keys()) { setNameUsers(k, true); relink(k); }", target: "cp31" },
   { name: "recalc-own-edges-only", file: "sheet.mjs", find: "  const edgesOf = (k) => engine.ownPrecs(id, k);", replace: "  const edgesOf = (k) => engine.precs(g(k)).filter((x) => x.startsWith(id + \"|\")).map((x) => x.slice(x.indexOf(\"|\") + 1));", target: "cp32" },
@@ -165,6 +165,12 @@ const MUTANTS = [
   { name: "setmany-sorted-keys", file: "api2.mjs", find: "Object.entries(cells).map(", replace: "Object.entries(cells).sort(([x], [y]) => (x.toUpperCase() < y.toUpperCase() ? -1 : 1)).map(", target: "cp33" },
   { name: "setmany-array-ok", file: "api2.mjs", find: " || Array.isArray(cells)) throw", replace: ") throw", target: "cp33" },
   { name: "book-get-missing-null", file: "workbook.mjs", find: "      return book.sheet(name);", replace: "      const i = find(name);\n      return i < 0 ? null : list[i].sheet;", target: "cp33" },
+  { name: "first-ignored", file: "errors.mjs", find: "  if (ORDER === \"first\") return errors.find(isError) ?? null;\n", replace: "", target: "cp34" },
+  { name: "option-case-insensitive", file: "errors.mjs", find: "  const o = opts.errorOrder;", replace: "  const o = typeof opts.errorOrder === \"string\" ? opts.errorOrder.toLowerCase() : opts.errorOrder;", target: "cp34" },
+  { name: "null-opts-ok", file: "errors.mjs", find: "  if (opts === undefined) return \"priority\";", replace: "  if (opts == null) return \"priority\";", target: "cp34" },
+  { name: "array-opts-ok", file: "errors.mjs", find: " || Array.isArray(opts)) throw", replace: ") throw", target: "cp34" },
+  { name: "detached-loses-order", file: "workbook.mjs", find: "bind(createEngine(engine.errorOrder), null);", replace: "bind(createEngine(), null);", target: "cp34" },
+  { name: "loadsheet-checks-text-first", file: "sheet.mjs", find: "{ const order = errorOrderOption(opts); return makeSheet(parseSave(json), order); }", replace: "{ const init = parseSave(json); return makeSheet(init, errorOrderOption(opts)); }", target: "cp34" },
   { name: "col-names-not-moved", file: "structure.mjs", find: "    const m = range(ax.get(a), ax.get(b));", replace: "    const m = axis === \"col\" ? [ax.get(a), ax.get(b)] : range(ax.get(a), ax.get(b));", target: "cp25" },
 ];
 
