@@ -45,4 +45,5 @@ before Stage 3, never a published comparison.
 
 ## Re-freezes
 
-(none yet)
+- 2026-11-09 13:35 UTC: added `tools/compare.mjs` (the bootstrap named above, self-tested) while
+  the pilot was at cp02, before any score existed. No prediction or threshold changed.

@@ -1,7 +1,7 @@
 {
-  "written": "2026-11-09T13:26:33.251Z",
+  "written": "2026-11-09T13:28:08.498Z",
   "files": {
-    "../PREDICTIONS.md": "bec6fcb526ee204fac3c62131131e5761dc6023df34f16a969411a6c103074a3",
+    "../PREDICTIONS.md": "65760514cc0bda6ad155c5bb84a4e932bb5e1fa51da1d09a6fb0fed8179dacea",
     "checkpoints/cp01/hidden.test.mjs": "f506ec7d88bab105feb01ce9a10b2f26900247d930ac271de903f52009120bfd",
     "checkpoints/cp01/spec.md": "9da3c51c7e725a257b0217afd8daed12055c93d7d332b585f5281e9edd6dbde6",
     "checkpoints/cp01/visible.test.mjs": "621a742841da6521f8cfdb1045f1a6cb871c2441d3d4b27708d5f85f992568cb",
@@ -166,6 +166,7 @@
     "tools/check-probes.mjs": "79c7c86d99ce386379b1ed8ecfb51ca8e84b90d97f78c15265d88b8ca47c5f2b",
     "tools/check-rules.mjs": "45dc55d9e46e3fa0e47baf6590d77d3a27d9d160cacbdb0b10f3ff3c9c53a23b",
     "tools/check-tree.mjs": "6ddb2e57080fd0a43c56cf300087dea9f9b56bf1b4f5df9d286e15a19f7b6953",
+    "tools/compare.mjs": "1305808dd7611890137d1b887eb215fb963bad458aca021a0b3e327f52480d26",
     "tools/freeze.mjs": "3fb20054d565eea89285afc7b6d00fb3306b38d5aa2af17e9833997a5a5d2b34",
     "tools/mutants.mjs": "2b69aad501537a7e53d3bb0bda77eda597fb36c1de8703b57b0b19cd05ee5671",
     "tools/probe-selftest.mjs": "778d17f9b807218ac1dac10ae5615c15bcc41bf4a41d16f8e04ad333c13bda55",
