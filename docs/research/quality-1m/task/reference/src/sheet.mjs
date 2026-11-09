@@ -1,4 +1,4 @@
-// sheet.mjs: one sheet: its inputs, names, undo list and public methods (cp01-cp32). The graph and
+// sheet.mjs: one sheet: its inputs, names, undo list and public methods (cp01-cp33). The graph and
 // value cache live in the engine the sheet is bound to (engine.mjs); a workbook rebinds it.
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
@@ -13,6 +13,7 @@ import { copyWrites } from "./copy.mjs";
 import { createHistory, snapshot, sameState } from "./history.mjs";
 import { toCSV, csvWrites } from "./csv.mjs";
 import { saveText, parseSave } from "./persist.mjs";
+import { addV2 } from "./api2.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -201,7 +202,7 @@ export function makeSheet(init) {
     if (name !== null) engine.announce(name);
   }
 
-  const core = { valueOf, relink, bind, keys: () => inputs.keys() };
+  const core = { valueOf, relink, bind, key, writeAll, keys: () => inputs.keys() };
   bind(createEngine(), null);
   if (init) rebuild(init);
 
@@ -292,5 +293,5 @@ export function makeSheet(init) {
     },
   };
   CORE.set(sheet, core);
-  return sheet;
+  return addV2(sheet, core);
 }

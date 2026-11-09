@@ -9,7 +9,7 @@ export function createWorkbook() {
   const list = []; // { name, sheet } in creation order, name as typed
   const find = (name) => (typeof name === "string" ? list.findIndex((e) => e.name.toUpperCase() === name.toUpperCase()) : -1);
 
-  return {
+  const book = {
     addSheet(name) {
       checkName(name);
       if (find(name) >= 0) throw makeError("#SHEET", name, `a sheet named ${name} already exists`);
@@ -17,6 +17,9 @@ export function createWorkbook() {
       CORE.get(sheet).bind(engine, name);
       list.push({ name, sheet });
       return sheet;
+    },
+    get(name) {
+      return book.sheet(name);
     },
     sheet(name) {
       const i = find(name);
@@ -35,4 +38,5 @@ export function createWorkbook() {
       return true;
     },
   };
+  return book;
 }

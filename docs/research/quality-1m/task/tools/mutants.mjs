@@ -159,6 +159,12 @@ const MUTANTS = [
   { name: "missing-sheet-links-own-cell", file: "sheet.mjs", find: "      if (sid !== null) out.add(`${sid}|${c.slice(i + 1)}`);", replace: "      out.add(sid !== null ? `${sid}|${c.slice(i + 1)}` : g(c.slice(i + 1)));", target: "cp32" },
   { name: "add-relinks-without-invalidate", file: "engine.mjs", find: "      sheets.get(id).core.relink(addr);\n    }\n    invalidate(users);", replace: "      sheets.get(id).core.relink(addr);\n    }", target: "cp32" },
   { name: "add-invalidates-everything", file: "engine.mjs", find: "      sheets.get(id).core.relink(addr);\n    }\n    invalidate(users);", replace: "      sheets.get(id).core.relink(addr);\n    }\n    cache.clear();", target: "cp32" },
+  { name: "formula-null-for-empty", file: "api2.mjs", find: "formula: (address) => sheet.getInput(address) ?? \"\",", replace: "formula: (address) => sheet.getInput(address),", target: "cp33" },
+  { name: "setmany-step-per-cell", file: "api2.mjs", find: "      core.writeAll(writes);", replace: "      for (const w of writes) core.writeAll([w]);", target: "cp33" },
+  { name: "setmany-partial-apply", file: "api2.mjs", find: "      const writes = Object.entries(cells).map(([a, input]) => [core.key(a), input]);\n      core.writeAll(writes);", replace: "      for (const [a, input] of Object.entries(cells)) sheet.set(a, input);", target: "cp33" },
+  { name: "setmany-sorted-keys", file: "api2.mjs", find: "Object.entries(cells).map(", replace: "Object.entries(cells).sort(([x], [y]) => (x.toUpperCase() < y.toUpperCase() ? -1 : 1)).map(", target: "cp33" },
+  { name: "setmany-array-ok", file: "api2.mjs", find: " || Array.isArray(cells)) throw", replace: ") throw", target: "cp33" },
+  { name: "book-get-missing-null", file: "workbook.mjs", find: "      return book.sheet(name);", replace: "      const i = find(name);\n      return i < 0 ? null : list[i].sheet;", target: "cp33" },
   { name: "col-names-not-moved", file: "structure.mjs", find: "    const m = range(ax.get(a), ax.get(b));", replace: "    const m = axis === \"col\" ? [ax.get(a), ax.get(b)] : range(ax.get(a), ax.get(b));", target: "cp25" },
 ];
 
