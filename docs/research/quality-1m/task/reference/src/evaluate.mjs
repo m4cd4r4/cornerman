@@ -81,6 +81,7 @@ export function evaluate(node, ctx) {
     case "name": {
       const n = ctx.name(node.v);
       if (!n) return makeError("#NAME?", ctx.cell, `unknown name ${node.v}`);
+      if ("value" in n) return n.value; // cp52: a named constant
       if (n.range) return makeError("#VALUE!", ctx.cell, `range name ${node.v} used as a value`);
       return ctx.read(n.a);
     }

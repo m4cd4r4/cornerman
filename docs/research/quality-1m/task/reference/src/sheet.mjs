@@ -60,7 +60,7 @@ export function makeSheet(init, order = "priority") {
     }
     for (const n of p.refs.names) {
       const d = names.get(n);
-      if (d) for (const c of rangeKeys(d.a, d.b)) out.add(g(c));
+      if (d && d.a) for (const c of rangeKeys(d.a, d.b)) out.add(g(c));
     }
     return [...out];
   }

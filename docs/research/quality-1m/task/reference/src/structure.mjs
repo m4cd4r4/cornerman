@@ -43,6 +43,7 @@ function apply(inputs, names, axis, one, range, layers) {
   }
   const nextNames = new Map();
   for (const [n, d] of names) {
+    if (!d.a) { nextNames.set(n, d); continue; } // cp52: constants have no cells
     const a = parseRef(d.a);
     const b = parseRef(d.b);
     const m = range(ax.get(a), ax.get(b));

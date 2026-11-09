@@ -99,7 +99,7 @@ const MUTANTS = [
   { name: "redo-applies-before", file: "history.mjs", find: "      apply(e, \"after\");", replace: "      apply(e, \"before\");", target: "cp27" },
   { name: "noop-write-recorded", file: "sheet.mjs", find: "    if (diffs.length) history.record({ cells: diffs });", replace: "    history.record({ cells: diffs });", target: "cp27" },
   { name: "noop-structure-recorded", file: "sheet.mjs", find: "    if (!sameState(before, next)) history.record", replace: "    if (true) history.record", target: "cp27" },
-  { name: "same-name-recorded", file: "namedefs.mjs", find: "      if (before && JSON.stringify(before) === JSON.stringify(d)) return;\n", replace: "", target: "cp27" },
+  { name: "same-name-recorded", file: "namedefs.mjs", find: "    if (before && JSON.stringify(before) === JSON.stringify(d)) return;\n", replace: "", target: "cp27" },
   { name: "removed-name-lost", file: "namedefs.mjs", find: "      history.record({ name: n, before: names.get(n), after: undefined });", replace: "      history.record({ name: n, before: undefined, after: undefined });", target: "cp27" },
   { name: "copy-step-per-cell", file: "sheet.mjs", find: "      history.group(() => { writeAll(w);", replace: "      for (const x of w) writeAll([x]);\n      history.group(() => {", target: "cp27" },
   { name: "undo-cells-rebuilds", file: "sheet.mjs", find: "      for (const [k, before, after] of list) write(k, side === \"before\" ? before : after);", replace: "      for (const [k, before, after] of list) write(k, side === \"before\" ? before : after);\n      rebuild(snapshot(inputs, names));", target: "cp27" },
@@ -348,6 +348,12 @@ const MUTANTS = [
   { name: "replace-unchecked", file: "findreplace.mjs", find: "      core.writeAll(writes);", replace: "      core.writeRaw(writes);", target: "cp51" },
   { name: "replace-counts-unchanged", file: "findreplace.mjs", find: "        if (out !== input) writes.push([k, out]);", replace: "        writes.push([k, out]);", target: "cp51" },
   { name: "replace-step-per-cell", file: "findreplace.mjs", find: "      core.writeAll(writes);", replace: "      for (const w of writes) core.writeAll([w]);", target: "cp51" },
+  { name: "constant-text-numeric", file: "names.mjs", find: "  return { value: value === 0 ? 0 : value };", replace: "  return { value: typeof value === \"string\" && /^-?\\d+(\\.\\d+)?$/.test(value) ? Number(value) : value === 0 ? 0 : value };", target: "cp52" },
+  { name: "constant-sum-uses-value", file: "functions.mjs", find: "    if (isRangeArg(a)) {\n      const r = rangeArg(a, ctx);", replace: "    const cn = a.k === \"name\" ? ctx.name(a.v) : null;\n    if (isRangeArg(a) && !(cn && \"value\" in cn)) {\n      const r = rangeArg(a, ctx);", target: "cp52" },
+  { name: "constant-empty-range", file: "args.mjs", find: "    if (\"value\" in n) return { err: makeError(\"#VALUE!\", ctx.cell, `constant ${node.v} used as a range`) };", replace: "    if (\"value\" in n) return { keys: [], width: 0, height: 0 };", target: "cp52" },
+  { name: "delete-drops-constants", file: "structure.mjs", find: "    if (!d.a) { nextNames.set(n, d); continue; }", replace: "    if (!d.a) continue;", target: "cp52" },
+  { name: "constant-text-unquoted", file: "names.mjs", find: "  if (typeof v === \"string\") return `=\"${v.replaceAll('\"', '\"\"')}\"`;", replace: "  if (typeof v === \"string\") return `=${v}`;", target: "cp52" },
+  { name: "load-constant-not-roundtripped", file: "persist.mjs", find: "    if (nameText(d) !== ref) throw", replace: "    if (!(\"value\" in d) && nameText(d) !== ref) throw", target: "cp52" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

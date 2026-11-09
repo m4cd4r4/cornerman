@@ -1,7 +1,7 @@
 // persist.mjs: save text out and loadSheet text in (cp30). Pure: index.mjs builds the sheet.
 import { normalise, compareAddresses } from "./address.mjs";
 import { makeError } from "./errors.mjs";
-import { checkName, parseNameRef, nameText } from "./names.mjs";
+import { checkName, parseNameRef, nameText, parseConstant } from "./names.mjs";
 import { storedNote } from "./layers.mjs";
 
 export const FORMAT = "sheet";
@@ -59,7 +59,7 @@ export function parseBody(doc, at = "") {
     let d;
     try {
       if (checkName(n) !== n) throw new Error("case");
-      d = parseNameRef(ref);
+      d = typeof ref === "string" && ref.startsWith("=") ? parseConstant(ref) : parseNameRef(ref); // cp52
     } catch {
       throw bad(path("names", n), `${n} is not a valid name and target`);
     }

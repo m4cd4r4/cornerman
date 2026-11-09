@@ -27,6 +27,7 @@ export function rangeGrid(node, ctx) {
   } else if (node.k === "name") {
     const n = ctx.name(node.v);
     if (!n) return { err: makeError("#NAME?", ctx.cell, `unknown name ${node.v}`) };
+    if ("value" in n) return { err: makeError("#VALUE!", ctx.cell, `constant ${node.v} used as a range`) };
     a = n.a;
     b = n.b;
   } else return { err: makeError("#VALUE!", ctx.cell, "expected a range") };

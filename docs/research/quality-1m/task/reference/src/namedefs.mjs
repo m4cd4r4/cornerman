@@ -1,17 +1,20 @@
-// namedefs.mjs: the sheet methods for defined names: defineName, removeName, names (cp14).
-import { checkName, parseNameRef, nameText } from "./names.mjs";
+// namedefs.mjs: the sheet methods for defined names: defineName, removeName, names (cp14), and
+// defineConstant (cp52), which shares their one namespace.
+import { checkName, parseNameRef, nameText, checkConstant } from "./names.mjs";
 
 export function addNames(sheet, core) {
   const { names, history } = core;
+  // One undo step, unless the name already has exactly this target or value.
+  function define(n, target) {
+    const d = target();
+    const before = names.get(n);
+    if (before && JSON.stringify(before) === JSON.stringify(d)) return;
+    core.setName(n, d);
+    history.record({ name: n, before, after: d });
+  }
   Object.assign(sheet, {
-    defineName(name, ref) {
-      const n = checkName(name);
-      const d = parseNameRef(ref);
-      const before = names.get(n);
-      if (before && JSON.stringify(before) === JSON.stringify(d)) return;
-      core.setName(n, d);
-      history.record({ name: n, before, after: d });
-    },
+    defineName: (name, ref) => define(checkName(name), () => parseNameRef(ref)),
+    defineConstant: (name, value) => define(checkName(name), () => checkConstant(value)),
     removeName(name) {
       const n = typeof name === "string" ? name.toUpperCase() : "";
       if (!names.has(n)) return false;
