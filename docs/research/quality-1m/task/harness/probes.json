@@ -33,6 +33,21 @@
         { "id": "P2.10", "ask": "A9 holds =SUM(A1:C1). After insertCols(\"B\"), what does getInput(\"A9\") return? Answer the exact text.", "kind": "text", "answer": "=SUM(A1:D1)" }
       ]
     },
-    { "id": "P3", "after": "cp35", "questions": [] }
+    {
+      "id": "P3",
+      "after": "cp35",
+      "questions": [
+        { "id": "P3.1", "ask": "Which checkpoint introduced the #ARG error code? Answer cpNN.", "kind": "checkpoint", "answer": "cp23" },
+        { "id": "P3.2", "ask": "loadWorkbook is given the save text of a single sheet (version 1). What is the name of the one sheet in the workbook it returns? Answer the exact text.", "kind": "text", "answer": "Sheet_1" },
+        { "id": "P3.3", "ask": "On a sheet created with { errorOrder: \"first\" }, A1 holds =1/0, B1 holds =nope and C1 holds =A1+B1. Which error code does C1 return? Answer the code.", "kind": "text", "answer": "#DIV/0!" },
+        { "id": "P3.4", "ask": "A workbook save has two sheets, and the second sheet's cells hold the key \"a1\". What is the cell of the #LOAD error that loadWorkbook throws? Answer the exact text.", "kind": "text", "answer": "sheets.1.cells.a1" },
+        { "id": "P3.5", "ask": "Which files under src/ did your cp31 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp31" },
+        { "id": "P3.6", "ask": "Which checkpoint introduced sheet.formula? Answer cpNN.", "kind": "checkpoint", "answer": "cp33" },
+        { "id": "P3.7", "ask": "setMany is called with one valid and one invalid address. Which error code does it throw? Answer the code.", "kind": "text", "answer": "#ADDR" },
+        { "id": "P3.8", "ask": "On a new sheet: set(\"A1\", \"1\"), then set(\"A1\", \"1\"), then set(\"A1\", \"2\"). How many undo() calls in a row return true? Answer a number.", "kind": "number", "answer": 2 },
+        { "id": "P3.9", "ask": "How many records does fromCSV read from the text \"a\\n\\n\" (a, then two line feeds)? Answer a number.", "kind": "number", "answer": 2 },
+        { "id": "P3.10", "ask": "Alpha!A1 holds =Beta!B2+1 and Beta!B2 holds =Alpha!A1+1. What is the cell of the error that Beta!B2 returns? Answer the exact text.", "kind": "text", "answer": "B2" }
+      ]
+    }
   ]
 }

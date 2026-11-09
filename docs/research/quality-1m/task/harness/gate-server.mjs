@@ -6,6 +6,10 @@
 //               test into the repo, return its spec. Otherwise return the failures.
 // GET /status - { current, total, done }
 // State lives in <run>/gate-state.json so a restart resumes where it was.
+// Recall probes (probes.json, never copied into the repo): after the checkpoint a probe follows,
+// /next refuses until <repo>/PROBES.md has a non-empty line for each of its questions. The gate
+// shows only id + ask, and copies PROBES.md to <run>/probes-<id>.md when answered, so later
+// edits cannot change the score. Logs probe-asked / probe-answered for the token join.
 import { createServer } from "node:http";
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, cpSync, appendFileSync } from "node:fs";
 import { join, dirname, resolve, relative } from "node:path";
@@ -29,7 +33,9 @@ mkdirSync(join(RUN, "snapshots"), { recursive: true });
 
 const ALL = readdirSync(CPS).filter((d) => /^cp\d\d$/.test(d)).sort();
 const STATE = join(RUN, "gate-state.json");
+const PROBES = JSON.parse(readFileSync(join(HERE, "probes.json"), "utf8")).probes;
 const state = existsSync(STATE) ? JSON.parse(readFileSync(STATE, "utf8")) : { current: 0, visibleHashes: {} };
+state.probes ??= {}; // id -> "asked" | "answered"
 const save = () => writeFileSync(STATE, JSON.stringify(state, null, 2));
 const log = (event) => appendFileSync(join(RUN, "gate-log.jsonl"), JSON.stringify({ ts: new Date().toISOString(), ...event }) + "\n");
 
@@ -56,6 +62,43 @@ function snapshot(name) {
   return to;
 }
 
+// Question ids with a non-empty answer line in PROBES.md (same line shape check-probes.mjs reads).
+function answered() {
+  const f = join(REPO, "PROBES.md");
+  const ids = new Set();
+  if (!existsSync(f)) return ids;
+  for (const line of readFileSync(f, "utf8").split(/\r?\n/)) {
+    const m = line.match(/^\s*[-*]?\s*\**(P\d+\.\d+)\**\s*[:=]\s*(.*)$/i);
+    if (m && m[2].trim()) ids.add(m[1].toUpperCase());
+  }
+  return ids;
+}
+
+// null when no probe is waiting after checkpoint `done`, else the refusal to send.
+function probeGate(done) {
+  const p = PROBES.find((x) => x.after === done && state.probes[x.id] !== "answered");
+  if (!p) return null;
+  const have = answered();
+  const missing = p.questions.filter((q) => !have.has(q.id));
+  if (!missing.length) {
+    cpSync(join(REPO, "PROBES.md"), join(RUN, `probes-${p.id}.md`));
+    state.probes[p.id] = "answered";
+    save();
+    log({ event: "probe-answered", probe: p.id, cp: state.current, head: headSha() });
+    return null;
+  }
+  if (state.probes[p.id] !== "asked") {
+    state.probes[p.id] = "asked";
+    save();
+    log({ event: "probe-asked", probe: p.id, cp: state.current, head: headSha() });
+  }
+  const lines = p.questions.map((q) => `${q.id}: ${q.ask}`).join("\n");
+  return {
+    status: 409,
+    body: `Not yet: recall check ${p.id}. Before the next checkpoint, append one line per question to PROBES.md at the repo root, in the form \`${p.questions[0].id}: <answer>\`. Answer from what you remember and any notes you kept; do not run code or tests to work the answers out. Then commit and run \`node gate.mjs next\`.\n\n${lines}\n\nStill unanswered: ${missing.map((q) => q.id).join(", ")}\n`,
+  };
+}
+
 function next() {
   if (state.finished) return { status: 200, body: "ALL DONE. Every checkpoint is finished.\n" };
   if (state.current > 0) {
@@ -65,8 +108,13 @@ function next() {
       return { status: 409, body: `Not yet: visible tests fail.\n${v.failed.map((f) => `  - ${f}`).join("\n")}\n${v.failed.length ? "" : v.tail}\n` };
     }
     const done = ALL[state.current - 1];
-    snapshot(`${done}-done`);
-    log({ event: "done", cp: state.current, head: headSha() });
+    // The scored snapshot is the first passing tree; a probe stop must not move it.
+    if (!existsSync(join(RUN, "snapshots", `${done}-done`))) {
+      snapshot(`${done}-done`);
+      log({ event: "done", cp: state.current, head: headSha() });
+    }
+    const wait = probeGate(done);
+    if (wait) return wait;
   }
   if (state.current === ALL.length) {
     state.finished = true;

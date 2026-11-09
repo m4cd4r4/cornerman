@@ -35,7 +35,7 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp31: workbooks and sheet references
 - [ ] cp32: cross-sheet cycles and recalculation
 - [ ] cp33: API v2
-- [ ] cp34: optional Excel error order
+- [ ] cp34: optional reading-order errors
 - [ ] cp35: save format v2 and migration
 - [ ] cp36: performance budget
 - [ ] cp37: sheet rename

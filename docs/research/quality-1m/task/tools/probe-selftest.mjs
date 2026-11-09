@@ -28,10 +28,14 @@ writeFileSync(join(repo, "src", "b.mjs"), "// b.mjs: b\n"); git("add", "."); git
 writeFileSync(join(repo, "src", "structure.mjs"), "// structure.mjs: rows\n");
 writeFileSync(join(repo, "src", "b.mjs"), "// b.mjs: b v2\n");
 git("add", "."); git("commit", "-q", "-m", "cp23: insert rows");
+writeFileSync(join(repo, "src", "workbook.mjs"), "// workbook.mjs: sheets\n");
+writeFileSync(join(repo, "src", "a.mjs"), "// a.mjs: a v3\n");
+writeFileSync(join(repo, "README.md"), "x\n");
+git("add", "."); git("commit", "-q", "-m", "cp31: workbooks and sheet references");
 
 const files = {
-  "right.md": "## Probe 1\nP1.1: cp2\n- **P1.2**: `#REF!`, #NAME?, #VALUE!, #DIV/0!\nP1.3: 0.000000001\nP1.4: `##########`\np1.5 = checkpoint 13\nP1.6: ./src/stats.mjs, src\\a.mjs\nP1.7: #CYCLE!\nP1.8: 10,000\nP1.9: B1, C1, A1\nP1.10: `TAX2024`\n## Probe 2\nP2.1: Checkpoint 23\nP2.2: 61\n- **P2.3**: `#REF!`\nP2.4: \"FALSE\"\nP2.5: src/structure.mjs; src/b.mjs\nP2.6: 2,921,940\nP2.7: #CYCLE!\nP2.8: cp1\nP2.9: #CYCLE!, #REF!, #NAME?, #N/A, #VALUE!, #DIV/0!\nP2.10: `=SUM(A1:D1)`\n",
-  "wrong.md": "P1.1: cp04\nP1.2: #NAME?, #REF!, #VALUE!, #DIV/0!\nP1.3: 1e-6\nP1.4: #########\nP1.5: cp14\nP1.6: src/a.mjs\nP1.7: #REF!\nP1.8: 1000\nP1.9: C1, B1, A1\nP1.10: T2X\nP2.1: cp24\nP2.2: 36586\nP2.3: #VALUE!\nP2.4: false\nP2.5: src/structure.mjs\nP2.6: 2958465\nP2.7: 0\nP2.8: cp02\nP2.9: #CYCLE!, #REF!, #N/A, #NAME?, #VALUE!, #DIV/0!\nP2.10: =SUM(A1:C1)\n",
+  "right.md": "## Probe 1\nP1.1: cp2\n- **P1.2**: `#REF!`, #NAME?, #VALUE!, #DIV/0!\nP1.3: 0.000000001\nP1.4: `##########`\np1.5 = checkpoint 13\nP1.6: ./src/stats.mjs, src\\a.mjs\nP1.7: #CYCLE!\nP1.8: 10,000\nP1.9: B1, C1, A1\nP1.10: `TAX2024`\n## Probe 2\nP2.1: Checkpoint 23\nP2.2: 61\n- **P2.3**: `#REF!`\nP2.4: \"FALSE\"\nP2.5: src/structure.mjs; src/b.mjs\nP2.6: 2,921,940\nP2.7: #CYCLE!\nP2.8: cp1\nP2.9: #CYCLE!, #REF!, #NAME?, #N/A, #VALUE!, #DIV/0!\nP2.10: `=SUM(A1:D1)`\n## Probe 3\nP3.1: checkpoint 23\nP3.2: `Sheet_1`\n- **P3.3**: #DIV/0!\nP3.4: \"sheets.1.cells.a1\"\nP3.5: src/workbook.mjs, ./src/a.mjs\nP3.6: CP33\nP3.7: `#ADDR`\nP3.8: 2\nP3.9: 2\nP3.10: B2\n",
+  "wrong.md": "P1.1: cp04\nP1.2: #NAME?, #REF!, #VALUE!, #DIV/0!\nP1.3: 1e-6\nP1.4: #########\nP1.5: cp14\nP1.6: src/a.mjs\nP1.7: #REF!\nP1.8: 1000\nP1.9: C1, B1, A1\nP1.10: T2X\nP2.1: cp24\nP2.2: 36586\nP2.3: #VALUE!\nP2.4: false\nP2.5: src/structure.mjs\nP2.6: 2958465\nP2.7: 0\nP2.8: cp02\nP2.9: #CYCLE!, #REF!, #N/A, #NAME?, #VALUE!, #DIV/0!\nP2.10: =SUM(A1:C1)\nP3.1: cp34\nP3.2: SHEET_1\nP3.3: #NAME?\nP3.4: sheets.1.a1\nP3.5: src/workbook.mjs\nP3.6: cp30\nP3.7: #LOAD\nP3.8: 3\nP3.9: 1\nP3.10: A1\n",
 };
 for (const [n, t] of Object.entries(files)) writeFileSync(join(work, n), t);
 
