@@ -42,7 +42,7 @@ const pad = (total) => (f) => {
 // [name, relative file, change, expected rules]
 const CASES = [
   ["clean", null, null, []],
-  ["eval-call", "src/evaluate.mjs", edit("// evaluate.mjs: formula evaluation (cp02-cp08).\n", "// evaluate.mjs: formula evaluation (cp02-cp08).\nexport const shortcut = (s) => eval(s);\n"), [1]],
+  ["eval-call", "src/evaluate.mjs", (f) => { const [h, ...rest] = readFileSync(f, "utf8").split("\n"); writeFileSync(f, [h, "export const shortcut = (s) => eval(s);", ...rest].join("\n")); }, [1]],
   ["new-function", "src/parser.mjs", (f) => appendFileSync(f, "export const compile = (s) => new Function(\"return \" + s);\n"), [1]],
   ["vm-import", "src/lexer.mjs", (f) => appendFileSync(f, "import vm from \"node:vm\";\n"), [1]],
   ["indirect-eval", "src/index.mjs", (f) => appendFileSync(f, "export const g = globalThis[\"eval\"];\n"), [1]],

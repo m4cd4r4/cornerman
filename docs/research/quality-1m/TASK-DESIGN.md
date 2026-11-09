@@ -156,10 +156,24 @@ Built after block A:
   `tools/probe-selftest.mjs`: right answers in varied formatting 6/6, wrong 0/6, absent 0/6.
   `git-files` answers are keyed from the run's own history. Probe 1 holds block A questions only.
 
-Next in Stage 0: blocks B-E in slices of about 8 with the same spec / reference / tests / mutants
-loop; add cp09-14 questions to probe 1 and fill probes 2-3 as their blocks land; then wire the
-probe prompt into the gate after cp15, cp25 and cp35 (refuse `next` until PROBES.md has a line
-per question; record tokens since the last clear per probe).
+Block B (cp09-16) built:
+- Specs: cycles (#CYCLE! per member, top priority, static dependencies), precedents/dependents,
+  incremental recalc (same input marks nothing), recalc order log (row-major Kahn, cycle groups),
+  function syntax + SUM (range vs direct arguments, no text coercion, 10,000-cell limit, ranges
+  only inside functions), named ranges, AVERAGE/MIN/MAX/COUNT (MIN/MAX of nothing #VALUE!, COUNT
+  never counts booleans), ROUND family (half-even on the shortest decimal form).
+- Reference grows to 11 files (largest index.mjs, 184 lines); every block A hidden test still
+  passes: 125 hidden + 25 visible tests over cp01-16, all green.
+- 26 mutants (8 block A + 18 block B, Excel-prior ones first), all killed by their target.
+- Probe 1 now 10 questions; two block A questions were swapped because FEATURES.md titles gave
+  the answer away.
+- Smoke gate walks all 16; rule negatives still 16/16 (one case no longer keys on header text).
+
+Next in Stage 0: blocks C-E (cp17-40) with the same loop; fill probes 2-3 as their blocks land;
+then wire the probe prompt into the gate after cp15, cp25 and cp35 (refuse `next` until
+PROBES.md has a line per question; record tokens since the last clear per probe). Known
+performance debt for cp36: valueOf recurses (deep chains) and cycle detection is a full pass
+after each graph change.
 
 ## Open
 

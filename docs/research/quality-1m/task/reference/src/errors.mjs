@@ -1,8 +1,8 @@
-// errors.mjs: error values and the priority order (cp02, cp04; later checkpoints add codes).
+// errors.mjs: error values and the priority order (cp02, cp04, cp09; later checkpoints add codes).
 import { compareAddresses } from "./address.mjs";
 
 // Highest priority first.
-export const PRIORITY = ["#REF!", "#NAME?", "#VALUE!", "#DIV/0!"];
+export const PRIORITY = ["#CYCLE!", "#REF!", "#NAME?", "#VALUE!", "#DIV/0!"];
 
 export function makeError(code, cell, message) {
   return { code, cell, message: message || code };

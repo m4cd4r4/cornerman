@@ -46,7 +46,7 @@ function score(q, raw) {
   switch (q.kind) {
     case "checkpoint": return { ok: cpOf(raw) === q.answer };
     case "text": return { ok: unwrap(raw) === q.answer };
-    case "number": { const n = Number(unwrap(raw)); return { ok: Number.isFinite(n) && n === q.answer }; }
+    case "number": { const n = Number(unwrap(raw).replace(/,(?=\d{3}\b)/g, ""));return { ok: Number.isFinite(n) && n === q.answer }; }
     case "ordered": { const got = list(raw); return { ok: got.length === q.answer.length && got.every((x, i) => x.toUpperCase() === q.answer[i]) }; }
     case "git-files": {
       const want = gitFiles(q.commit);

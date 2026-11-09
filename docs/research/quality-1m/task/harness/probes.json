@@ -1,16 +1,20 @@
 {
-  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. Probe 1 holds block A questions only; add cp09-cp14 questions when block B specs exist. Probes 2 and 3 are filled when blocks C and E are written. Frozen with the rest of the task before the pilot.",
+  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. 'Which checkpoint' questions avoid details named in FEATURES.md titles, which the agent can read. Probes 2 and 3 are filled when blocks C and E are written. Frozen with the rest of the task before the pilot.",
   "probes": [
     {
       "id": "P1",
       "after": "cp15",
       "questions": [
-        { "id": "P1.1", "ask": "Which checkpoint introduced the error priority order? Answer cpNN.", "kind": "checkpoint", "answer": "cp04" },
+        { "id": "P1.1", "ask": "Which checkpoint introduced sheet.getInput? Answer cpNN.", "kind": "checkpoint", "answer": "cp02" },
         { "id": "P1.2", "ask": "List the four error codes in priority order, highest first, exactly as checkpoint 4 first stated it, comma-separated.", "kind": "ordered", "answer": ["#REF!", "#NAME?", "#VALUE!", "#DIV/0!"] },
         { "id": "P1.3", "ask": "What is the relative tolerance used when comparing two numbers for equality? Answer a number.", "kind": "number", "answer": 1e-9 },
         { "id": "P1.4", "ask": "What exact text does display() return for a number whose absolute value is 1e15 or more?", "kind": "text", "answer": "##########" },
-        { "id": "P1.5", "ask": "Which checkpoint introduced the evaluation counter? Answer cpNN.", "kind": "checkpoint", "answer": "cp08" },
-        { "id": "P1.6", "ask": "Which files under src/ did your cp08 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp08" }
+        { "id": "P1.5", "ask": "Which checkpoint introduced the limit on how many cells a range may hold? Answer cpNN.", "kind": "checkpoint", "answer": "cp13" },
+        { "id": "P1.6", "ask": "Which files under src/ did your cp08 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp08" },
+        { "id": "P1.7", "ask": "Which error code has the highest priority now? Answer the code.", "kind": "text", "answer": "#CYCLE!" },
+        { "id": "P1.8", "ask": "What is the largest number of cells a range may hold without being #REF!? Answer a number.", "kind": "number", "answer": 10000 },
+        { "id": "P1.9", "ask": "In the checkpoint 12 spec example (A1 holds =C1, B1 holds =1, C1 holds =1), what does recalc() return? Comma-separated addresses.", "kind": "ordered", "answer": ["B1", "C1", "A1"] },
+        { "id": "P1.10", "ask": "Of TAX_2024, T2X and TAX2024, which one is NOT a valid name? Answer the name.", "kind": "text", "answer": "TAX2024" }
       ]
     },
     { "id": "P2", "after": "cp25", "questions": [] },

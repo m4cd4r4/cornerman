@@ -1,6 +1,7 @@
-// evaluate.mjs: formula evaluation (cp02-cp08).
+// evaluate.mjs: formula evaluation (cp02-cp08; ranges cp13, names cp14).
 import { makeError, isError, pickError } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
+import { callFunction, rangeCells } from "./functions.mjs";
 
 const TOL = 1e-9;
 
@@ -8,7 +9,7 @@ export function numEqual(a, b) {
   return Math.abs(a - b) <= TOL * Math.max(1, Math.abs(a), Math.abs(b));
 }
 
-function toNumber(v, cell) {
+export function toNumber(v, cell) {
   if (v === null) return 0;
   if (typeof v === "number") return v;
   if (typeof v === "boolean") return v ? 1 : 0;
@@ -68,7 +69,7 @@ function compareOp(op, a, b) {
   throw new Error(`unknown comparison ${op}`);
 }
 
-// ctx: { cell, read(addr) }
+// ctx: { cell, read(addr), name(NAME) -> { a, b, range } | null }
 export function evaluate(node, ctx) {
   switch (node.k) {
     case "num": return node.v;
@@ -76,7 +77,17 @@ export function evaluate(node, ctx) {
     case "bool": return node.v;
     case "ref": return ctx.read(node.addr);
     case "badref": return makeError("#REF!", ctx.cell, `invalid reference ${node.v}`);
-    case "name": return makeError("#NAME?", ctx.cell, `unknown name ${node.v}`);
+    case "name": {
+      const n = ctx.name(node.v);
+      if (!n) return makeError("#NAME?", ctx.cell, `unknown name ${node.v}`);
+      if (n.range) return makeError("#VALUE!", ctx.cell, `range name ${node.v} used as a value`);
+      return ctx.read(n.a);
+    }
+    case "range": {
+      const r = rangeCells(node, ctx);
+      return isError(r) ? r : makeError("#VALUE!", ctx.cell, "range used outside a function");
+    }
+    case "call": return callFunction(node, ctx, evaluate);
     case "pct": {
       const v = evaluate(node.arg, ctx);
       if (isError(v)) return v;

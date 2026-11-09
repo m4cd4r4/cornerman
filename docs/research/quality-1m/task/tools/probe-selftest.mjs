@@ -27,8 +27,8 @@ git("add", "."); git("commit", "-q", "-m", "cp08: tolerance and counter");
 writeFileSync(join(repo, "src", "b.mjs"), "// b.mjs: b\n"); git("add", "."); git("commit", "-q", "-m", "cp09: cycles");
 
 const files = {
-  "right.md": "## Probe 1\nP1.1: cp04\n- **P1.2**: `#REF!`, #NAME?, #VALUE!, #DIV/0!\nP1.3: 0.000000001\nP1.4: `##########`\np1.5 = checkpoint 8\nP1.6: ./src/stats.mjs, src\\a.mjs\n",
-  "wrong.md": "P1.1: cp02\nP1.2: #NAME?, #REF!, #VALUE!, #DIV/0!\nP1.3: 1e-6\nP1.4: #########\nP1.5: cp11\nP1.6: src/a.mjs\n",
+  "right.md": "## Probe 1\nP1.1: cp2\n- **P1.2**: `#REF!`, #NAME?, #VALUE!, #DIV/0!\nP1.3: 0.000000001\nP1.4: `##########`\np1.5 = checkpoint 13\nP1.6: ./src/stats.mjs, src\\a.mjs\nP1.7: #CYCLE!\nP1.8: 10,000\nP1.9: B1, C1, A1\nP1.10: `TAX2024`\n",
+  "wrong.md": "P1.1: cp04\nP1.2: #NAME?, #REF!, #VALUE!, #DIV/0!\nP1.3: 1e-6\nP1.4: #########\nP1.5: cp14\nP1.6: src/a.mjs\nP1.7: #REF!\nP1.8: 1000\nP1.9: C1, B1, A1\nP1.10: T2X\n",
 };
 for (const [n, t] of Object.entries(files)) writeFileSync(join(work, n), t);
 
