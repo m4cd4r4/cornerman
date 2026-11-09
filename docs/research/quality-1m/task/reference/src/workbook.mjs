@@ -5,6 +5,7 @@ import { createEngine } from "./engine.mjs";
 import { makeSheet, CORE } from "./sheet.mjs";
 import { renameRefs, dropSheetRefs } from "./refs.mjs";
 import { addBookNames } from "./booknames.mjs";
+import { createHistory } from "./history.mjs";
 
 export const createWorkbook = (opts) => buildWorkbook(errorOrderOption(opts), []);
 
@@ -12,6 +13,15 @@ export const createWorkbook = (opts) => buildWorkbook(errorOrderOption(opts), []
 // workbook save (cp35, cp53), already checked.
 export function buildWorkbook(order, loaded, bookNames = new Map()) {
   const engine = createEngine(order);
+  const nameHistory = createHistory(); // cp55: workbook name changes
+  const applyName = (e, side) => engine.setBookName(e.bookName, e[side]);
+  // cp55: the list (a sheet's, or the names list) whose next step by `which` is the newest.
+  function newest(which) {
+    const lists = [...list.map((e) => ({ h: CORE.get(e.sheet).history, run: (w) => e.sheet[w]() })), { h: nameHistory, run: (w) => nameHistory[w](applyName) }];
+    let best = null;
+    for (const x of lists) if (x.h[which]() >= 0 && (!best || x.h[which]() > best.h[which]())) best = x;
+    return best;
+  }
   const list = []; // { name, sheet } in creation order, name as typed
   const find = (name) => (typeof name === "string" ? list.findIndex((e) => e.name.toUpperCase() === name.toUpperCase()) : -1);
   const add = (name, init) => {
@@ -55,6 +65,7 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
       const [e] = list.splice(i, 1);
       CORE.get(e.sheet).bind(createEngine(engine.errorOrder), null);
       CORE.get(e.sheet).history.clear();
+      nameHistory.clear();
       for (const [n, d] of [...engine.bookNames]) if (d.sheet && d.sheet.toUpperCase() === OLD) engine.setBookName(n, undefined);
       return list.reduce((count, x) => count + CORE.get(x.sheet).renamed((v) => dropSheetRefs(v, OLD)), 0);
     },
@@ -70,7 +81,17 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
       const OLD = list[i].name.toUpperCase();
       list[i].name = newName;
       engine.rename(OLD, newName);
+      nameHistory.clear();
       for (const e of list) CORE.get(e.sheet).renamed((v) => renameRefs(v, OLD, newName));
+    },
+    // cp55: undo the newest step on any sheet or on the names list, or redo the one undone last.
+    undo() {
+      const x = newest("nextUndo");
+      return x ? x.run("undo") : false;
+    },
+    redo() {
+      const x = newest("nextRedo");
+      return x ? x.run("redo") : false;
     },
     // cp35: the whole workbook as v2 save text; each sheet's cells and names as its own save writes them.
     save() {
@@ -86,5 +107,5 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
   };
   for (const { name, init } of loaded) add(name, init);
   for (const [n, d] of bookNames) engine.setBookName(n, d);
-  return addBookNames(book, engine);
+  return addBookNames(book, engine, nameHistory);
 }

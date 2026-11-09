@@ -4,10 +4,14 @@
 //   { state: { before, after } }              structural ops: { inputs, names, ...layers } snapshots
 //   { layer, cells: [[key, before, after]] }  a per-cell layer (cp41 on; undefined = none)
 //   { group: [entry, ...] }                   several entries made by one call (cp41 on)
+//   { bookName, before, after }               a workbook name (cp53), on the book's own list (cp55)
 // sheet.mjs owns applying an entry; this file only keeps the order and unpacks groups.
+// cp55: every entry is stamped from one clock shared by all lists: t when it was made or redone,
+// u when it was undone, so a workbook can find the newest step across its sheets.
 import { sameLayers } from "./layers.mjs";
 
 export const HISTORY_LIMIT = 100;
+let CLOCK = 0;
 
 // apply(entry, side) for every part of a group: in order for "after", reversed for "before".
 const grouped = (fn) => function each(e, side) {
@@ -23,6 +27,7 @@ export function createHistory(limit = HISTORY_LIMIT) {
     record(entry) {
       if (!entry) return;
       if (buffer) { buffer.push(entry); return; }
+      entry.t = ++CLOCK;
       done.push(entry);
       if (done.length > limit) done.shift();
       undone.length = 0;
@@ -39,6 +44,9 @@ export function createHistory(limit = HISTORY_LIMIT) {
         if (parts.length) history.record(parts.length === 1 ? parts[0] : { group: parts });
       }
     },
+    // cp55: the stamp of the step undo() or redo() would take next, or -1 when there is none.
+    nextUndo: () => (done.length ? done[done.length - 1].t : -1),
+    nextRedo: () => (undone.length ? undone[undone.length - 1].u : -1),
     clear() {
       done.length = 0;
       undone.length = 0;
@@ -48,6 +56,7 @@ export function createHistory(limit = HISTORY_LIMIT) {
       const e = done.pop();
       if (!e) return false;
       apply(e, "before");
+      e.u = ++CLOCK;
       undone.push(e);
       return true;
     },
@@ -56,6 +65,7 @@ export function createHistory(limit = HISTORY_LIMIT) {
       const e = undone.pop();
       if (!e) return false;
       apply(e, "after");
+      e.t = ++CLOCK;
       done.push(e);
       return true;
     },

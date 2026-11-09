@@ -54,3 +54,4 @@
 - cp52: defineConstant names a number, text or boolean; a constant is a value, never a range argument.
 - cp53: book.defineName and defineConstant add names every sheet can use; a sheet's own name of that name wins.
 - cp54: book.deleteSheet rewrites references to the sheet as #REF! and drops the workbook names that point at it.
+- cp55: book.undo and book.redo take the newest step of any sheet or of the workbook names, by time.

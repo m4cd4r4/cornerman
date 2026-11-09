@@ -56,3 +56,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp52: named constants
 - [ ] cp53: workbook names
 - [ ] cp54: deleting a sheet
+- [ ] cp55: undo across a workbook

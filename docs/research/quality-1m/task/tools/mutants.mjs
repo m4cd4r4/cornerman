@@ -370,6 +370,14 @@ const MUTANTS = [
   { name: "delete-keeps-own-undo", file: "workbook.mjs", find: "      CORE.get(e.sheet).history.clear();\n", replace: "", target: "cp54" },
   { name: "delete-counts-all-cells", file: "sheet.mjs", find: "    const changed = [...inputs.values()].filter((v) => rewrite(v) !== v).length;", replace: "    const changed = inputs.size;", target: "cp54" },
   { name: "delete-rewrites-deleted-sheet", file: "workbook.mjs", find: "      return list.reduce((count, x) =>", replace: "      CORE.get(e.sheet).renamed((v) => dropSheetRefs(v, OLD));\n      return list.reduce((count, x) =>", target: "cp54" },
+  { name: "book-redo-cleared-by-any-change", file: "workbook.mjs", find: "      const x = newest(\"nextRedo\");", replace: "      const x = newest(\"nextRedo\");\n      const last = newest(\"nextUndo\");\n      if (x && last && last.h.nextUndo() > x.h.nextRedo()) return false;", target: "cp55" },
+  { name: "book-undo-first-sheet", file: "workbook.mjs", find: "(!best || x.h[which]() > best.h[which]())", replace: "!best", target: "cp55" },
+  { name: "redo-keeps-old-stamp", file: "history.mjs", find: "      e.t = ++CLOCK;\n", replace: "", target: "cp55" },
+  { name: "book-names-not-undoable", file: "workbook.mjs", find: ", { h: nameHistory, run: (w) => nameHistory[w](applyName) }]", replace: "]", target: "cp55" },
+  { name: "book-name-noop-recorded", file: "booknames.mjs", find: "    if (before && JSON.stringify(before) === JSON.stringify(d)) return;\n    engine.setBookName(n, d);", replace: "    engine.setBookName(n, d);", target: "cp55" },
+  { name: "rename-keeps-names-list", file: "workbook.mjs", find: "      engine.rename(OLD, newName);\n      nameHistory.clear();", replace: "      engine.rename(OLD, newName);", target: "cp55" },
+  { name: "delete-keeps-names-list", file: "workbook.mjs", find: "      CORE.get(e.sheet).history.clear();\n      nameHistory.clear();", replace: "      CORE.get(e.sheet).history.clear();", target: "cp55" },
+  { name: "undo-not-stamped", file: "history.mjs", find: "      e.u = ++CLOCK;\n", replace: "", target: "cp55" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

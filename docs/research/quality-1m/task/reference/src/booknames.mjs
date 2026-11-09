@@ -25,11 +25,13 @@ export function loadBookTarget(text) {
 }
 
 // engine.bookNames is the shared map; engine.setBookName(n, d) applies a change (undefined removes).
-export function addBookNames(book, engine) {
+// history (cp55): the book's own undo list, where each change is one step.
+export function addBookNames(book, engine, history) {
   function define(n, d) {
     const before = engine.bookNames.get(n);
     if (before && JSON.stringify(before) === JSON.stringify(d)) return;
     engine.setBookName(n, d);
+    history.record({ bookName: n, before, after: d });
   }
   Object.assign(book, {
     defineName: (name, ref) => define(checkName(name), parseBookRef(ref)),
@@ -40,6 +42,7 @@ export function addBookNames(book, engine) {
     removeName(name) {
       const n = typeof name === "string" ? name.toUpperCase() : "";
       if (!engine.bookNames.has(n)) return false;
+      history.record({ bookName: n, before: engine.bookNames.get(n), after: undefined });
       engine.setBookName(n, undefined);
       return true;
     },
