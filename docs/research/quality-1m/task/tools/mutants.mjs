@@ -122,6 +122,18 @@ const MUTANTS = [
   { name: "csv-in-text-before-at", file: "csv.mjs", find: "  const t = parseAddress(at);\n  if (!t) throwAddr(at);\n  const records = parseCSV(text);\n", replace: "  const records = parseCSV(text);\n  const t = parseAddress(at);\n  if (!t) throwAddr(at);\n", target: "cp29" },
   { name: "csv-in-step-per-cell", file: "index.mjs", find: "      writeAll(csvWrites(text, at));", replace: "      for (const w of csvWrites(text, at)) writeAll([w]);", target: "cp29" },
   { name: "csv-in-partial-write", file: "csv.mjs", find: "  if (records.length && (t.row", replace: "  if (false && records.length && (t.row", target: "cp29" },
+  { name: "save-insertion-order", file: "persist.mjs", find: "  for (const k of [...inputs.keys()].sort(compareAddresses)) cells[k]", replace: "  for (const k of [...inputs.keys()]) cells[k]", target: "cp30" },
+  { name: "save-names-unsorted", file: "persist.mjs", find: "  for (const n of [...names.keys()].sort()) out[n]", replace: "  for (const n of [...names.keys()]) out[n]", target: "cp30" },
+  { name: "save-one-cell-range-flat", file: "persist.mjs", find: "  for (const n of [...names.keys()].sort()) out[n] = nameText(names.get(n));", replace: "  for (const n of [...names.keys()].sort()) { const d = names.get(n); out[n] = d.a === d.b ? d.a : nameText(d); }", target: "cp30" },
+  { name: "save-pretty", file: "persist.mjs", find: "cells, names: out });", replace: "cells, names: out }, null, 1);", target: "cp30" },
+  { name: "save-evaluates", file: "index.mjs", find: "      return saveText(inputs, names);", replace: "      for (const k of inputs.keys()) valueOf(k);\n      return saveText(inputs, names);", target: "cp30" },
+  { name: "load-keeps-history", file: "index.mjs", find: "  if (init) rebuild(init);", replace: "  if (init) restructure(init);", target: "cp30" },
+  { name: "load-lenient-version", file: "persist.mjs", find: "  if (doc.version !== VERSION)", replace: "  if (doc.version != VERSION)", target: "cp30" },
+  { name: "load-array-cells", file: "persist.mjs", find: "  if (!isPlain(doc.cells))", replace: "  if (doc.cells === null || typeof doc.cells !== \"object\")", target: "cp30" },
+  { name: "load-lower-keys", file: "persist.mjs", find: "    if (normalise(k) !== k) throw", replace: "    if (normalise(k) === null) throw", target: "cp30" },
+  { name: "load-empty-cell-ok", file: "persist.mjs", find: "    if (typeof v !== \"string\" || v === \"\") throw", replace: "    if (typeof v !== \"string\") throw", target: "cp30" },
+  { name: "load-target-any-case", file: "persist.mjs", find: "    if (nameText(d) !== ref) throw", replace: "    if (nameText(d) !== ref.toUpperCase()) throw", target: "cp30" },
+  { name: "load-names-before-cells", file: "persist.mjs", find: "  if (!isPlain(doc.cells)) throw bad(\"cells\", \"cells must be an object\");\n  if (!isPlain(doc.names)) throw bad(\"names\", \"names must be an object\");", replace: "  if (!isPlain(doc.names)) throw bad(\"names\", \"names must be an object\");\n  if (!isPlain(doc.cells)) throw bad(\"cells\", \"cells must be an object\");", target: "cp30" },
   { name: "col-names-not-moved", file: "structure.mjs", find: "    const m = range(ax.get(a), ax.get(b));", replace: "    const m = axis === \"col\" ? [ax.get(a), ax.get(b)] : range(ax.get(a), ax.get(b));", target: "cp25" },
 ];
 
