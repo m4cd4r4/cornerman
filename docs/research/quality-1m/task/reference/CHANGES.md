@@ -49,3 +49,4 @@
 - cp47: merge joins a range into its top-left cell; covered cells keep hidden inputs, read as empty and refuse set.
 - cp48: sort reorders the rows of a range by one column, stably; formulas move as typed and notes stay put.
 - cp49: hideRows and hideCols hide lines by number; toCSV leaves them out, inserted lines are never hidden.
+- cp50: SUBTOTAL(code, ranges) sums, counts, averages or finds the min or max, leaving out hidden rows and subtotals.

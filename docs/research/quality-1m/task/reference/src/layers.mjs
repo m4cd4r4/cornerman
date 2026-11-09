@@ -49,7 +49,8 @@ export const sameLayers = (x, y) =>
   ALL.every((n) => sameMap(x[n] || new Map(), y[n] || new Map())) && JSON.stringify(x.merges || []) === JSON.stringify(y.merges || []);
 
 // onCovered(keys): cells that became or stopped being covered by a merge, to recalculate.
-export function createLayers(onCovered) {
+// onLines(): a row or column was hidden or shown (cp49), so SUBTOTAL formulas (cp50) recalculate.
+export function createLayers(onCovered, onLines = () => {}) {
   const L = { merges: [], covered: new Set() };
   for (const n of ALL) L[n] = new Map();
   function setMerges(list) {
@@ -69,6 +70,7 @@ export function createLayers(onCovered) {
       else L[layer].set(k, v);
       cells.push([k, before, v]);
     }
+    if (cells.length && LINE_LAYERS.includes(layer)) onLines();
     return cells.length ? { layer, cells } : null;
   }
 
@@ -95,6 +97,7 @@ export function createLayers(onCovered) {
         if (v === undefined) L[e.layer].delete(k);
         else L[e.layer].set(k, v);
       }
+      if (LINE_LAYERS.includes(e.layer)) onLines();
     },
     // cp46, cp47: throws #MERGE or #INVALID for the first [key, input] its cell refuses.
     check(writes) {

@@ -329,6 +329,15 @@ const MUTANTS = [
   { name: "hidden-rows-text-sort", file: "hiding.mjs", find: ".sort((a, b) => a - b);", replace: ".sort();", target: "cp49" },
   { name: "show-first-only", file: "hiding.mjs", find: "    for (let i = pos; i < pos + count; i++) pairs.push(", replace: "    for (let i = pos; i < pos + (on ? count : 1); i++) pairs.push(", target: "cp49" },
   { name: "csv-rect-visible-only", file: "csv.mjs", find: "  for (const k of keys) {\n    const p = parseAddress(k);", replace: "  for (const k of keys) {\n    const p = parseAddress(k);\n    if (hidden.rows.has(p.row) || hidden.cols.has(p.col)) continue;", target: "cp49" },
+  { name: "subtotal-1xx-codes", file: "subtotal.mjs", find: "  const fn = CODES[code];", replace: "  const fn = CODES[code > 100 ? code - 100 : code];", target: "cp50" },
+  { name: "subtotal-counts-hidden-rows", file: "subtotal.mjs", find: "  if (hiddenRows.has(parseAddress(k).row)) return true;\n", replace: "", target: "cp50" },
+  { name: "subtotal-skips-any-subtotal", file: "subtotal.mjs", find: "  return !!(entry && entry.ast && entry.ast.k === \"call\" && entry.ast.fn === \"SUBTOTAL\");", replace: "  return !!(entry && entry.ast && JSON.stringify(entry.ast).includes('\"fn\":\"SUBTOTAL\"'));", target: "cp50" },
+  { name: "subtotal-row-set-for-cols", file: "subtotal.mjs", find: "  if (hiddenRows.has(parseAddress(k).row)) return true;", replace: "  if (hiddenRows.has(parseAddress(k).row) || hiddenRows.has(parseAddress(k).col)) return true;", target: "cp50" },
+  { name: "subtotal-direct-args", file: "subtotal.mjs", edits: [["  if (!args.slice(1).every(isRangeArg)) return makeError(\"#VALUE!\", ctx.cell, \"SUBTOTAL takes ranges only\");\n", ""], ["    const g = rangeGrid(a, ctx);\n", "    if (!isRangeArg(a)) { const v = evaluate(a, ctx); if (typeof v === \"number\") nums.push(v); else if (isError(v)) errors.push(v); continue; }\n    const g = rangeGrid(a, ctx);\n"]], target: "cp50" },
+  { name: "subtotal-no-recalc-on-hide", file: "layers.mjs", find: "    if (cells.length && LINE_LAYERS.includes(layer)) onLines();\n", replace: "", target: "cp50" },
+  { name: "subtotal-undo-no-recalc", file: "layers.mjs", find: "      if (LINE_LAYERS.includes(e.layer)) onLines();\n", replace: "", target: "cp50" },
+  { name: "subtotal-other-sheet-own-rows", file: "sheet.mjs", find: "    return sid !== null && engine.coreOf(sid).skipped(a.slice(i + 1));", replace: "    return sid !== null && skipped(a.slice(i + 1));", target: "cp50" },
+  { name: "subtotal-count-counts-errors", file: "subtotal.mjs", find: "      else if (isError(v) && fn !== \"COUNT\") errors.push(v);", replace: "      else if (isError(v)) errors.push(v);", target: "cp50" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

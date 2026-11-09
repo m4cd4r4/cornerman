@@ -17,6 +17,7 @@ import { createLayers } from "./layers.mjs";
 import { addFeatures } from "./features.mjs";
 import { addNames } from "./namedefs.mjs";
 import { addHiding } from "./hiding.mjs";
+import { leftOut } from "./subtotal.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -34,7 +35,8 @@ export function makeSheet(init, order = "priority") {
   const nameUsers = new Map(); // NAME -> Set of formula keys whose text uses it
   const stats = { evaluations: 0 };
   const history = createHistory();
-  const layers = createLayers((keys) => invalidate(keys)); // formats, notes, rules, merges (cp41-cp47)
+  // formats, notes, rules, merges, hidden rows and columns (cp41-cp49)
+  const layers = createLayers((keys) => invalidate(keys), () => engine.invalidateSheet(id));
   let engine = null;
   let id = 0;
   const g = (k) => `${id}|${k}`;
@@ -100,13 +102,22 @@ export function makeSheet(init, order = "priority") {
     if (p.parseError) v = makeError("#PARSE!", k, p.parseError);
     else if (engine.onCycle(g(k))) v = makeError("#CYCLE!", k, "circular reference");
     else {
-      const ctx = { cell: k, read: (a) => read(k, a), name: (n) => names.get(n) || null, sheet: (n) => engine.resolve(n) !== null };
+      const ctx = { cell: k, read: (a) => read(k, a), name: (n) => names.get(n) || null, sheet: (n) => engine.resolve(n) !== null, skip };
       v = withErrorOrder(engine.errorOrder, () => evaluate(p.ast, ctx));
     }
     const out = v === null ? 0 : typeof v === "number" && v === 0 ? 0 : v;
     stats.evaluations++;
     engine.cache.set(g(k), out);
     return out;
+  }
+
+  // cp50: whether SUBTOTAL leaves out a cell it reads, own ("A1") or on another sheet ("NAME!A1").
+  const skipped = (k) => leftOut(k, parsed.get(k), layers.L.rows);
+  function skip(a) {
+    const i = a.indexOf("!");
+    if (i < 0) return skipped(a);
+    const sid = engine.resolve(a.slice(0, i));
+    return sid !== null && engine.coreOf(sid).skipped(a.slice(i + 1));
   }
 
   function setNameUsers(k, add) {
@@ -212,7 +223,7 @@ export function makeSheet(init, order = "priority") {
   }
 
   const shown = (k) => layers.show(k, valueOf(k));
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 

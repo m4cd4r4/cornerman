@@ -1,5 +1,5 @@
 {
-  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. 'Which checkpoint' questions avoid details named in FEATURES.md titles, which the agent can read. Probes 2 and 3 are filled when blocks C and E are written. Frozen with the rest of the task before the pilot.",
+  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. 'Which checkpoint' questions avoid details named in FEATURES.md titles, which the agent can read. Probes 2 and 3 are filled when blocks C and E are written; probe 4 (after cp50) asks about blocks A-D. Frozen with the rest of the task before the pilot.",
   "probes": [
     {
       "id": "P1",
@@ -47,6 +47,22 @@
         { "id": "P3.8", "ask": "On a new sheet: set(\"A1\", \"1\"), then set(\"A1\", \"1\"), then set(\"A1\", \"2\"). How many undo() calls in a row return true? Answer a number.", "kind": "number", "answer": 2 },
         { "id": "P3.9", "ask": "How many records does fromCSV read from the text \"a\\n\\n\" (a, then two line feeds)? Answer a number.", "kind": "number", "answer": 2 },
         { "id": "P3.10", "ask": "Alpha!A1 holds =Beta!B2+1 and Beta!B2 holds =Alpha!A1+1. What is the cell of the error that Beta!B2 returns? Answer the exact text.", "kind": "text", "answer": "B2" }
+      ]
+    },
+    {
+      "id": "P4",
+      "after": "cp50",
+      "questions": [
+        { "id": "P4.1", "ask": "Which checkpoint introduced the #ADDR error code? Answer cpNN.", "kind": "checkpoint", "answer": "cp01" },
+        { "id": "P4.2", "ask": "A workbook has sheets added in the order Main, Zeta, Alpha. Main!A1 holds =Zeta!B2+C1+Alpha!A1+Zeta!A1+A2. What does precedents(\"A1\") on Main return? Comma-separated labels.", "kind": "ordered", "answer": ["C1", "A2", "ZETA!A1", "ZETA!B2", "ALPHA!A1"] },
+        { "id": "P4.3", "ask": "At most how many actions can be undone in a row on one sheet? Answer a number.", "kind": "number", "answer": 100 },
+        { "id": "P4.4", "ask": "What value does =DATE(2001, 1, 1) return? Answer a number.", "kind": "number", "answer": 367 },
+        { "id": "P4.5", "ask": "What exact text does display() return for a cell holding =2/3?", "kind": "text", "answer": "0.666667" },
+        { "id": "P4.6", "ask": "Which error code does =MID(\"spreadsheet\", 0, 3) return? Answer the code.", "kind": "text", "answer": "#VALUE!" },
+        { "id": "P4.7", "ask": "What value does =COUNT(TRUE, 1, \"x\") return? Answer a number.", "kind": "number", "answer": 1 },
+        { "id": "P4.8", "ask": "A1 holds =B1+$C$1+D$1. After copy(\"A1\", \"B3\"), what does getInput(\"B3\") return? Answer the exact text.", "kind": "text", "answer": "=C3+$C$1+E$1" },
+        { "id": "P4.9", "ask": "Which files under src/ did your cp05 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp05" },
+        { "id": "P4.10", "ask": "Which checkpoint introduced the #FULL error code? Answer cpNN.", "kind": "checkpoint", "answer": "cp23" }
       ]
     }
   ]

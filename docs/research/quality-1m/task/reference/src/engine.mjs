@@ -152,6 +152,8 @@ export function createEngine(errorOrder = "priority") {
     link,
     unlink,
     invalidate,
+    // cp50: every value read from sheet id, and what reads it, after its hidden rows changed.
+    invalidateSheet: (id) => invalidate([...rdeps.keys()].filter((g) => g.startsWith(`${id}|`))),
     labels,
     ordered,
     label,
