@@ -281,6 +281,7 @@ Block E progress (2026-11-09):
   the FEATURES.md title fails, no duplicate texts. 8 mutants.
 - sheet.mjs kept under 300 lines (row/col methods and display/cells/stats became one-liners);
   `redo-kept-on-record` find text made unique after history.clear(). 222 mutants.
+- Block E done: full mutants.mjs run 222/222 killed, check-tree cp01-40 green, smoke gate OK.
 
 ## Open
 
