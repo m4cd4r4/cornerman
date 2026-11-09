@@ -182,40 +182,38 @@ Block C (cp17-24) built:
 - 62 mutants (36 new, Excel-prior ones first), all killed by their target.
 - Smoke gate walks all 24; rule negatives and probe self-test unchanged and passing.
 
-Block D (cp25-32), in progress:
-- Built: probe P2 (10 questions; self-test right 20/20, wrong 0/20, absent 0/20); cp25 insert and
+Block D (cp25-32), built:
+- Probe P2 (10 questions; self-test right 20/20, wrong 0/20, absent 0/20); cp25 insert and
   delete columns (refs.mjs, axis-generic structure); cp26 `$` refs + copy (copy.mjs); cp27 undo
   and redo (history.mjs, limit 100, no-op calls not recorded); cp28 CSV export (LF, no trailing
   line end, stated quoting); cp29 CSV import (strict #CSV with 1-based record number, refs not
   shifted by `at`, one undo step); cp30 save and `loadSheet` (persist.mjs, exact JSON text,
-  canonical keys and targets only, #LOAD with the failing key).
-- 116 mutants at cp30. The full suite was last run at 63/63; the 53 added since were each run
-  in their own batch, all killed.
-- check-tree cp01-29 all green after cp29; cp30 green on its own.
-- cp31-32 design, decided by the fixture designer, not yet reviewed:
-  - `createWorkbook()` starts with no sheets. `addSheet(name)` returns the sheet; sheet names
-    follow the defined-name rule (checkpoint 14), case-insensitive, `#BADNAME` if invalid, `#SHEET`
-    (cell = name) if taken. `sheet(name)` throws `#SHEET` for an unknown name. `sheetNames()` in
-    creation order, as typed. `removeSheet(name)` returns true/false.
-  - `Sheet2!A1`, `Sheet2!A1:B3`, `Sheet2!$A$1` in formulas; references resolve by name at
-    evaluation, so an unknown or removed sheet gives `#REF!` and adding it later resolves them
-    again. `Sheet2!` before anything other than a cell or range is `#PARSE!`. Defined names stay
-    per sheet. `createSheet()` is a sheet in no workbook: every sheet reference there is `#REF!`.
-  - Error values keep their own `cell` when read across sheets (no qualification).
-  - Row and column operations rewrite only their own sheet's formulas: `=Sheet2!A1` on Sheet1
-    keeps pointing at A1 after rows are inserted in Sheet2. This is NOT what Excel does. Each
-    sheet keeps its own undo list; addSheet/removeSheet are not undoable. Copy shifts relative
-    sheet references like any other.
-  - cp32: cycles across sheets are `#CYCLE!` on every member; incremental recalc crosses sheets
-    (a change on Sheet2 re-evaluates only its dependents on any sheet, each counted in its own
-    sheet's `stats()`); precedents/dependents list own-sheet addresses first (row-major), then
-    `Name!A1` for other sheets in sheet creation order.
-  - Reference plan: workbook-level graph keyed by `<sheetId>|<addr>` (cache, edges, rdeps,
-    cycles), per-sheet inputs/parsed/names/history/stats, and a workbook map of sheet name ->
-    formulas that mention it (relink and invalidate on add/remove). Keep every file under 300
-    lines; index.mjs is 279 now, so the sheet internals move to their own module.
+  canonical keys and targets only, #LOAD with the failing key); cp31 workbooks and `Name!A1`
+  references; cp32 cycles, precedents/dependents, incremental recalc and `recalc()` across sheets.
+- cp31-32 as built (fixture designer's calls, not yet reviewed by Macdara):
+  - `createWorkbook()` starts with no sheets. Sheet names follow the defined-name rule
+    (checkpoint 14), so `Sheet2` is invalid; spec examples use `Data`, `Main`. `#BADNAME` /
+    `#SHEET`. No spaces around `!`; the sheet name is written once per range
+    (`Data!A1:Data!B2` is #PARSE!).
+  - References resolve by name at evaluation: unknown or removed sheet = `#REF!` (own cell),
+    re-resolved on add. A range on a missing sheet is #REF! even inside COUNT. Errors keep their
+    own unqualified cell. A removed sheet keeps working on its own (no workbook).
+  - Row/column ops never rewrite a sheet-named reference, even one naming its own sheet (marked
+    "This is NOT what Excel does"). Copy shifts them; a reference copied off the sheet becomes
+    `#REF!` with its sheet name (found while writing the tests: the first version left
+    `Data!#REF!`, which does not parse).
+  - Labels: own cells plain first, then `Name!A1` by sheet creation order. `recalc()` returns
+    own cells only, ordered through paths on other sheets; a removed sheet re-evaluates all its
+    formulas on next read.
+- Reference refactor: engine.mjs holds the graph, cache and sheet registry keyed
+  `<sheetId>|<addr>`; sheet.mjs is the sheet (296 lines); workbook.mjs; index.mjs re-exports.
+  Every file under 300 lines.
+- 141 mutants at cp32 (14 for cp31, 11 for cp32). Six older mutants had stale find text after
+  the cp27 and cp31 changes (two silently, since cp27); rewritten and killed. Full suite run
+  after cp32: 141/141 killed.
+- check-tree cp01-32 all green; smoke gate OK.
 
-Next in Stage 0: blocks D-E (cp25-40) with the same loop; fill probes 2-3 as their blocks land;
+Next in Stage 0: block E (cp33-40) with the same loop; fill probes 2-3 as their blocks land;
 then wire the probe prompt into the gate after cp15, cp25 and cp35 (refuse `next` until
 PROBES.md has a line per question; record tokens since the last clear per probe). Known
 performance debt for cp36: valueOf recurses (deep chains) and cycle detection is a full pass
