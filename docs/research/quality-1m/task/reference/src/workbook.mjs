@@ -61,7 +61,8 @@ export function buildWorkbook(order, loaded) {
     // cp35: the whole workbook as v2 save text; each sheet's cells and names as its own save writes them.
     save() {
       const sheets = list.map((e) => {
-        const { cells, names } = JSON.parse(e.sheet.save());
+        const { cells, names, notes } = JSON.parse(e.sheet.save());
+        if (notes) return { name: e.name, cells, names, notes };
         return { name: e.name, cells, names };
       });
       return JSON.stringify({ format: "workbook", version: 2, errorOrder: engine.errorOrder, sheets });

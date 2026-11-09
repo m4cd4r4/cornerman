@@ -126,7 +126,7 @@ const MUTANTS = [
   { name: "save-names-unsorted", file: "persist.mjs", find: "  for (const n of [...names.keys()].sort()) out[n]", replace: "  for (const n of [...names.keys()]) out[n]", target: "cp30" },
   { name: "save-one-cell-range-flat", file: "persist.mjs", find: "  for (const n of [...names.keys()].sort()) out[n] = nameText(names.get(n));", replace: "  for (const n of [...names.keys()].sort()) { const d = names.get(n); out[n] = d.a === d.b ? d.a : nameText(d); }", target: "cp30" },
   { name: "save-pretty", file: "persist.mjs", find: "cells, names: out });", replace: "cells, names: out }, null, 1);", target: "cp30" },
-  { name: "save-evaluates", file: "sheet.mjs", find: "      return saveText(inputs, names);", replace: "      for (const k of inputs.keys()) valueOf(k);\n      return saveText(inputs, names);", target: "cp30" },
+  { name: "save-evaluates", file: "sheet.mjs", find: "      return saveText(inputs, names, layers.L.notes);", replace: "      for (const k of inputs.keys()) valueOf(k);\n      return saveText(inputs, names, layers.L.notes);", target: "cp30" },
   { name: "load-keeps-history", file: "sheet.mjs", find: "  if (init) rebuild(init);", replace: "  if (init) restructure(init);", target: "cp30" },
   { name: "load-lenient-version", file: "persist.mjs", find: "  if (doc.version !== VERSION)", replace: "  if (doc.version != VERSION)", target: "cp30" },
   { name: "load-array-cells", file: "persist.mjs", find: "  if (!isPlain(doc.cells))", replace: "  if (doc.cells === null || typeof doc.cells !== \"object\")", target: "cp30" },
@@ -254,6 +254,18 @@ const MUTANTS = [
   { name: "layer-noop-recorded", file: "layers.mjs", find: "    return cells.length ? { layer, cells } : null;", replace: "    return { layer, cells };", target: "cp41" },
   { name: "rename-drops-layers", file: "sheet.mjs", find: "rebuild({ ...state(), inputs:", replace: "rebuild({ names: new Map(names), inputs:", target: "cp41" },
   { name: "fmt-check-before-target", file: "features.mjs", find: "      const t = parseTarget(target);\n      const f = checkFormat(format) ?? undefined;", replace: "      const f = checkFormat(format) ?? undefined;\n      const t = parseTarget(target);", target: "cp41" },
+  { name: "changes-late-out-of-order", file: "../CHANGES.md", find: "- cp41: setFormat gives cells a number format such as 0.00, #,##0 or 0%, which changes only the text display shows.\n- cp42: setNote, getNote and notes() keep trimmed notes on cells; copy leaves them, save() writes them.\n", replace: "- cp42: setNote, getNote and notes() keep trimmed notes on cells; copy leaves them, save() writes them.\n- cp41: setFormat gives cells a number format such as 0.00, #,##0 or 0%, which changes only the text display shows.\n", target: "cp40" },
+  { name: "copy-copies-notes", file: "sheet.mjs", find: "history.record(layers.write(\"formats\", w.map(([t, , s]) => [t, layers.L.formats.get(s)])));", replace: "history.record(layers.write(\"formats\", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); history.record(layers.write(\"notes\", w.map(([t, , s]) => [t, layers.L.notes.get(s)])));", target: "cp42" },
+  { name: "note-untrimmed", file: "features.mjs", find: "      const t = text.trim();", replace: "      const t = text;", target: "cp42" },
+  { name: "note-blank-kept", file: "features.mjs", find: "[[k, t === \"\" ? undefined : t]]", replace: "[[k, text === \"\" ? undefined : t]]", target: "cp42" },
+  { name: "note-limit-before-trim", file: "features.mjs", find: "      if (t.length > NOTE_LIMIT)", replace: "      if (text.length > NOTE_LIMIT)", target: "cp42" },
+  { name: "note-push-off-full", file: "structure.mjs", find: "  for (const k of inputs.keys()) {", replace: "  for (const k of [...inputs.keys(), ...layers.notes.keys()]) {", target: "cp42" },
+  { name: "notes-list-unsorted", file: "features.mjs", find: "[...layers.L.notes.keys()].sort(compareAddresses)", replace: "[...layers.L.notes.keys()]", target: "cp42" },
+  { name: "save-notes-always", file: "persist.mjs", find: "  if (notes && notes.size) body.notes =", replace: "  if (notes) body.notes =", target: "cp42" },
+  { name: "save-notes-unsorted", file: "persist.mjs", find: "[...notes.keys()].sort(compareAddresses).map(", replace: "[...notes.keys()].map(", target: "cp42" },
+  { name: "load-notes-loose-values", file: "persist.mjs", find: "      if (!storedNote(v)) throw", replace: "      if (typeof v !== \"string\") throw", target: "cp42" },
+  { name: "load-notes-lower-keys", file: "persist.mjs", find: "      if (normalise(k) !== k) throw bad(path(\"notes\", k)", replace: "      if (normalise(k) === null) throw bad(path(\"notes\", k)", target: "cp42" },
+  { name: "book-save-drops-notes", file: "workbook.mjs", find: "        if (notes) return { name: e.name, cells, names, notes };\n", replace: "", target: "cp42" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

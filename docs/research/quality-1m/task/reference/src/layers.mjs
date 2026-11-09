@@ -1,12 +1,16 @@
-// layers.mjs: what a sheet keeps per cell beside its inputs (formats cp41), how it moves with
+// layers.mjs: what a sheet keeps per cell beside its inputs (formats cp41, notes cp42), how it moves with
 // insert and delete, its undo entries, and its part of a structural snapshot.
 import { parseAddress, rangeKeys, rangeBox, rangeSize, colName, RANGE_LIMIT } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
 import { parseFormat, formatNumber } from "./numfmt.mjs";
 
-// Layers keyed by cell address. A value is a string (format text).
-export const CELL_LAYERS = ["formats"];
+// Layers keyed by cell address. A value is a string (format text, note text).
+export const CELL_LAYERS = ["formats", "notes"];
+
+// cp42: note text as setNote stores it (trimmed, 1 to NOTE_LIMIT characters).
+export const NOTE_LIMIT = 200;
+export const storedNote = (v) => typeof v === "string" && v !== "" && v === v.trim() && v.length <= NOTE_LIMIT;
 
 // "A1" or "A1:B3" as given to setFormat and the like: { a, b, keys } with a top-left. Throws
 // #ADDR (cell = the text as given) or #ARG for more than RANGE_LIMIT cells.

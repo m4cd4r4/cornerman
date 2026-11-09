@@ -41,3 +41,4 @@
 - cp39: sheet.explain returns a cell and everything it reads as a tree, each cell expanded once.
 - cp40: this file, one line per checkpoint.
 - cp41: setFormat gives cells a number format such as 0.00, #,##0 or 0%, which changes only the text display shows.
+- cp42: setNote, getNote and notes() keep trimmed notes on cells; copy leaves them, save() writes them.

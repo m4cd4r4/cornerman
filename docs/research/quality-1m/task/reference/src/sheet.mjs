@@ -33,7 +33,7 @@ export function makeSheet(init, order = "priority") {
   const nameUsers = new Map(); // NAME -> Set of formula keys whose text uses it
   const stats = { evaluations: 0 };
   const history = createHistory();
-  const layers = createLayers(); // formats (cp41), keyed by cell
+  const layers = createLayers(); // formats (cp41) and notes (cp42), keyed by cell
   let engine = null;
   let id = 0;
   const g = (k) => `${id}|${k}`;
@@ -217,7 +217,7 @@ export function makeSheet(init, order = "priority") {
 
   const sheet = {
     save() {
-      return saveText(inputs, names);
+      return saveText(inputs, names, layers.L.notes);
     },
     set(address, input) {
       writeAll([[key(address), input]]);

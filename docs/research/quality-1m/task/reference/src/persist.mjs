@@ -2,22 +2,27 @@
 import { normalise, compareAddresses } from "./address.mjs";
 import { makeError } from "./errors.mjs";
 import { checkName, parseNameRef, nameText } from "./names.mjs";
+import { storedNote } from "./layers.mjs";
 
 export const FORMAT = "sheet";
 export const VERSION = 1;
 
-// The { cells, names } object of a save: cells in address order, names sorted (cp30).
-export function saveBody(inputs, names) {
+// The { cells, names } object of a save: cells in address order, names sorted (cp30), then
+// notes in address order when there are any (cp42).
+export function saveBody(inputs, names, notes) {
   const cells = {};
   for (const k of [...inputs.keys()].sort(compareAddresses)) cells[k] = inputs.get(k);
   const out = {};
   for (const n of [...names.keys()].sort()) out[n] = nameText(names.get(n));
-  return { cells, names: out };
+  const body = { cells, names: out };
+  if (notes && notes.size) body.notes = Object.fromEntries([...notes.keys()].sort(compareAddresses).map((k) => [k, notes.get(k)]));
+  return body;
 }
 
-// inputs: key -> input, names: NAME -> { a, b, range }.
-export function saveText(inputs, names) {
-  const { cells, names: out } = saveBody(inputs, names);
+// inputs: key -> input, names: NAME -> { a, b, range }, notes: key -> text.
+export function saveText(inputs, names, notes) {
+  const { cells, names: out, notes: n } = saveBody(inputs, names, notes);
+  if (n) return JSON.stringify({ format: FORMAT, version: VERSION, cells, names: out, notes: n });
   return JSON.stringify({ format: FORMAT, version: VERSION, cells, names: out });
 }
 
@@ -37,7 +42,7 @@ export function parseDoc(json) {
   return doc;
 }
 
-// The cells and names of one sheet, checked in a fixed order. at = "" for a v1 save (cells
+// The cells, names and notes (cp42) of one sheet, checked in a fixed order. at = "" for a v1 save (cells
 // "cells", "names", then the key) or "sheets.N." for a sheet of a v2 workbook save (cp35).
 export function parseBody(doc, at = "") {
   const path = (part, key) => (at === "" ? key ?? part : `${at}${part}${key === undefined ? "" : "." + key}`);
@@ -61,7 +66,16 @@ export function parseBody(doc, at = "") {
     if (nameText(d) !== ref) throw bad(path("names", n), `${n} target must be written as ${nameText(d)}`);
     names.set(n, d);
   }
-  return { inputs, names };
+  const notes = new Map();
+  if (doc.notes !== undefined) {
+    if (!isPlain(doc.notes)) throw bad(path("notes"), "notes must be an object");
+    for (const [k, v] of Object.entries(doc.notes)) {
+      if (normalise(k) !== k) throw bad(path("notes", k), `${k} is not an upper-case cell address`);
+      if (!storedNote(v)) throw bad(path("notes", k), `note ${k} is not trimmed text of 1 to 200 characters`);
+      notes.set(k, v);
+    }
+  }
+  return { inputs, names, notes };
 }
 
 // The checks after the JSON object of a v1 sheet save.

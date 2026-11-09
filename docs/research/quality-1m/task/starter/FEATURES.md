@@ -43,3 +43,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp39: explain
 - [ ] cp40: change log
 - [ ] cp41: number formats
+- [ ] cp42: cell notes
