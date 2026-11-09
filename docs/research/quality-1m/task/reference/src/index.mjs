@@ -1,4 +1,4 @@
-// index.mjs: the sheet object and public API (cp01-cp16).
+// index.mjs: the sheet object and public API (cp01-cp24).
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";
@@ -6,6 +6,7 @@ import { evaluate } from "./evaluate.mjs";
 import { displayValue } from "./display.mjs";
 import { collectRefs, cycleNodes, reachable, recalcOrder } from "./graph.mjs";
 import { checkName, parseNameRef, nameText } from "./names.mjs";
+import { insertRows, deleteRows } from "./structure.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -106,6 +107,29 @@ export function createSheet() {
     invalidate(users);
   }
 
+  function parseInto(k, input) {
+    if (!input.startsWith("=")) { parsed.delete(k); return; }
+    try {
+      const ast = parseFormula(input.slice(1));
+      parsed.set(k, { ast, refs: collectRefs(ast) });
+    } catch (e) {
+      if (!(e instanceof ParseError)) throw e;
+      parsed.set(k, { parseError: e.message });
+    }
+  }
+
+  // After a structural change: swap in the moved inputs and names, rebuild every index.
+  function rebuild(next) {
+    inputs.clear();
+    names.clear();
+    for (const [k, v] of next.inputs) inputs.set(k, v);
+    for (const [n, d] of next.names) names.set(n, d);
+    for (const m of [parsed, cache, edges, rdeps, nameUsers]) m.clear();
+    for (const [k, v] of inputs) parseInto(k, v);
+    for (const k of inputs.keys()) { setNameUsers(k, true); relink(k); }
+    cycles = null;
+  }
+
   return {
     set(address, input) {
       const k = key(address);
@@ -116,17 +140,7 @@ export function createSheet() {
         parsed.delete(k);
       } else {
         inputs.set(k, input);
-        if (input.startsWith("=")) {
-          try {
-            const ast = parseFormula(input.slice(1));
-            parsed.set(k, { ast, refs: collectRefs(ast) });
-          } catch (e) {
-            if (!(e instanceof ParseError)) throw e;
-            parsed.set(k, { parseError: e.message });
-          }
-        } else {
-          parsed.delete(k);
-        }
+        parseInto(k, input);
       }
       setNameUsers(k, true);
       relink(k);
@@ -174,6 +188,12 @@ export function createSheet() {
       names.delete(n);
       nameChanged(n);
       return true;
+    },
+    insertRows(at, count = 1) {
+      rebuild(insertRows(inputs, names, at, count));
+    },
+    deleteRows(at, count = 1) {
+      rebuild(deleteRows(inputs, names, at, count));
     },
     names() {
       const out = {};

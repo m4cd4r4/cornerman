@@ -31,7 +31,7 @@ const MUTANTS = [
   { name: "dfs-order", file: "index.mjs", find: "      const order = recalcOrder(dirty, edgesOf);", replace: "      const order = [];\n      const seen = new Set();\n      const visit = (k) => { if (seen.has(k) || !dirty.includes(k)) return; seen.add(k); for (const p of edgesOf(k)) visit(p); order.push(k); };\n      dirty.forEach(visit);", target: "cp12" },
   { name: "no-resort", file: "graph.mjs", find: "    ready.sort((x, y) => compareAddresses(comps[x][0], comps[y][0]));\n", replace: "", target: "cp12" },
   { name: "text-coerced", file: "functions.mjs", find: "    else if (!count) errors.push(makeError(\"#VALUE!\", ctx.cell, \"text argument\"));", replace: "    else if (!count) { const n = Number(v); if (v.trim() !== \"\" && !Number.isNaN(n)) nums.push(n); else errors.push(makeError(\"#VALUE!\", ctx.cell, \"text argument\")); }", target: "cp13" },
-  { name: "single-ref-direct", file: "functions.mjs", find: "const isRangeArg = (n) => n.k === \"ref\" || ", replace: "const isRangeArg = (n) => ", target: "cp13" },
+  { name: "single-ref-direct", file: "args.mjs", find: "const isRangeArg = (n) => n.k === \"ref\" || ", replace: "const isRangeArg = (n) => ", target: "cp13" },
   { name: "range-reads-first", file: "evaluate.mjs", find: "return isError(r) ? r : makeError(\"#VALUE!\", ctx.cell, \"range used outside a function\");", replace: "return isError(r) ? r : ctx.read(r[0]);", target: "cp13" },
   { name: "names-case-sensitive", file: "parser.mjs", find: "    if (NAME.test(w)) return { k: \"name\", v: up };", replace: "    if (NAME.test(w)) return { k: \"name\", v: w };", target: "cp14" },
   { name: "name-digits-allowed", file: "names.mjs", find: " && !/^[A-Za-z]+\\d+$/.test(name)", replace: "", target: "cp14" },
