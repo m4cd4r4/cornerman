@@ -352,3 +352,49 @@ Outline (titles go into starter/FEATURES.md; specs may refine them):
 CM-250 pilot (cm250-sonnet-r1, cornerman 0.7.2): all 40 in 38 minutes, 3 sessions (2 clears at
 about 258k), peak 258,437, work 582,518, US$8.30. Hidden 38/40 (fails cp21, cp30), 0 regressions,
 0 rule violations, probes 30/30. n = 1 per arm: calibration only, not a comparison.
+
+## Block F progress (2026-11-09)
+
+- cp40 retune (first commit of the block): CHANGES.md may hold entries after the 40th, which must
+  continue in order (`- cp41: `, `- cp42: `, ...) under the length, spacing and no-duplicate rules;
+  the first 40 are checked exactly as before. The bare-title rule for cp41+ lines is checked by
+  each later checkpoint's own hidden test (each cp41-48 hidden file has a "CHANGES.md has a cpNN
+  line" test). Visible test relaxed the same way (`>= 40`). New cp40 mutant
+  `changes-late-out-of-order` (cp41/cp42 swapped) killed. This changes frozen files: re-freeze.
+- Shared infrastructure: layers.mjs (per-cell layers formats/notes/rules plus merges, moved by
+  insert/delete through structure.mjs, in structural snapshots, undo entries `{ layer, ... }`),
+  history groups (`{ group: [...] }`, one undo step for copy and sort), features.mjs (the new
+  sheet methods), graph.mjs `parseEntry` (moved out of sheet.mjs to keep it at 295 lines).
+- cp41 number formats (numfmt.mjs, layers.mjs, features.mjs): departures half-even rounding on the
+  decimal form (1.005 -> 1.00, 0.125 -> 0.12), inserted rows/cols get no format, formulas never
+  inherit a format (`=A1&""` is the plain text). `%` moves digits (0.575 -> 58%); copy copies
+  formats; toCSV writes formatted text. 12 mutants.
+- cp42 cell notes (features.mjs, persist.mjs, workbook.mjs): departures copy does not carry notes,
+  text is trimmed and blank removes, an insert drops a note pushed off the sheet with no #FULL.
+  v1 and v2 saves gain an optional `notes` object (omitted when empty, so earlier save texts are
+  byte-identical), checked on load after names. 11 mutants (+1 cp40).
+- cp43 COUNTIF and AVERAGEIF (criteria.mjs on the cp22 matcher): departures type-strict criteria
+  and no wildcards, error cells never match (not even `<>`), averageRange must be the same shape.
+  8 mutants.
+- cp44 INDEX and MATCH (indexing.mjs): departures MATCH defaults to type 0, a lone INDEX index is
+  always the row (INDEX(A1:C1, 2) is #REF!), types 1/-1 search the whole unsorted range and take
+  the first of tied best values. 0 is #REF!, 2-D MATCH range is #VALUE!. 8 mutants.
+- cp45 SUMPRODUCT (products.mjs): departures non-range arguments are #VALUE! and never evaluated
+  (SUMPRODUCT(1/0) is #VALUE!, array arithmetic refused), booleans count 1/0. Same width and
+  height, any error in any range wins by priority. 7 mutants.
+- cp46 data validation (validation.mjs, layers.mjs check): departures list match is exact (case
+  and spaces), formulas and clearing always pass, copy neither checks nor carries rules. set,
+  setCell, setMany, fromCSV check every input before writing (#INVALID); undo/copy/structure do
+  not; `invalidCells()`. 11 mutants.
+- cp47 merged ranges (merges.mjs, layers.mjs, sheet.mjs valueOf/recalc/toCSV): departures covered
+  cells keep hidden inputs (unmerge brings them back), copy ignores merges (copies hidden inputs,
+  writes into covered cells). Covered cells read empty everywhere (cross-sheet too), are never
+  evaluated or listed by recalc; set/setMany/fromCSV refuse them with #MERGE before validation;
+  insert/delete resize like formula ranges and drop one-cell merges. 10 mutants.
+- cp48 sorting a range (sort.mjs, features.mjs): departures formulas move as typed text (refs not
+  shifted), notes and rules stay while inputs and formats move, descending keeps ties stable with
+  errors and empties last. Writes unchecked; #MERGE when the range touches a merge. 10 mutants.
+- Older mutants whose find text moved (same intent): copy-reads-own-writes, copy-step-per-cell,
+  csv-formulas-evaluate, csv-in-skip-empty, csv-in-step-per-cell, save-evaluates. 300 mutants.
+- Not saved yet (left for cp56): formats, validation rules, merges. The cp41/46/47 specs say so;
+  no test asserts it, so cp56 can add them without breaking a hidden test.
