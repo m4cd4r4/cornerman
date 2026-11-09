@@ -25,6 +25,9 @@ the given column of that row.
 - Empty cells and error cells in the first column never match.
 - An empty `key` (a reference to an empty cell) matches nothing.
 - No match is `#N/A` (`cell` = the formula cell).
+- `#N/A` is a new error code. In the checkpoint 4 priority order it sits between `#NAME?` and
+  `#VALUE!`, so the whole order is now, highest first: `#CYCLE!`, `#REF!`, `#NAME?`, `#N/A`,
+  `#VALUE!`, `#DIV/0!`.
 
 ## Result
 

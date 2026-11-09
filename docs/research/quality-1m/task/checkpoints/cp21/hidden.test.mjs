@@ -81,6 +81,13 @@ test("cp21h argument errors follow the priority order", () => {
   assert.ok(isErr(val("=VLOOKUP(B1, K1:L9, 2)", { ...TABLE, B1: "=FOO()" }), "#NAME?", "B1"));
 });
 
+test("cp21h #N/A sits between #NAME? and #VALUE! in the priority order", () => {
+  assert.ok(isErr(val('=VLOOKUP("pear", K1:L9, 2) + 1/0'), "#N/A", "Z99"));
+  assert.ok(isErr(val('=SUM(1/0, "x" + 1, VLOOKUP("pear", K1:L9, 2))'), "#N/A", "Z99"));
+  assert.ok(isErr(val('=VLOOKUP("pear", K1:L9, 2) + FOO()'), "#NAME?", "Z99"));
+  assert.ok(isErr(val('=VLOOKUP("pear", K1:L9, 2) + K0'), "#REF!", "Z99"));
+});
+
 test("cp21h every table cell is referred to", () => {
   const s = sheet({});
   s.set("Z99", "=VLOOKUP(1, K1:L2, 2)");

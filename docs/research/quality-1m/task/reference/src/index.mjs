@@ -1,4 +1,4 @@
-// index.mjs: the sheet object and public API (cp01-cp24).
+// index.mjs: the sheet object and public API (cp01-cp25).
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";
@@ -6,7 +6,7 @@ import { evaluate } from "./evaluate.mjs";
 import { displayValue } from "./display.mjs";
 import { collectRefs, cycleNodes, reachable, recalcOrder } from "./graph.mjs";
 import { checkName, parseNameRef, nameText } from "./names.mjs";
-import { insertRows, deleteRows } from "./structure.mjs";
+import { insertRows, deleteRows, insertCols, deleteCols } from "./structure.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -194,6 +194,12 @@ export function createSheet() {
     },
     deleteRows(at, count = 1) {
       rebuild(deleteRows(inputs, names, at, count));
+    },
+    insertCols(at, count = 1) {
+      rebuild(insertCols(inputs, names, at, count));
+    },
+    deleteCols(at, count = 1) {
+      rebuild(deleteCols(inputs, names, at, count));
     },
     names() {
       const out = {};
