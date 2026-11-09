@@ -21,9 +21,10 @@ const entries = () =>
     .split(/\r?\n/)
     .filter((l) => l.trim() !== "" && !l.startsWith("#"));
 
-test("cp40h every non-blank, non-heading line is an entry, cp01 to cp40 in order", () => {
+// Entries after the 40th (added by later checkpoints) must continue the numbering in order.
+test("cp40h every non-blank, non-heading line is an entry, cp01 to cp40 in order, then cp41 on", () => {
   const lines = entries();
-  assert.equal(lines.length, 40);
+  assert.ok(lines.length >= 40, `${lines.length} entries`);
   lines.forEach((line, i) => {
     const nn = String(i + 1).padStart(2, "0");
     assert.ok(line.startsWith(`- cp${nn}: `), `line ${i + 1}: ${line}`);
@@ -36,7 +37,7 @@ test("cp40h texts: length, spacing, not the bare title, all different", () => {
   texts.forEach((t, i) => {
     assert.ok(t.length >= 1 && t.length <= 120, `cp${i + 1} length ${t.length}`);
     assert.equal(t, t.trim(), `cp${i + 1} spacing`);
-    assert.notEqual(t.toLowerCase(), TITLES[i].toLowerCase(), `cp${i + 1} is only its title`);
+    if (i < TITLES.length) assert.notEqual(t.toLowerCase(), TITLES[i].toLowerCase(), `cp${i + 1} is only its title`);
     assert.ok(!seen.has(t.toLowerCase()), `cp${i + 1} repeats an earlier text`);
     seen.add(t.toLowerCase());
   });

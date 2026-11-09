@@ -12,7 +12,9 @@ Nothing new in the API. Write a change log: a file that tells a reader of the co
 
 ## The entries
 
-- There are exactly 40, for `cp01` to `cp40`, in that order, each once.
+- The first 40 are for `cp01` to `cp40`, in that order, each once. Later checkpoints add their
+  own entries after these; any entry after the 40th continues the numbering in order (`cp41`,
+  `cp42`, ...), each once, under the same rules.
 - Each text is 1 to 120 characters long and does not start or end with a space.
 - Each text says what that checkpoint added or changed, in words a user of the API can follow. A
   text that equals the checkpoint's title in `FEATURES.md`, ignoring case, fails this rule.
