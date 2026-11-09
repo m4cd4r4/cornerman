@@ -43,3 +43,4 @@
 - cp41: setFormat gives cells a number format such as 0.00, #,##0 or 0%, which changes only the text display shows.
 - cp42: setNote, getNote and notes() keep trimmed notes on cells; copy leaves them, save() writes them.
 - cp43: COUNTIF counts and AVERAGEIF averages the cells that meet a SUMIF-style criterion.
+- cp44: INDEX reads a cell of a range by row and column; MATCH finds a position, exact unless asked.

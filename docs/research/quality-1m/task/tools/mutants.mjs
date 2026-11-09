@@ -274,6 +274,14 @@ const MUTANTS = [
   { name: "averageif-none-zero", file: "criteria.mjs", find: "  return count ? total / count : makeError(", replace: "  return count ? total / count : 0 && makeError(", target: "cp43" },
   { name: "averageif-matched-error-ignored", file: "criteria.mjs", find: "    else if (isError(v)) errors.push(v);", replace: "", target: "cp43" },
   { name: "countif-crit-error-ignored", file: "criteria.mjs", find: "  const err = pickError([g.err, crit]);", replace: "  const err = g.err;", target: "cp43" },
+  { name: "match-default-approx", file: "indexing.mjs", find: "  const type = args.length === 3 ? intArg(args[2], ctx, evaluate) : 0;", replace: "  const type = args.length === 3 ? intArg(args[2], ctx, evaluate) : 1;", target: "cp44" },
+  { name: "index-lone-column", file: "indexing.mjs", find: "  const row = intArg(args[1], ctx, evaluate);\n  const col = args.length === 3 ? intArg(args[2], ctx, evaluate) : 1;", replace: "  let row = intArg(args[1], ctx, evaluate);\n  let col = args.length === 3 ? intArg(args[2], ctx, evaluate) : 1;\n  if (args.length === 2 && !g.err && g.height === 1) { col = row; row = 1; }", target: "cp44" },
+  { name: "match-stops-at-greater", file: "indexing.mjs", find: "      if (type === 1 ? c > 0 : c < 0) continue;", replace: "      if (type === 1 ? c > 0 : c < 0) break;", target: "cp44" },
+  { name: "match-ties-last", file: "indexing.mjs", find: "compareValues(v, bestV) > 0 : compareValues(v, bestV) < 0", replace: "compareValues(v, bestV) >= 0 : compareValues(v, bestV) <= 0", target: "cp44" },
+  { name: "match-star-wildcard", file: "indexing.mjs", find: "        if (c === 0) return i + 1;", replace: "        if (c === 0 || (key.includes && key.includes(\"*\") && v.toLowerCase().startsWith(key.slice(0, key.indexOf(\"*\")).toLowerCase()))) return i + 1;", target: "cp44" },
+  { name: "match-loose-type", file: "indexing.mjs", find: "      if (v === null || isError(v) || typeof v !== typeof key) continue;", replace: "      if (v === null || isError(v)) continue;", target: "cp44" },
+  { name: "match-2d-allowed", file: "indexing.mjs", find: "  if (g.width !== 1 && g.height !== 1) return", replace: "  if (false) return", target: "cp44" },
+  { name: "index-error-recast", file: "indexing.mjs", find: "  return ctx.read(g.keys[(row - 1) * g.width + col - 1]);", replace: "  const v = ctx.read(g.keys[(row - 1) * g.width + col - 1]);\n  return isError(v) ? makeError(v.code, ctx.cell, v.message) : v;", target: "cp44" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

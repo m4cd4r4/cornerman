@@ -7,6 +7,7 @@ import { TEXT } from "./text.mjs";
 import { DATES } from "./dates.mjs";
 import { LOOKUP } from "./lookup.mjs";
 import { CRITERIA } from "./criteria.mjs";
+import { INDEXING } from "./indexing.mjs";
 
 // Numbers for an aggregate. Range arguments contribute only their numbers; direct arguments
 // contribute numbers and booleans (1/0), and direct text is #VALUE!. COUNT passes `count`.
@@ -64,7 +65,7 @@ function rounding(fn, args, ctx, evaluate) {
   return roundDecimal(x, digits === 0 ? 0 : digits, MODES[fn]);
 }
 
-const TABLE = { ...LOGIC, ...TEXT, ...DATES, ...LOOKUP, ...CRITERIA };
+const TABLE = { ...LOGIC, ...TEXT, ...DATES, ...LOOKUP, ...CRITERIA, ...INDEXING };
 for (const fn of ["SUM", "AVERAGE", "MIN", "MAX", "COUNT"]) TABLE[fn] = (args, ctx, ev) => aggregate(fn, args, ctx, ev);
 for (const fn of Object.keys(MODES)) TABLE[fn] = (args, ctx, ev) => rounding(fn, args, ctx, ev);
 
