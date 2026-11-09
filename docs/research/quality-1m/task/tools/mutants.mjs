@@ -282,6 +282,13 @@ const MUTANTS = [
   { name: "match-loose-type", file: "indexing.mjs", find: "      if (v === null || isError(v) || typeof v !== typeof key) continue;", replace: "      if (v === null || isError(v)) continue;", target: "cp44" },
   { name: "match-2d-allowed", file: "indexing.mjs", find: "  if (g.width !== 1 && g.height !== 1) return", replace: "  if (false) return", target: "cp44" },
   { name: "index-error-recast", file: "indexing.mjs", find: "  return ctx.read(g.keys[(row - 1) * g.width + col - 1]);", replace: "  const v = ctx.read(g.keys[(row - 1) * g.width + col - 1]);\n  return isError(v) ? makeError(v.code, ctx.cell, v.message) : v;", target: "cp44" },
+  { name: "sp-booleans-zero", file: "products.mjs", find: "typeof v === \"boolean\" ? (v ? 1 : 0) : 0", replace: "typeof v === \"boolean\" ? 0 : 0", target: "cp45" },
+  { name: "sp-scalar-args-evaluated", file: "products.mjs", find: "function sumproduct(args, ctx) {\n  if (!args.length)", replace: "function sumproduct(args, ctx, evaluate) {\n  for (const a of args) if (![\"ref\", \"range\", \"name\"].includes(a.k)) { const v = evaluate(a, ctx); if (isError(v)) return v; }\n  if (!args.length)", target: "cp45" },
+  { name: "sp-text-number-coerced", file: "products.mjs", find: "typeof v === \"boolean\" ? (v ? 1 : 0) : 0", replace: "typeof v === \"boolean\" ? (v ? 1 : 0) : typeof v === \"string\" && /^-?[0-9]+$/.test(v) ? Number(v) : 0", target: "cp45" },
+  { name: "sp-same-count-is-same-shape", file: "products.mjs", find: "g.width !== first.width || g.height !== first.height", replace: "g.keys.length !== first.keys.length", target: "cp45" },
+  { name: "sp-first-error-wins", file: "products.mjs", find: "  const e = pickError(values.flat().filter(isError));", replace: "  const e = values.flat().find(isError) ?? null;", target: "cp45" },
+  { name: "sp-no-args-zero", file: "products.mjs", find: "  if (!args.length) return makeError(", replace: "  if (!args.length) return 0 && makeError(", target: "cp45" },
+  { name: "sp-first-bad-range-wins", file: "products.mjs", find: "  const err = pickError(grids.map((g) => g.err));", replace: "  const err = grids.find((g) => g.err)?.err ?? null;", target: "cp45" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
