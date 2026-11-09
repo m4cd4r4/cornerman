@@ -1,4 +1,4 @@
-// Error values and the priority order (cp02, cp04; later checkpoints add codes).
+// errors.mjs: error values and the priority order (cp02, cp04; later checkpoints add codes).
 import { compareAddresses } from "./address.mjs";
 
 // Highest priority first.

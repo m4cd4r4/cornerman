@@ -1,4 +1,4 @@
-// Spreadsheet engine reference implementation (cp01-cp08).
+// index.mjs: the sheet object and public API (cp01-cp08).
 import { normalise, compareAddresses } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";

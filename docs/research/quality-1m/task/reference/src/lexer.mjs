@@ -1,4 +1,4 @@
-// Tokens for formulas (cp02, cp03, cp06, cp07).
+// lexer.mjs: tokens for formulas (cp02, cp03, cp06, cp07).
 const OPS = ["<=", ">=", "<>", "=", "<", ">", "&", "+", "-", "*", "/", "^", "%", "(", ")", ",", ":", "!"];
 
 export class ParseError extends Error {}

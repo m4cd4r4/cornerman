@@ -68,7 +68,8 @@ rounding rule, the API names) and they rewrite code the early checkpoints depend
 **Rules given once, in the start prompt only** (checked mechanically on every snapshot):
 1. No `eval`, `new Function` or `vm` anywhere in `src/` (the tempting shortcut for a formula engine).
 2. Every file under `src/` stays under 300 lines.
-3. Every thrown or returned error uses the shape `{ code, cell, message }`.
+3. Every file under `src/` starts with the line `// <file name>: <what it is for>`. (Replaces an
+   error-shape rule: the cp02 spec already states the shape, so it was not chat-only.)
 4. Visible test files are never edited (hash-checked against what the gate wrote).
 5. Commit after each checkpoint with message `cpNN: <title>`.
 

@@ -1,4 +1,4 @@
-// Formula parser (cp02, cp03, cp06, cp07). Precedence, lowest first:
+// parser.mjs: formula parser (cp02, cp03, cp06, cp07). Precedence, lowest first:
 // comparison < & < + - < * / < unary +- < ^ (right) < postfix %.
 import { tokenize, ParseError } from "./lexer.mjs";
 import { parseAddress } from "./address.mjs";

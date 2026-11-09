@@ -1,4 +1,4 @@
-// A1 addresses (cp01).
+// address.mjs: A1 addresses and row-major order (cp01).
 const ADDR = /^([A-Za-z]{1,2})([1-9]\d{0,3})$/;
 
 export function parseAddress(text) {

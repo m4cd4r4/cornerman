@@ -1,4 +1,4 @@
-// Formula evaluation (cp02-cp08).
+// evaluate.mjs: formula evaluation (cp02-cp08).
 import { makeError, isError, pickError } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
 

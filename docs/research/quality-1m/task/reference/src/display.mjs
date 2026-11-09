@@ -1,4 +1,4 @@
-// Display text (cp05).
+// display.mjs: display text (cp05).
 import { isError } from "./errors.mjs";
 
 // Plain decimal digits of a non-negative number's shortest form, no exponent.
