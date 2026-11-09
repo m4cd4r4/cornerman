@@ -169,7 +169,20 @@ Block B (cp09-16) built:
   the answer away.
 - Smoke gate walks all 16; rule negatives still 16/16 (one case no longer keys on header text).
 
-Next in Stage 0: blocks C-E (cp17-40) with the same loop; fill probes 2-3 as their blocks land;
+Block C (cp17-24) built:
+- Specs: IF (lazy branches, static dependencies), AND/OR (no short-circuit, range vs direct
+  arguments), NOT; text functions (display-text conversion, TRIM ends only); dates (serial 1 =
+  2000-01-01, no rollover); ISERROR/IFERROR (#CYCLE! never caught); VLOOKUP (exact only,
+  type-strict, column outside the table #REF!); SUMIF (operator grammar, type-strict, no
+  wildcards, `<>` = complement of `=`, same-shape sum range); insert rows and delete rows
+  (token-wise formula rewriting, corners move independently, #REF! for lost refs, #FULL, #ARG,
+  names move/shrink/are removed, full re-evaluation after).
+- Reference grows to 16 files (args, logic, text, dates, lookup, structure; index.mjs 204 lines);
+  188 hidden + 37 visible tests over cp01-24, all green.
+- 62 mutants (36 new, Excel-prior ones first), all killed by their target.
+- Smoke gate walks all 24; rule negatives and probe self-test unchanged and passing.
+
+Next in Stage 0: blocks D-E (cp25-40) with the same loop; fill probes 2-3 as their blocks land;
 then wire the probe prompt into the gate after cp15, cp25 and cp35 (refuse `next` until
 PROBES.md has a line per question; record tokens since the last clear per probe). Known
 performance debt for cp36: valueOf recurses (deep chains) and cycle detection is a full pass

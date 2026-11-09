@@ -35,11 +35,7 @@ function rewrite(src, mapper) {
   const edits = [];
   for (let i = 0; i < toks.length; i++) {
     const a = refAt(toks, i);
-    if (!a) {
-      // #REF!:A5 stays broken as typed.
-      if (toks[i].t === "referr" && toks[i + 1]?.v === ":" && toks[i + 2]) i += 2;
-      continue;
-    }
+    if (!a) continue;
     const colon = toks[i + 1];
     const b = colon && colon.t === "op" && colon.v === ":" ? refAt(toks, i + 2) : null;
     if (!b) {
