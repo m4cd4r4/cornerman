@@ -266,6 +266,14 @@ const MUTANTS = [
   { name: "load-notes-loose-values", file: "persist.mjs", find: "      if (!storedNote(v)) throw", replace: "      if (typeof v !== \"string\") throw", target: "cp42" },
   { name: "load-notes-lower-keys", file: "persist.mjs", find: "      if (normalise(k) !== k) throw bad(path(\"notes\", k)", replace: "      if (normalise(k) === null) throw bad(path(\"notes\", k)", target: "cp42" },
   { name: "book-save-drops-notes", file: "workbook.mjs", find: "        if (notes) return { name: e.name, cells, names, notes };\n", replace: "", target: "cp42" },
+  { name: "countif-text-matches-number", file: "criteria.mjs", find: "  for (const k of g.keys) if (test(ctx.read(k))) n++;", replace: "  const loose = (v) => typeof v === \"string\" && v !== \"\" && typeof crit !== \"boolean\" && v.toLowerCase() === String(crit).replace(/^=/, \"\").toLowerCase();\n  for (const k of g.keys) if (test(ctx.read(k)) || loose(ctx.read(k))) n++;", target: "cp43" },
+  { name: "averageif-resize", file: "criteria.mjs", find: "  if (s.width !== g.width || s.height !== g.height) return", replace: "  if (false) return", target: "cp43" },
+  { name: "countif-star-wildcard", file: "criteria.mjs", find: "  const test = matcher(crit);\n  let n = 0;", replace: "  const test = crit === \"*\" ? (v) => typeof v === \"string\" && v !== \"\" : matcher(crit);\n  let n = 0;", target: "cp43" },
+  { name: "countif-ne-counts-errors", file: "criteria.mjs", find: "  for (const k of g.keys) if (test(ctx.read(k))) n++;", replace: "  for (const k of g.keys) if (test(ctx.read(k)) || (isError(ctx.read(k)) && typeof crit === \"string\" && crit.startsWith(\"<>\"))) n++;", target: "cp43" },
+  { name: "averageif-counts-nonnumbers", file: "criteria.mjs", find: "    if (typeof v === \"number\") { total += v; count++; }", replace: "    if (typeof v === \"number\") total += v;\n    if (!isError(v)) count++;", target: "cp43" },
+  { name: "averageif-none-zero", file: "criteria.mjs", find: "  return count ? total / count : makeError(", replace: "  return count ? total / count : 0 && makeError(", target: "cp43" },
+  { name: "averageif-matched-error-ignored", file: "criteria.mjs", find: "    else if (isError(v)) errors.push(v);", replace: "", target: "cp43" },
+  { name: "countif-crit-error-ignored", file: "criteria.mjs", find: "  const err = pickError([g.err, crit]);", replace: "  const err = g.err;", target: "cp43" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

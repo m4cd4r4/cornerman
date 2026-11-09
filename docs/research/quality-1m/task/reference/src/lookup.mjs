@@ -6,7 +6,7 @@ import { compareValues } from "./evaluate.mjs";
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sameType = (a, b) => typeof a === typeof b;
 
-function gridArg(node, ctx) {
+export function gridArg(node, ctx) {
   return isRangeArg(node) ? rangeGrid(node, ctx) : { err: makeError("#VALUE!", ctx.cell, "expected a range") };
 }
 
