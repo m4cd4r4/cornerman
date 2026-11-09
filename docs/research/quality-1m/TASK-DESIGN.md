@@ -111,6 +111,44 @@ violations per snapshot, probe accuracy, cost and wall time per run including su
 6. Predictions written, then task + tests + scorer + predictions frozen with sha256.
 7. Smoke: one free dry run of the gate against the reference to prove the reveal order.
 
+## Progress (2026-11-09)
+
+Built and passing, all under `task/`, US$0:
+- `checkpoints/cp01-cp08`: spec, visible and hidden tests (block A). The reference passes all 52.
+- `reference/src`: block A engine, 7 files, no eval.
+- `tools/check-tree.mjs`: runs checkpoint tests against any tree, in a fresh copy.
+- `tools/mutants.mjs`: 8 mutants (Excel-style number grammar, unary above power, empty ref as
+  null, leftmost error, half-up rounding, case-sensitive text, % below ^, no tolerance). All 8
+  killed by their target checkpoint.
+- `harness/gate-server.mjs` + `starter/gate.mjs`: local HTTP gate, state in the run dir so it
+  survives clears. `harness/smoke-gate.mjs` passes (stub refused, reference walks every gate,
+  one snapshot per checkpoint, visible hashes recorded, ALL DONE, status done).
+- Fixture files carry a `tdd-guard:allow` header (acceptance fixtures, proven by the mutants).
+
+Rules found while building:
+- **Backward compatible.** Every later checkpoint keeps every earlier hidden test passing (API
+  rename keeps old names as aliases; the error-order change is opt-in). Otherwise "regression"
+  would punish following the spec.
+- `node --test <dir>` fails on Node 25; always pass a glob (`"test/**/*.test.mjs"`).
+
+Draft titles for 9-40 (specs not written; revise freely until the freeze):
+9 cycles (#CYCLE!, top priority); 10 precedents/dependents; 11 incremental recalc (only
+dependents re-evaluate); 12 recalc order log (topological, row-major ties); 13 function syntax +
+SUM over ranges; 14 named ranges; 15 AVERAGE/MIN/MAX/COUNT with stated empty and text rules
+(probe 1); 16 ROUND half-even with digits, ROUNDUP/ROUNDDOWN; 17 IF short-circuit (untaken branch
+errors ignored), AND/OR/NOT; 18 text functions, 1-based MID, stated TRIM; 19 DATE serial from
+epoch 2000-01-01 = 1, YEAR/MONTH/DAY; 20 ISERROR/IFERROR; 21 exact-only VLOOKUP with #N/A placed
+in the order; 22 SUMIF criteria grammar; 23 insert rows; 24 delete rows (refs to deleted cells
+#REF!); 25 insert/delete columns (probe 2); 26 $ absolute refs + copy with relative rewrite;
+27 undo/redo; 28 CSV export with stated quoting; 29 CSV import; 30 JSON save/load v1;
+31 workbook + Sheet2!A1; 32 cross-sheet cycles and recalc; 33 API v2 names, v1 kept as aliases;
+34 opt-in Excel error order; 35 persistence v2 + migration from v1 (probe 3); 36 performance
+budget, 10k-cell chain; 37 sheet rename rewrites refs; 38 canonical formula text; 39 explain(addr)
+trace; 40 CHANGES.md, one line per checkpoint, checked.
+
+Next in Stage 0: FEATURES.md + START-PROMPT.md (the five rules), rule checker and probe checker,
+then blocks B-E in slices of about 8 with the same spec / reference / tests / mutants loop.
+
 ## Open
 
 - Checkpoint sizing is a guess. If the Default pilot finishes all 40 under 1M context, the task is
