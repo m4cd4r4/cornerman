@@ -211,7 +211,7 @@ export function makeSheet(init, order = "priority") {
   }
 
   const shown = (k) => layers.show(k, valueOf(k));
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), renamed, layers, history, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 

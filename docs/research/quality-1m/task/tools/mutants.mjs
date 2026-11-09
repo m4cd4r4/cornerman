@@ -310,6 +310,16 @@ const MUTANTS = [
   { name: "recalc-lists-covered", file: "sheet.mjs", find: " && !layers.L.covered.has(k));", replace: ");", target: "cp47" },
   { name: "merge-no-invalidate", file: "layers.mjs", find: "    onCovered([...new Set([...before, ...L.covered])]);", replace: "", target: "cp47" },
   { name: "copy-refuses-covered", file: "sheet.mjs", find: "      history.group(() => { writeAll(w);", replace: "      history.group(() => { writeAll(layers.check(w));", target: "cp47" },
+  { name: "sort-shifts-formula-refs", file: "features.mjs", edits: [["import { sortPlan } from \"./sort.mjs\";\n", "import { sortPlan } from \"./sort.mjs\";\nimport { rewriteRefs } from \"./refs.mjs\";\n"], ["          writes.push([to, core.input(colName(c) + src) ?? \"\"]);", "          const raw = core.input(colName(c) + src) ?? \"\";\n          const d = t.r1 + i - src;\n          const mv = (p) => (p.absRow ? p : { ...p, row: p.row + d });\n          writes.push([to, raw.startsWith(\"=\") ? \"=\" + rewriteRefs(raw.slice(1), mv, (a, b) => [mv(a), mv(b)]) : raw]);"]], target: "cp48" },
+  { name: "sort-descending-reversed", file: "sort.mjs", find: "  rows.sort((x, y) => compareKeys(x.v, y.v, descending));", replace: "  rows.sort((x, y) => compareKeys(x.v, y.v, false));\n  if (descending) rows.reverse();", target: "cp48" },
+  { name: "sort-descending-blanks-first", file: "sort.mjs", edits: [["  if (descending && ga < 3) ga = 2 - ga;", "  if (descending) ga = 4 - ga;"], ["  if (descending && gb < 3) gb = 2 - gb;", "  if (descending) gb = 4 - gb;"]], target: "cp48" },
+  { name: "sort-moves-notes", file: "features.mjs", edits: [["      const formats = [];\n", "      const formats = [];\n      const notes = [];\n"], ["          formats.push([to, layers.L.formats.get(colName(c) + src)]);", "          formats.push([to, layers.L.formats.get(colName(c) + src)]);\n          notes.push([to, layers.L.notes.get(colName(c) + src)]);"], ["        history.record(layers.write(\"formats\", formats));", "        history.record(layers.write(\"formats\", formats));\n        history.record(layers.write(\"notes\", notes));"]], target: "cp48" },
+  { name: "sort-formats-stay", file: "features.mjs", find: "        history.record(layers.write(\"formats\", formats));", replace: "", target: "cp48" },
+  { name: "sort-text-case-sensitive", file: "sort.mjs", find: "  const c = compareValues(a, b);", replace: "  const c = typeof a === \"string\" ? (a < b ? -1 : a > b ? 1 : 0) : compareValues(a, b);", target: "cp48" },
+  { name: "sort-booleans-before-text", file: "sort.mjs", find: "typeof v === \"string\" ? 1 : 2);", replace: "typeof v === \"string\" ? 2 : 1);", target: "cp48" },
+  { name: "sort-writes-checked", file: "features.mjs", find: "        core.writeRaw(writes);", replace: "        core.writeAll(writes);", target: "cp48" },
+  { name: "sort-ignores-merges", file: "sort.mjs", find: "  if (merges.some((m) => overlaps(m, t))) throw", replace: "  if (false) throw", target: "cp48" },
+  { name: "sort-column-relative", file: "sort.mjs", edits: [["  if (!(col >= t.c1 && col <= t.c2)) throw", "  if (!(col >= 1 && col <= t.c2 - t.c1 + 1)) throw"], ["rows.push({ r, v: valueOf(colName(col) + r) });", "rows.push({ r, v: valueOf(colName(col + t.c1 - 1) + r) });"]], target: "cp48" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
