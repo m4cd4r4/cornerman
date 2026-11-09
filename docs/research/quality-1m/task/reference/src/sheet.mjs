@@ -33,7 +33,7 @@ export function makeSheet(init, order = "priority") {
   const nameUsers = new Map(); // NAME -> Set of formula keys whose text uses it
   const stats = { evaluations: 0 };
   const history = createHistory();
-  const layers = createLayers(); // formats (cp41) and notes (cp42), keyed by cell
+  const layers = createLayers(); // formats (cp41), notes (cp42), validation (cp46), keyed by cell
   let engine = null;
   let id = 0;
   const g = (k) => `${id}|${k}`;
@@ -211,7 +211,7 @@ export function makeSheet(init, order = "priority") {
   }
 
   const shown = (k) => layers.show(k, valueOf(k));
-  const core = { valueOf, compute, relink, bind, key, writeAll, renamed, layers, history, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), renamed, layers, history, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
   bind(createEngine(order), null);
   if (init) rebuild(init);
 
@@ -220,7 +220,7 @@ export function makeSheet(init, order = "priority") {
       return saveText(inputs, names, layers.L.notes);
     },
     set(address, input) {
-      writeAll([[key(address), input]]);
+      writeAll(layers.check([[key(address), input]]));
     },
     copy(from, to) {
       const w = copyWrites(inputs, from, to);
@@ -231,7 +231,7 @@ export function makeSheet(init, order = "priority") {
       return toCSV(sorted(inputs.keys()), text);
     },
     fromCSV(text, at = "A1") {
-      writeAll(csvWrites(text, at));
+      writeAll(layers.check(csvWrites(text, at)));
     },
     undo() {
       return history.undo(applyEntry);

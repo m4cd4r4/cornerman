@@ -47,3 +47,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp43: COUNTIF and AVERAGEIF
 - [ ] cp44: INDEX and MATCH
 - [ ] cp45: SUMPRODUCT
+- [ ] cp46: data validation

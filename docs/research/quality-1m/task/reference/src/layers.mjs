@@ -1,12 +1,13 @@
-// layers.mjs: what a sheet keeps per cell beside its inputs (formats cp41, notes cp42), how it moves with
-// insert and delete, its undo entries, and its part of a structural snapshot.
+// layers.mjs: what a sheet keeps per cell beside its inputs (formats cp41, notes cp42, validation
+// rules cp46), how it moves with insert and delete, its undo entries, its structural snapshot.
 import { parseAddress, rangeKeys, rangeBox, rangeSize, colName, RANGE_LIMIT } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { displayValue } from "./display.mjs";
 import { parseFormat, formatNumber } from "./numfmt.mjs";
+import { passes } from "./validation.mjs";
 
-// Layers keyed by cell address. A value is a string (format text, note text).
-export const CELL_LAYERS = ["formats", "notes"];
+// Layers keyed by cell address. A value is a string (format text, note text) or a rule object.
+export const CELL_LAYERS = ["formats", "notes", "rules"];
 
 // cp42: note text as setNote stores it (trimmed, 1 to NOTE_LIMIT characters).
 export const NOTE_LIMIT = 200;
@@ -71,6 +72,14 @@ export function createLayers() {
         if (v === undefined) L[e.layer].delete(k);
         else L[e.layer].set(k, v);
       }
+    },
+    // cp46: throws #INVALID for the first [key, input] its cell's rule refuses; writes nothing.
+    check(writes) {
+      for (const [k, input] of writes) {
+        const r = L.rules.get(k);
+        if (r && !passes(r, input)) throw makeError("#INVALID", k, `${k} refuses ${JSON.stringify(input)}`);
+      }
+      return writes;
     },
     // The text display() shows for value v in cell k: its number format applies to numbers only.
     show(k, v) {

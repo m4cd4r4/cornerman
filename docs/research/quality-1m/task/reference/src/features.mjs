@@ -1,8 +1,10 @@
-// features.mjs: the sheet methods for its per-cell layers: number formats (cp41), notes (cp42).
+// features.mjs: the sheet methods for its per-cell layers: number formats (cp41), notes (cp42),
+// validation (cp46).
 import { parseTarget, NOTE_LIMIT } from "./layers.mjs";
 import { checkFormat } from "./numfmt.mjs";
 import { makeError } from "./errors.mjs";
 import { compareAddresses } from "./address.mjs";
+import { checkRule, copyRule, passes } from "./validation.mjs";
 
 export function addFeatures(sheet, core) {
   const { layers, history } = core;
@@ -28,6 +30,17 @@ export function addFeatures(sheet, core) {
       for (const k of [...layers.L.notes.keys()].sort(compareAddresses)) out[k] = layers.L.notes.get(k);
       return out;
     },
+    // cp46: existing inputs are not checked; one undo step; null clears.
+    setValidation(target, rule) {
+      const t = parseTarget(target);
+      const r = checkRule(rule, target);
+      history.record(layers.write("rules", t.keys.map((k) => [k, r])));
+    },
+    getValidation(address) {
+      const r = layers.L.rules.get(core.key(address));
+      return r ? copyRule(r) : null;
+    },
+    invalidCells: () => [...layers.L.rules].filter(([k, r]) => !passes(r, core.input(k) ?? "")).map(([k]) => k).sort(compareAddresses),
   });
   return sheet;
 }

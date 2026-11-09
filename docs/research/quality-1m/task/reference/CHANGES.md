@@ -45,3 +45,4 @@
 - cp43: COUNTIF counts and AVERAGEIF averages the cells that meet a SUMIF-style criterion.
 - cp44: INDEX reads a cell of a range by row and column; MATCH finds a position, exact unless asked.
 - cp45: SUMPRODUCT multiplies same-shape ranges position by position and adds the products; booleans count 1 or 0.
+- cp46: setValidation rules (whole numbers or a list) make set, setMany and fromCSV refuse bad inputs with #INVALID.
