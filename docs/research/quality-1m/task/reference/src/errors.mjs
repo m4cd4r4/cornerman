@@ -1,4 +1,4 @@
-// errors.mjs: error values and the priority order (cp02, cp04, cp09; later checkpoints add codes).
+// errors.mjs: error values, the priority order and the opt-in reading order (cp02, cp04, cp09, cp34).
 import { compareAddresses } from "./address.mjs";
 
 // Highest priority first.
@@ -19,6 +19,7 @@ function rank(code) {
 
 // The winning error among candidates (cp04): highest priority, then row-major origin.
 export function pickError(errors) {
+  if (ORDER === "first") return errors.find(isError) ?? null;
   let best = null;
   for (const e of errors) {
     if (!isError(e)) continue;
@@ -27,6 +28,28 @@ export function pickError(errors) {
     if (d < 0 || (d === 0 && compareAddresses(e.cell, best.cell) < 0)) best = e;
   }
   return best;
+}
+
+// cp34: the error order in force while a formula is evaluated ("priority" or "first").
+let ORDER = "priority";
+export function withErrorOrder(order, fn) {
+  const before = ORDER;
+  ORDER = order;
+  try {
+    return fn();
+  } finally {
+    ORDER = before;
+  }
+}
+
+// The errorOrder option of createSheet, loadSheet and createWorkbook; throws #ARG if invalid.
+export function errorOrderOption(opts) {
+  if (opts === undefined) return "priority";
+  if (opts === null || typeof opts !== "object" || Array.isArray(opts)) throw makeError("#ARG", "", "options must be an object");
+  const o = opts.errorOrder;
+  if (o === undefined) return "priority";
+  if (o !== "priority" && o !== "first") throw makeError("#ARG", String(o), `unknown errorOrder ${o}`);
+  return o;
 }
 
 export function throwAddr(address) {

@@ -9,7 +9,7 @@ export const split = (g) => {
   return [Number(g.slice(0, i)), g.slice(i + 1)];
 };
 
-export function createEngine() {
+export function createEngine(errorOrder = "priority") {
   const sheets = new Map(); // id -> { core, name }
   const byName = new Map(); // NAME -> id
   const cache = new Map(); // graph key -> value
@@ -87,6 +87,7 @@ export function createEngine() {
   }
 
   return {
+    errorOrder,
     cache,
     ownPrecs,
     precs,

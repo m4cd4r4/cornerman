@@ -1,7 +1,7 @@
 // sheet.mjs: one sheet: its inputs, names, undo list and public methods (cp01-cp33). The graph and
 // value cache live in the engine the sheet is bound to (engine.mjs); a workbook rebinds it.
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
-import { makeError, throwAddr } from "./errors.mjs";
+import { makeError, throwAddr, withErrorOrder, errorOrderOption } from "./errors.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";
 import { evaluate } from "./evaluate.mjs";
 import { displayValue } from "./display.mjs";
@@ -20,11 +20,11 @@ const sorted = (xs) => [...xs].sort(compareAddresses);
 
 export const CORE = new WeakMap(); // sheet object -> its core, for workbook.mjs
 
-export const createSheet = () => makeSheet(null);
-export const loadSheet = (json) => makeSheet(parseSave(json));
+export const createSheet = (opts) => makeSheet(null, errorOrderOption(opts));
+export const loadSheet = (json, opts) => { const order = errorOrderOption(opts); return makeSheet(parseSave(json), order); };
 
 // init = { inputs, names } from a save, or null for an empty sheet.
-export function makeSheet(init) {
+export function makeSheet(init, order = "priority") {
   const inputs = new Map(); // key -> raw string
   const parsed = new Map(); // key -> { ast, refs } | { parseError }
   const names = new Map(); // NAME -> { a, b, range }
@@ -97,7 +97,7 @@ export function makeSheet(init) {
     else if (engine.cycleSet().has(g(k))) v = makeError("#CYCLE!", k, "circular reference");
     else {
       const ctx = { cell: k, read: (a) => read(k, a), name: (n) => names.get(n) || null, sheet: (n) => engine.resolve(n) !== null };
-      v = evaluate(p.ast, ctx);
+      v = withErrorOrder(engine.errorOrder, () => evaluate(p.ast, ctx));
     }
     const out = v === null ? 0 : typeof v === "number" && v === 0 ? 0 : v;
     cache.set(g(k), out);
@@ -203,7 +203,7 @@ export function makeSheet(init) {
   }
 
   const core = { valueOf, relink, bind, key, writeAll, keys: () => inputs.keys() };
-  bind(createEngine(), null);
+  bind(createEngine(order), null);
   if (init) rebuild(init);
 
   const sheet = {
