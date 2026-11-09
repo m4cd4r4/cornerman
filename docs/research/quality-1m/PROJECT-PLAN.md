@@ -108,8 +108,12 @@ fail, and the real cost per run. Stage 3 is re-costed from pilot numbers and nee
 - Linked from the cornerman product page and the GitHub README.
 - The product page lede stays as is until results exist, then is rewritten from them.
 
-## Open decisions for Macdara
+## Rulings (Macdara, 2026-11-09)
 
-1. Sonnet 5.5 only, or add Opus for the two key arms (about 2.5x cost per run)?
-2. n=5 per arm, or fewer arms (drop CM-180 or CM-500) to afford n=8?
-3. Spend sign-off for stage 1 (US$60-120).
+1. Stage 1 pilot APPROVED: Default + CM-250 on Sonnet 5.5, 1 run each, capped at US$120.
+   Stage 0 (task, hidden tests, frozen predictions) comes first, no spend.
+2. Full test runs the SAME design on BOTH Sonnet 5.5 and Opus: 6 arms x 5 runs per model,
+   60 runs. Opus is about 2.5x per run, so the full test is re-costed from pilot numbers
+   (rough: Sonnet US$600-1,000 plus Opus US$1,500-2,500) and needs its own yes.
+3. 6 arms, n=5 per arm.
+4. Goal framing: the test may show clearing does not help; the article publishes either way.
