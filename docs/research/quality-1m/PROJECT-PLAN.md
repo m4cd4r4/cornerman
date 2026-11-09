@@ -1,6 +1,7 @@
 # Quality at 1M: clearing vs filling vs auto-compact
 
-Status: DRAFT, awaiting Macdara's sign-off on arms, n and spend. Nothing has run. No money spent.
+Status: Stage 0 in progress (task design: TASK-DESIGN.md). Pilot approved, US$120 cap. Nothing
+has run. No money spent.
 Started 2026-11-09.
 
 ## Question
@@ -20,7 +21,7 @@ publishes whatever it finds.
 | Rules given only in chat: 11/12 with note vs 1.75/12 without | RESEARCH.md | Plugin-vs-nothing on rule carry-over; cite as is |
 | Trail: 17/17 with vs 0/17 without; held-out 37/38 | RESEARCH.md | Cite as is |
 | Cost per 30-item Sonnet build: relay US$9.08, auto-compact US$9.19, never US$9.66 | RESEARCH.md | Cost is settled; this test measures quality |
-| 599k never-compacted session | _ab ledger | Seed to continue toward 1M instead of starting from zero (check it can be resumed first) |
+| 599k never-compacted session | _ab ledger | Not usable: Opus on the dropped site task (checked 2026-11-09) |
 | Ledger, frozen predictions + sha256, scorer self-tests | I:/Scratch/_ab/probes/ | Reuse the harness discipline |
 
 ## Dropped, listed briefly in the article
@@ -58,7 +59,7 @@ model is a separate experiment and out of scope here.
 | Arm | What happens |
 |:--|:--|
 | Default | Nothing installed. The chat fills; Claude Code auto-compacts near full |
-| Compact-250 | Auto-compact at 250k (verify the override env var works first) |
+| Compact-250 | Auto-compact at 250k via `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE=25` (18 gave ~177k earlier) |
 | CM-180 / CM-250 / CM-350 / CM-500 | cornerman relay, handover + clear at that size |
 
 Compact-250 vs CM-250 separates the method from the threshold. Default vs the CM arms is
