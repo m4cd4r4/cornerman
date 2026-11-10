@@ -53,7 +53,9 @@ describe("save.mjs output", () => {
     expect(lines[0]).toMatch(/^Saved handover "Cart totals rounding" \(id [0-9a-f]+\)\.$/);
     expect(lines[1]).toBe(`After /clear, the next session in ${fwd(tree)} loads it automatically.`);
     expect(lines[2]).toBe(`It loads only in this worktree, not in ${fwd(repo)}.`);
-    expect(lines).toHaveLength(3);
+    // The body has only a Goal, so the missing-sections note (#194) follows the details.
+    expect(lines[3]).toMatch(/^Note: this handover has no /);
+    expect(lines).toHaveLength(4);
   }, GIT_TEST_TIMEOUT);
 
   it("names the folder one way when it is handed in another spelling", () => {
