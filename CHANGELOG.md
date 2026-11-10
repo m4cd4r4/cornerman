@@ -2,6 +2,10 @@
 
 ## 0.7.2 (not released yet)
 
+- **The relay no longer stops on work that never commits.** It stopped after two continued
+  sessions with no new commit, so a Squarespace edit or research ran out after two. A handover
+  that says something new now counts as progress too, and the commit check reads the folder the
+  window started in, not wherever a `cd` left the session (#195).
 - **Reading the save script no longer clears your session.** A session that printed the source
   of `save.mjs` (with `cat`, `sed` or `grep`) looked to the relay like one that had saved a
   handover, so it ran `/clear` mid-task with nothing saved. The relay now counts only a run of
