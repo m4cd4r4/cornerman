@@ -580,3 +580,4 @@ is NOT what Excel does" / "...what you might expect".
 - Verified before the full mutant run: check-tree cp01-80 all green (visible 134/134, hidden
   701/701), SMOKE OK, probe-selftest right 50/50 wrong 0/50 absent 0/50, every mutant's find text
   applies.
+- Full mutant run (`--jobs 8`, after the cp79 fix): 579/579 killed, none survived, none did not apply.
