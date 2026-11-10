@@ -57,3 +57,4 @@
 - cp55: book.undo and book.redo take the newest step of any sheet or of the workbook names, by time.
 - cp56: book.save writes version 3 with formats, rules, merges and hidden lines when a sheet has any, else v2.
 - cp57: TEXT(value, format) gives a number as text in a cp41 format; other values come back as display shows them.
+- cp58: EDATE and EOMONTH move a date by whole months; WEEKDAY numbers the days from Monday = 1 by default.

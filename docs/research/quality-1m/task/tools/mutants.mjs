@@ -396,6 +396,14 @@ const MUTANTS = [
   { name: "text-format-trimmed", file: "text.mjs", find: "const fmt = parseFormat(f);", replace: "const fmt = parseFormat(f.trim());", target: "cp57" },
   { name: "text-format-checked-first", file: "text.mjs", find: "    const err = pickError([v, f]);\n    if (err) return err;\n    const fmt = parseFormat(f);", replace: "    const fmt = parseFormat(f);\n    if (!fmt && typeof f === \"string\") return makeError(\"#VALUE!\", ctx.cell, \"TEXT: bad format\");\n    const err = pickError([v, f]);\n    if (err) return err;", target: "cp57" },
   { name: "text-result-number", file: "text.mjs", find: "    if (v === null || typeof v === \"number\") return formatNumber(v ?? 0, fmt);", replace: "    if (v === null || typeof v === \"number\") { const o = formatNumber(v ?? 0, fmt); return /^-?\\d+(\\.\\d+)?$/.test(o) ? Number(o) : o; }", target: "cp57" },
+  { name: "weekday-sunday-default", file: "calendar.mjs", find: "numberArg(args[1], ctx, evaluate) : 2;", replace: "numberArg(args[1], ctx, evaluate) : 1;", target: "cp58" },
+  { name: "months-truncated", file: "calendar.mjs", find: "    const m = numberArg(args[1], ctx, evaluate);", replace: "    const m = intArg(args[1], ctx, evaluate);", target: "cp58" },
+  { name: "edate-rolls-over", file: "calendar.mjs", find: "Math.min(p.d, daysIn(y, mo));\n    return dateSerial(y, mo, d);", replace: "p.d;\n    return dateSerial(y, mo, d) ?? dateSerial(y, mo + 1, d - daysIn(y, mo));", target: "cp58" },
+  { name: "edate-sticky-month-end", file: "calendar.mjs", find: "const d = last ? daysIn(y, mo)", replace: "const d = last || p.d === daysIn(p.y, p.m) ? daysIn(y, mo)", target: "cp58" },
+  { name: "eomonth-next-first", file: "calendar.mjs", find: "    return dateSerial(y, mo, d);", replace: "    return dateSerial(y, mo, d) + (last ? 1 : 0);", target: "cp58" },
+  { name: "weekday-epoch-sunday", file: "calendar.mjs", find: "((s + 4) % 7) + 1", replace: "((s + 5) % 7) + 1", target: "cp58" },
+  { name: "weekday-type-truncated", file: "calendar.mjs", find: "numberArg(args[1], ctx, evaluate) : 2;", replace: "intArg(args[1], ctx, evaluate) : 2;", target: "cp58" },
+  { name: "month-result-unchecked", file: "calendar.mjs", find: "    if (y < 2000 || y > 9999) return bad(ctx, fn, \"result out of range\");\n", replace: "", target: "cp58" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
