@@ -581,3 +581,21 @@ is NOT what Excel does" / "...what you might expect".
   701/701), SMOKE OK, probe-selftest right 50/50 wrong 0/50 absent 0/50, every mutant's find text
   applies.
 - Full mutant run (`--jobs 8`, after the cp79 fix): 579/579 killed, none survived, none did not apply.
+
+## Pilot 2 result (80 checkpoints, Sonnet, one run per arm; calibration, not scored)
+
+| | Default r2 | CM-250 r2 |
+|:--|:--|:--|
+| Checkpoints passed (hidden) | 73/80 | 75/80 |
+| Late segment cp32-80 (K = 32) | 44/49 | 44/49 |
+| Regressions on the final tree | 1 | 2 |
+| Rule violations (after the eval fix) | 2 | 0 |
+| Probes right | 49/50 | 42/50 |
+| Work tokens / peak context | 1,752,815 / 959,403 | 1,357,258 / 260,144 |
+| Sessions / compactions | 1 / 1 | 6 / 0 |
+| API-equivalent cost | US$37.38 | US$20.01 |
+| Wall time | 5 h 24 min (3 h 20 min of 5-hour-limit waits) | 1 h 33 min |
+
+The longer task does what pilot 1 could not: Default filled the window to 959k and compacted
+once. Late pass rates are equal at n = 1 and 44/49 is under the 95% ceiling rule, so the task
+stays as frozen. Both runs together used up one 5-hour usage window (Default waited 10 times).

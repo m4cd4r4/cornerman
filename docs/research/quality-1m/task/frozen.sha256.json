@@ -1,7 +1,7 @@
 {
-  "written": "2026-11-10T14:50:59.544Z",
+  "written": "2026-11-10T20:31:47.562Z",
   "files": {
-    "../PREDICTIONS.md": "e689dfdfa4bc2e7698fd09994a1064fb3c8b25fe05677be58830ee72e65aefc9",
+    "../PREDICTIONS.md": "4cb279bb60c26a556d776b25c2238a66f49f68c72fd2c2cb544f1481b703198d",
     "checkpoints/cp01/hidden.test.mjs": "f506ec7d88bab105feb01ce9a10b2f26900247d930ac271de903f52009120bfd",
     "checkpoints/cp01/spec.md": "9da3c51c7e725a257b0217afd8daed12055c93d7d332b585f5281e9edd6dbde6",
     "checkpoints/cp01/visible.test.mjs": "621a742841da6521f8cfdb1045f1a6cb871c2441d3d4b27708d5f85f992568cb",
@@ -320,13 +320,13 @@
     "starter/package.json": "45bd3686b8502820897014fe7843389a493a61f39a2453634c73b85f59cf9f7c",
     "starter/src/index.mjs": "ead01e6cdf904aa7aae3e13ea1368d223457920e2f296b7875dcfb3b183f04aa",
     "tools/check-probes.mjs": "79c7c86d99ce386379b1ed8ecfb51ca8e84b90d97f78c15265d88b8ca47c5f2b",
-    "tools/check-rules.mjs": "45dc55d9e46e3fa0e47baf6590d77d3a27d9d160cacbdb0b10f3ff3c9c53a23b",
+    "tools/check-rules.mjs": "c7d5ac7827bcdbd5439e30dd8b49c775eb10b4231be96aef5d94f3eaa5112877",
     "tools/check-tree.mjs": "6ddb2e57080fd0a43c56cf300087dea9f9b56bf1b4f5df9d286e15a19f7b6953",
     "tools/compare.mjs": "fe74f191d547af352c8107f9223aa1880b56bd51fab4bb9087c244193e94e4db",
     "tools/freeze.mjs": "3fb20054d565eea89285afc7b6d00fb3306b38d5aa2af17e9833997a5a5d2b34",
     "tools/mutants.mjs": "7695c78adebf767bae1ed6cfd4738c13f6b3881596f8897dae2098bd5b309fd5",
     "tools/probe-selftest.mjs": "84ae448deb567ee3b521fc970f17420f71d20a3e374b532deacce95025e14865",
-    "tools/rule-negatives.mjs": "0d9902ecc98e95a863a2230b2a2c24011e89eef6ae255ac36859d8d49c9256e4",
+    "tools/rule-negatives.mjs": "4d4fb44cf328d6b2e1386c2393a272925ca05971047619136effc5ba3e6e9b63",
     "tools/score-run.mjs": "afe6c409072381fbb6cee75adf9938c7d4c46acaedecf5f29227872a20a0fe53",
     "tools/score-selftest.mjs": "b4d821ed7fc37515dea2d1cd4428ac6238557928cb3ada092d97eb9b80333f37",
     "tools/tokens.mjs": "6bef6e6c1deaba0ad2ca5b5985fe911a7bc3aa2fbfd79f5fdb190c7fe70239b8"

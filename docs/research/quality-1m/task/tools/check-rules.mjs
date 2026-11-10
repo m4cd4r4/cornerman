@@ -24,7 +24,9 @@ function walk(dir) {
 }
 
 const BANNED = [
-  [/\beval\s*\(/, "eval("],
+  // A method of the agent's own named eval (`env.eval(node)`) is not JavaScript eval: found as 24
+  // false hits in pilot 2 (cm250-sonnet-r2). Member calls count only on the global object.
+  [/(?<![\w$.])eval\s*\(|\b(?:globalThis|window|global|self)\s*\.\s*eval\s*\(/, "eval("],
   [/["'`]eval["'`]/, "eval by name"],
   [/\bnew\s+Function\b/, "new Function"],
   [/(?<![\w.])Function\s*\(/, "Function("],

@@ -48,6 +48,8 @@ const CASES = [
   ["indirect-eval", "src/index.mjs", (f) => appendFileSync(f, "export const g = globalThis[\"eval\"];\n"), [1]],
   ["eval-in-comment-only", "src/display.mjs", (f) => appendFileSync(f, "// never call eval(x) here; new Function is banned too\n"), []],
   ["evaluate-identifier", "src/errors.mjs", (f) => appendFileSync(f, "export const evaluateLater = (x) => x.evaluate(1);\n"), []],
+  ["method-named-eval", "src/errors.mjs", (f) => appendFileSync(f, "export const viaEnv = (env, node) => env.eval(node);\n"), []],
+  ["global-dot-eval", "src/errors.mjs", (f) => appendFileSync(f, "export const sneak = (s) => globalThis.eval(s);\n"), [1]],
   ["299-lines", "src/address.mjs", pad(299), []],
   ["300-lines", "src/address.mjs", pad(300), [2]],
   ["missing-header", "src/lexer.mjs", edit("// lexer.mjs: tokens for formulas", "// tokens for formulas"), [3]],

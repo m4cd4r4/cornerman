@@ -53,3 +53,9 @@ before Stage 3, never a published comparison.
   cp80" in P1. `tools/mutants.mjs` gained `--jobs` and `tools/score-selftest.mjs` counts the
   checkpoints instead of assuming 40. No confidence, threshold, claim rule or K rule changed.
   Pilot 1 is calibration only and is not scored against these predictions.
+- 2026-11-11 (after pilot 2, before the full test): rule 1's `eval(` pattern also matched a method
+  of the agent's own named eval (`env.eval(node)`), 24 false hits in cm250-sonnet-r2 and none in
+  Default. `tools/check-rules.mjs` now counts a member call only on the global object
+  (`globalThis.eval(`), with two new cases in `tools/rule-negatives.mjs` (18/18 OK). A scorer
+  bug fix found on CM pilot data; no prediction, threshold, claim rule or K rule changed.
+  K = 32, from the Default pilot (work passed 350,000 before its cp32 request).
