@@ -81,3 +81,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp77: range export to JSON
 - [ ] cp78: renaming names
 - [ ] cp79: cell styles
+- [ ] cp80: API index and final change log

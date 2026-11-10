@@ -596,6 +596,14 @@ const MUTANTS = [
   { name: "style-xcopy-left", file: "xcopy.mjs", find: "      tc.history.record(tc.layers.write(\"styles\", w.map(([k, , s]) => [k, sc.layers.L.styles.get(s)]))); // cp79\n", replace: "", target: "cp79" },
   { name: "style-colour-case-kept", file: "styles.mjs", find: "    out[k] = typeof v === \"string\" ? v.toUpperCase() : v;", replace: "    out[k] = v;", target: "cp79" },
   { name: "style-false-dropped", file: "styles.mjs", find: "  for (const k of KEYS) if (all[k] !== undefined && all[k] !== null) out[k] = all[k];", replace: "  for (const k of KEYS) if (all[k]) out[k] = all[k];", target: "cp79" },
+  { name: "index-drops-deprecated", file: "apiindex.mjs", find: "sheet: methods(createSheet()),", replace: "sheet: methods(createSheet()).filter((n) => ![\"set\", \"get\", \"display\", \"cells\", \"getInput\"].includes(n)),", target: "cp80" },
+  { name: "index-leaves-itself-out", file: "apiindex.mjs", find: "export const EXPORTS = [\"apiIndex\", ", replace: "export const EXPORTS = [", target: "cp80" },
+  { name: "index-unsorted", file: "apiindex.mjs", find: "typeof obj[k] === \"function\").sort();", replace: "typeof obj[k] === \"function\");", target: "cp80" },
+  { name: "index-shared-array", file: "apiindex.mjs", find: "  return { exports: [...EXPORTS],", replace: "  return { exports: EXPORTS,", target: "cp80" },
+  { name: "index-helper-method", file: "extend.mjs", find: "  return addDeprecations(s, SHEET_OLD);", replace: "  s.inspect = () => core;\n  return addDeprecations(s, SHEET_OLD);", target: "cp80" },
+  { name: "changes-cp81-extra", file: "../CHANGES.md", find: "- cp80: apiIndex() states every export, sheet method and workbook method, deprecated names included.\n", replace: "- cp80: apiIndex() states every export, sheet method and workbook method, deprecated names included.\n- cp81: nothing yet.\n", target: "cp80" },
+  { name: "changes-cp61-title-only", file: "../CHANGES.md", find: "- cp61: SUBSTITUTE swaps text, FIND and SEARCH give its position or #N/A; SEARCH reads ? and * and has no escape.", replace: "- cp61: substitute, find and search", target: "cp80" },
+  { name: "changes-cp80-title-only", file: "../CHANGES.md", find: "- cp80: apiIndex() states every export, sheet method and workbook method, deprecated names included.", replace: "- cp80: API index and final change log", target: "cp80" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

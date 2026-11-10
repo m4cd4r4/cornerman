@@ -79,3 +79,4 @@
 - cp77: exportJSON writes a range row by row as values or display texts, with formats on request; hidden lines too.
 - cp78: renameName renames a sheet or workbook name and rewrites the formulas using it, except where a LET hides it.
 - cp79: setStyle merges bold, italic and colours into cells; copy and fills paste whole styles, sort leaves them.
+- cp80: apiIndex() states every export, sheet method and workbook method, deprecated names included.
