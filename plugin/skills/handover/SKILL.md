@@ -23,6 +23,23 @@ git status --short
 git log --oneline -5
 ```
 
+## 1b. Carry forward what is still open
+
+A handover that narrows to the next step loses work that is settled but not yet done. Before
+writing, gather every key point that affects what to do next:
+
+- Rulings the user gave this session, and any decision log or review page the session touched.
+  List each one with no evidence it was applied. Do this even if the next action is a different item.
+- Work already built but not applied or fully tested (a trimmed file, a draft branch), and where it is.
+- Questions shown to the user for a choice with no answer recorded, and where the options live.
+- A progress measure, if the goal has one: start, now, target (`490 -> 483, target ~0`).
+- Other handovers on the same task (same task words or files): run
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/load.mjs"` (no name: lists waiting ones) to see waiting ones, and `--peek <file>` to read
+  one. Fold their unfinished items in, or name them under "Also read".
+- The handover you were started from, if any: compare its open items (decided, built, open questions,
+  progress) with yours. Anything that dropped out without being done is carried forward, or stated as
+  done or dropped. Never let an item disappear silently.
+
 ## 2. Write it
 
 Aim for under 40 lines.
@@ -45,10 +62,26 @@ One or two sentences: what this work is for, and what "done" means.
 The single first thing to do, concrete enough to run: a command, or a file:line
 and the change to make there. Not a topic to look into.
 
+## Progress
+Only when the goal has a number: start, now, target. Carry the start and target forward from the
+previous handover.
+
 ## State
 - Branch, last commit, PR number if there is one.
 - Done and verified, with how it was verified (the command, and what it printed).
 - In progress, uncommitted, or unverified. Say which.
+
+## Decided, not yet applied
+Rulings the user has made that are ready to apply, one per line, with where they are recorded.
+If a decision record is named, say how many items it holds. Write "None" if the list is empty.
+This is work to do, not background: the next session applies these, not only the next action.
+
+## Open questions
+Anything shown to the user for a choice with no answer recorded, and where it lives. Write "None"
+if there are none.
+
+## Also read
+Other handovers or records on the same task, and what each still holds open.
 
 ## Decisions already made
 Choices the user settled that the next session must not reopen. One line each,
@@ -66,7 +99,8 @@ Do not write a "Recent trail" section. Saving adds one from this session's own t
 files written, edited and read, and the last commands that succeeded and failed), and replaces any
 you wrote, so it is exact. `CORNERMAN_TRAIL=0` turns it off.
 
-Leave out sections that would be empty; an empty heading costs the reader a stop.
+Leave out sections that would be empty, except "Decided, not yet applied" and "Open questions",
+which always appear (say "None"); an empty heading costs the reader a stop.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it
