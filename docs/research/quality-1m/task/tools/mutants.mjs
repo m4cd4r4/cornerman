@@ -507,6 +507,15 @@ const MUTANTS = [
   { name: "csv-text-loose-numbers", file: "csv.mjs", find: "const asText = (f) => (NUMBER.test(f) ||", replace: "const asText = (f) => ((f.trim() !== \"\" && !Number.isNaN(Number(f))) ||", target: "cp69" },
   { name: "csv-opts-after-text", file: "csv.mjs", find: "  const o = csvOptions(opts);\n  const all = parseCSV(text, o.delimiter);\n", replace: "  const all = parseCSV(text, opts && typeof opts.delimiter === \"string\" && opts.delimiter.length === 1 ? opts.delimiter : \",\");\n  const o = csvOptions(opts);\n", target: "cp69" },
   { name: "csv-header-none-empty", file: "csv.mjs", find: "all.length ? [...all[0]] : null", replace: "all.length ? [...all[0]] : []", target: "cp69" },
+  { name: "diff-compares-values", file: "diff.mjs", find: "s.cells().map((k) => [k, s.getInput(k)])", replace: "s.cells().map((k) => [k, String(s.display(k))])", target: "cp70" },
+  { name: "diff-inputs-ignore-case", file: "diff.mjs", find: "keys.filter((k) => (x[k] ?? null) !== (y[k] ?? null))", replace: "keys.filter((k) => String(x[k] ?? null).toUpperCase() !== String(y[k] ?? null).toUpperCase())", target: "cp70" },
+  { name: "diff-sheets-case-sensitive", file: "diff.mjs", find: "book.sheetNames().some((n) => n.toUpperCase() === name.toUpperCase())", replace: "book.sheetNames().includes(name)", target: "cp70" },
+  { name: "diff-before-sheet-order", file: "diff.mjs", find: "  for (const n of b.sheetNames()) {\n    if (!has(a, n)) continue;", replace: "  for (const n of a.sheetNames()) {\n    if (!has(b, n)) continue;", target: "cp70" },
+  { name: "diff-cells-text-order", file: "diff.mjs", find: "changed(inputsOf(x), inputsOf(y), compareAddresses)", replace: "changed(inputsOf(x), inputsOf(y), byName)", target: "cp70" },
+  { name: "diff-error-unprefixed", file: "diff.mjs", find: "    if (e && e.code === \"#LOAD\") throw", replace: "    if (false) throw", target: "cp70" },
+  { name: "diff-after-loaded-first", file: "diff.mjs", find: "  const a = load(before, \"before\");\n  const b = load(after, \"after\");", replace: "  const b = load(after, \"after\");\n  const a = load(before, \"before\");", target: "cp70" },
+  { name: "diff-book-names-first", file: "diff.mjs", edits: [["  for (const [name, was, now] of changed(a.names(), b.names(), byName)) out.push({ kind: \"name\", sheet: null, name, before: was, after: now });\n", ""], ["  for (const n of a.sheetNames()) if (!has(b, n))", "  for (const [name, was, now] of changed(a.names(), b.names(), byName)) out.push({ kind: \"name\", sheet: null, name, before: was, after: now });\n  for (const n of a.sheetNames()) if (!has(b, n))"]], target: "cp70" },
+  { name: "diff-empty-as-blank", file: "diff.mjs", find: ".map((k) => [k, x[k] ?? null, y[k] ?? null])", replace: ".map((k) => [k, x[k] ?? \"\", y[k] ?? \"\"])", target: "cp70" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

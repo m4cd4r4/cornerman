@@ -71,3 +71,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp67: formula limits
 - [ ] cp68: copying across sheets
 - [ ] cp69: CSV import options
+- [ ] cp70: comparing two saves
