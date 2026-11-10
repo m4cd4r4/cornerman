@@ -59,3 +59,4 @@
 - cp57: TEXT(value, format) gives a number as text in a cp41 format; other values come back as display shows them.
 - cp58: EDATE and EOMONTH move a date by whole months; WEEKDAY numbers the days from Monday = 1 by default.
 - cp59: NETWORKDAYS counts Monday-to-Friday days between two dates in either order, less holidays from a range.
+- cp60: CHOOSE picks a value by position and SWITCH by a case-sensitive match; neither evaluates what it skips.

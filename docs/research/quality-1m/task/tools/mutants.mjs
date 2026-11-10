@@ -413,6 +413,15 @@ const MUTANTS = [
   { name: "holiday-not-truncated", file: "calendar.mjs", find: "const d = Math.trunc(v);", replace: "const d = v;", target: "cp59" },
   { name: "holiday-errors-skipped", file: "calendar.mjs", find: ", ...(hol.values || []).filter(isError)]", replace: "]", target: "cp59" },
   { name: "holidays-outside-dates", file: "calendar.mjs", find: "if (d >= lo && d <= hi && isoDay(d) <= 5)", replace: "if (isoDay(d) <= 5)", target: "cp59" },
+  { name: "switch-ignores-case", file: "choose.mjs", find: ": x === y;", replace: ": typeof x === \"string\" ? x.toLowerCase() === y.toLowerCase() : x === y;", target: "cp60" },
+  { name: "switch-empty-matches-text", file: "choose.mjs", edits: [["import { numEqual } from \"./evaluate.mjs\";", "import { numEqual, compareValues } from \"./evaluate.mjs\";"], ["export function sameValue(a, b) {", "export function sameValue(a, b) {\n  if (a === null || b === null) return compareValues(a, b) === 0;"]], target: "cp60" },
+  { name: "choose-eager", file: "choose.mjs", find: "  return evaluate(args[i], ctx);", replace: "  const all = args.slice(1).map((a) => evaluate(a, ctx));\n  return all.find(isError) || all[i - 1];", target: "cp60" },
+  { name: "choose-index-zero-first", file: "choose.mjs", edits: [["  if (i < 1 || i > args.length - 1)", "  if (i < 0 || i > args.length - 1)"], ["  return evaluate(args[i], ctx);", "  return evaluate(args[Math.max(i, 1)], ctx);"]], target: "cp60" },
+  { name: "switch-no-match-value", file: "choose.mjs", find: "makeError(\"#N/A\", ctx.cell, \"SWITCH: no case matches\")", replace: "makeError(\"#VALUE!\", ctx.cell, \"SWITCH: no case matches\")", target: "cp60" },
+  { name: "switch-case-errors-skipped", file: "choose.mjs", find: "    if (isError(c)) return c;", replace: "    if (isError(c)) continue;", target: "cp60" },
+  { name: "switch-default-always-last", file: "choose.mjs", find: "  if (args.length % 2 === 0) return", replace: "  if (args.length > 3) return", target: "cp60" },
+  { name: "switch-eager-cases", file: "choose.mjs", find: "  for (let i = 1; i + 1 < args.length; i += 2) {", replace: "  for (let j = 1; j + 1 < args.length; j += 2) { const e = evaluate(args[j], ctx); if (isError(e)) return e; }\n  for (let i = 1; i + 1 < args.length; i += 2) {", target: "cp60" },
+  { name: "switch-loose-types", file: "choose.mjs", find: "  if (typeof x !== typeof y) return false;", replace: "  if (typeof x !== typeof y) return String(x) === String(y);", target: "cp60" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
