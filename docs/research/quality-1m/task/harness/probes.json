@@ -1,5 +1,5 @@
 {
-  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. 'Which checkpoint' questions avoid details named in FEATURES.md titles, which the agent can read. Probes 2 and 3 are filled when blocks C and E are written; probe 4 (after cp50) asks about blocks A-D. Frozen with the rest of the task before the pilot.",
+  "_note": "Answer key for the recall probes. Never copied into the run repo. The gate shows only id + ask. 'Which checkpoint' questions avoid details named in FEATURES.md titles, which the agent can read. Probes 2 and 3 are filled when blocks C and E are written; probe 4 (after cp50) asks about blocks A-D; probe 5 (after cp65) asks about blocks A-G (cp01-cp56). Frozen with the rest of the task before the pilot.",
   "probes": [
     {
       "id": "P1",
@@ -63,6 +63,22 @@
         { "id": "P4.8", "ask": "A1 holds =B1+$C$1+D$1. After copy(\"A1\", \"B3\"), what does getInput(\"B3\") return? Answer the exact text.", "kind": "text", "answer": "=C3+$C$1+E$1" },
         { "id": "P4.9", "ask": "Which files under src/ did your cp05 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp05" },
         { "id": "P4.10", "ask": "Which checkpoint introduced the #FULL error code? Answer cpNN.", "kind": "checkpoint", "answer": "cp23" }
+      ]
+    },
+    {
+      "id": "P5",
+      "after": "cp65",
+      "questions": [
+        { "id": "P5.1", "ask": "Which checkpoint introduced the #PARSE! error code? Answer cpNN.", "kind": "checkpoint", "answer": "cp02" },
+        { "id": "P5.2", "ask": "List every code SUBTOTAL accepts, smallest first, comma-separated.", "kind": "ordered", "answer": ["1", "2", "4", "5", "9"] },
+        { "id": "P5.3", "ask": "At most how many characters can a cell note hold? Answer a number.", "kind": "number", "answer": 200 },
+        { "id": "P5.4", "ask": "What exact text does display() return for a cell holding 0.575 with the format 0%?", "kind": "text", "answer": "58%" },
+        { "id": "P5.5", "ask": "What value does =ROUND(2.5, 0) return? Answer a number.", "kind": "number", "answer": 2 },
+        { "id": "P5.6", "ask": "Which checkpoint introduced the #N/A error code? Answer cpNN.", "kind": "checkpoint", "answer": "cp21" },
+        { "id": "P5.7", "ask": "Which error code does =SUMPRODUCT(1/0) return? Answer the code.", "kind": "text", "answer": "#VALUE!" },
+        { "id": "P5.8", "ask": "In a workbook, Main!A1 holds =Data!B2*2. After book.deleteSheet(\"Data\"), what does getInput(\"A1\") on Main return? Answer the exact text.", "kind": "text", "answer": "=#REF!*2" },
+        { "id": "P5.9", "ask": "Which files under src/ did your cp47 commit change? Comma-separated paths relative to the repo root.", "kind": "git-files", "commit": "cp47" },
+        { "id": "P5.10", "ask": "Which checkpoint introduced sheet.invalidCells? Answer cpNN.", "kind": "checkpoint", "answer": "cp46" }
       ]
     }
   ]
