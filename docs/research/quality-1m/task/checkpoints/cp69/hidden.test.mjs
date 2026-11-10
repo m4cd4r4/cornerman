@@ -135,6 +135,21 @@ test("cp69h option errors come after at and before the text", () => {
   assert.deepEqual(s.cells(), []);
 });
 
+test("cp69h options together: one undo step, one event, header fields as read", () => {
+  const s = createSheet();
+  s.set("C3", "old");
+  const seen = [];
+  s.onChange((e) => seen.push(e.cells));
+  const h = s.fromCSV('"a\tb"\t=x\n5\t=1+1\n', "C3", { delimiter: "\t", header: true, types: "text" });
+  assert.deepEqual(h, ["a\tb", "=x"]);
+  assert.deepEqual(inputs(s), { C3: '="5"', D3: '="=1+1"' });
+  assert.deepEqual(seen, [["C3", "D3"]]);
+  assert.equal(s.undo(), true);
+  assert.deepEqual(inputs(s), { C3: "old" });
+  assert.equal(s.redo(), true);
+  assert.equal(s.get("D3"), "=1+1");
+});
+
 test("cp69h CHANGES.md has a cp69 line that is not the bare title", () => {
   const lines = readFileSync(new URL("../../CHANGES.md", import.meta.url), "utf8").split(/\r?\n/).filter((l) => l.trim() !== "" && !l.startsWith("#"));
   assert.ok(lines.length >= 69);

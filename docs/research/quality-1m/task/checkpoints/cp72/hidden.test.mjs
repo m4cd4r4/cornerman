@@ -116,6 +116,21 @@ test("cp72h a cycle across sheets and a long chain", () => {
   assert.deepEqual(list[2999], row("A3000", "#DIV/0!", "A1"));
 });
 
+test("cp72h formats, notes and names play no part; each call gives new objects", () => {
+  const s = createSheet();
+  s.setMany({ A1: "=K*2", B1: "=SUM(R)", C1: "=1/0" });
+  s.setFormat("C1", "0.00");
+  s.setNote("C1", "n");
+  s.defineName("R", "Z1:Z2");
+  s.set("Z1", "=nope");
+  const first = s.errorCells();
+  assert.deepEqual(brief(first), ["A1 #NAME? A1", "B1 #NAME? Z1", "Z1 #NAME? Z1", "C1 #DIV/0! C1"]);
+  first[0].code = "x";
+  assert.equal(s.errorCells()[0].code, "#NAME?");
+  s.defineConstant("K", 2);
+  assert.deepEqual(brief(s.errorCells()), ["B1 #NAME? Z1", "Z1 #NAME? Z1", "C1 #DIV/0! C1"]);
+});
+
 test("cp72h CHANGES.md has a cp72 line that is not the bare title", () => {
   const lines = readFileSync(new URL("../../CHANGES.md", import.meta.url), "utf8").split(/\r?\n/).filter((l) => l.trim() !== "" && !l.startsWith("#"));
   assert.ok(lines.length >= 72);

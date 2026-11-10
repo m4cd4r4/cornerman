@@ -153,6 +153,20 @@ test("cp70h row-major cells, after's sheet order, sheets with no cells", () => {
   assert.deepEqual(diffWorkbooks(b.save(), c.save()), []);
 });
 
+test("cp70h a sheet on one side lists no cells or names; formula errors do not matter", () => {
+  const b = createWorkbook();
+  const m = b.addSheet("Main");
+  m.set("A1", "=A1");
+  m.defineName("N", "A1");
+  const s1 = b.save();
+  const x = b.addSheet("X");
+  x.set("A1", "=1/0");
+  x.defineName("M", "B2");
+  m.set("A2", "=1/0");
+  assert.deepEqual(diffWorkbooks(s1, b.save()), [{ kind: "sheet-added", sheet: "X" }, cell("Main", "A2", null, "=1/0")]);
+  assert.deepEqual(diffWorkbooks(b.save(), s1), [{ kind: "sheet-removed", sheet: "X" }, cell("Main", "A2", "=1/0", null)]);
+});
+
 test("cp70h CHANGES.md has a cp70 line that is not the bare title", () => {
   const lines = readFileSync(new URL("../../CHANGES.md", import.meta.url), "utf8").split(/\r?\n/).filter((l) => l.trim() !== "" && !l.startsWith("#"));
   assert.ok(lines.length >= 70);
