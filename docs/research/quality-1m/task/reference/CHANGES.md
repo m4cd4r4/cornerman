@@ -62,3 +62,4 @@
 - cp60: CHOOSE picks a value by position and SWITCH by a case-sensitive match; neither evaluates what it skips.
 - cp61: SUBSTITUTE swaps text, FIND and SEARCH give its position or #N/A; SEARCH reads ? and * and has no escape.
 - cp62: LET names values inside one formula; a LET name is a value, never a range, and hides defined names.
+- cp63: a decimal option of "," shows numbers with a decimal comma; inputs, formulas, values and saves do not change.

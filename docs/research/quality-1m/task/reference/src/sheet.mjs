@@ -1,7 +1,8 @@
 // sheet.mjs: one sheet: its inputs, names, layers, undo list and public methods (cp01-cp33). The
 // graph and value cache live in the engine the sheet is bound to (engine.mjs); a workbook rebinds it.
 import { normalise, compareAddresses, rangeKeys } from "./address.mjs";
-import { makeError, throwAddr, withErrorOrder, errorOrderOption } from "./errors.mjs";
+import { makeError, throwAddr, withErrorOrder } from "./errors.mjs";
+import { sheetOptions, localize } from "./locale.mjs";
 import { evaluate } from "./evaluate.mjs";
 import { parseEntry, reachable, recalcOrder } from "./graph.mjs";
 import { createEngine } from "./engine.mjs";
@@ -25,11 +26,11 @@ const sorted = (xs) => [...xs].sort(compareAddresses);
 
 export const CORE = new WeakMap(); // sheet object -> its core, for workbook.mjs
 
-export const createSheet = (opts) => makeSheet(null, errorOrderOption(opts));
-export const loadSheet = (json, opts) => { const order = errorOrderOption(opts); return makeSheet(parseSave(json), order); };
+export const createSheet = (opts) => { const o = sheetOptions(opts); return makeSheet(null, o.errorOrder, o.decimal); };
+export const loadSheet = (json, opts) => { const o = sheetOptions(opts); return makeSheet(parseSave(json), o.errorOrder, o.decimal); };
 
-// init = { inputs, names } from a save, or null for an empty sheet.
-export function makeSheet(init, order = "priority") {
+// init = { inputs, names } from a save, or null for an empty sheet; decimal "." or "," (cp63).
+export function makeSheet(init, order = "priority", decimal = ".") {
   const inputs = new Map(); // key -> raw string
   const parsed = new Map(); // key -> { ast, refs } | { parseError }
   const names = new Map(); // NAME -> { a, b, range }
@@ -228,9 +229,9 @@ export function makeSheet(init, order = "priority") {
     return changed;
   }
 
-  const shown = (k) => layers.show(k, valueOf(k));
+  const shown = (k) => { const v = valueOf(k); const t = layers.show(k, v); return typeof v === "number" ? localize(t, engine.decimal) : t; };
   const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
-  bind(createEngine(order), null);
+  bind(createEngine(order, decimal), null);
   if (init) rebuild(init);
 
   const sheet = {

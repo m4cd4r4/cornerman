@@ -16,7 +16,7 @@ class Unwind {
   constructor(core, k) { this.core = core; this.k = k; }
 }
 
-export function createEngine(errorOrder = "priority") {
+export function createEngine(errorOrder = "priority", decimal = ".") {
   const sheets = new Map(); // id -> { core, name }
   const byName = new Map(); // NAME -> id
   const cache = new Map(); // graph key -> value
@@ -149,6 +149,7 @@ export function createEngine(errorOrder = "priority") {
 
   return {
     errorOrder,
+    decimal, // cp63: how display writes numbers
     cache,
     ownPrecs,
     precs,

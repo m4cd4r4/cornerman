@@ -5,12 +5,15 @@ import { checkName } from "./names.mjs";
 import { loadBookTarget } from "./booknames.mjs";
 import { buildWorkbook } from "./workbook.mjs";
 import { parseLayers } from "./save3.mjs";
+import { sheetOptions } from "./locale.mjs";
 
 export const MIGRATED_NAME = "Sheet_1";
 
-export function loadWorkbook(json) {
+// opts (cp63) is checked first; its decimal is used, and the error order comes from the text.
+export function loadWorkbook(json, opts) {
+  const { decimal } = sheetOptions(opts);
   const doc = parseDoc(json);
-  if (doc.format === "sheet") return buildWorkbook("priority", [{ name: MIGRATED_NAME, init: parseSheetDoc(doc) }]);
+  if (doc.format === "sheet") return buildWorkbook("priority", [{ name: MIGRATED_NAME, init: parseSheetDoc(doc) }], new Map(), decimal);
   if (doc.format !== "workbook") throw bad("format", `format is ${JSON.stringify(doc.format)}`);
   if (doc.version !== 2 && doc.version !== 3) throw bad("version", `version is ${JSON.stringify(doc.version)}`);
   const v3 = doc.version === 3; // every layer key and the top-level names are required
@@ -30,7 +33,7 @@ export function loadWorkbook(json) {
     if (!v3) return { name: s.name, init: parseBody(s, `${at}.`) };
     return { name: s.name, init: { ...parseBody({ ...s, notes: s.notes ?? null }, `${at}.`), ...parseLayers(s, at) } };
   });
-  return buildWorkbook(doc.errorOrder, sheets, bookNames(v3 ? doc.names ?? null : doc.names));
+  return buildWorkbook(doc.errorOrder, sheets, bookNames(v3 ? doc.names ?? null : doc.names), decimal);
 }
 
 // cp53: the optional top-level names of a workbook save, checked after every sheet.

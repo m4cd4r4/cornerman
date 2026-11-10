@@ -1,5 +1,6 @@
 // workbook.mjs: createWorkbook() - named sheets sharing one engine, so formulas can read across (cp31).
-import { makeError, errorOrderOption } from "./errors.mjs";
+import { makeError } from "./errors.mjs";
+import { sheetOptions } from "./locale.mjs";
 import { checkName } from "./names.mjs";
 import { createEngine } from "./engine.mjs";
 import { makeSheet, CORE } from "./sheet.mjs";
@@ -8,12 +9,12 @@ import { addBookNames } from "./booknames.mjs";
 import { createHistory } from "./history.mjs";
 import { hasV3Layers, sheetEntry } from "./save3.mjs";
 
-export const createWorkbook = (opts) => buildWorkbook(errorOrderOption(opts), []);
+export const createWorkbook = (opts) => { const o = sheetOptions(opts); return buildWorkbook(o.errorOrder, [], new Map(), o.decimal); };
 
 // order = "priority" | "first"; loaded = [{ name, init }] and bookNames = Map NAME -> target from a
-// workbook save (cp35, cp53), already checked.
-export function buildWorkbook(order, loaded, bookNames = new Map()) {
-  const engine = createEngine(order);
+// workbook save (cp35, cp53), already checked. decimal = "." or "," (cp63), shared by every sheet.
+export function buildWorkbook(order, loaded, bookNames = new Map(), decimal = ".") {
+  const engine = createEngine(order, decimal);
   const nameHistory = createHistory(); // cp55: workbook name changes
   const applyName = (e, side) => engine.setBookName(e.bookName, e[side]);
   // cp55: the list (a sheet's, or the names list) whose next step by `which` is the newest.
@@ -26,7 +27,7 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
   const list = []; // { name, sheet } in creation order, name as typed
   const find = (name) => (typeof name === "string" ? list.findIndex((e) => e.name.toUpperCase() === name.toUpperCase()) : -1);
   const add = (name, init) => {
-    const sheet = makeSheet(init, engine.errorOrder);
+    const sheet = makeSheet(init, engine.errorOrder, engine.decimal);
     CORE.get(sheet).bind(engine, name);
     list.push({ name, sheet });
     return sheet;
@@ -54,7 +55,7 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
       const i = find(name);
       if (i < 0) return false;
       const [e] = list.splice(i, 1);
-      CORE.get(e.sheet).bind(createEngine(engine.errorOrder), null);
+      CORE.get(e.sheet).bind(createEngine(engine.errorOrder, engine.decimal), null);
       return true;
     },
     // cp54: remove the sheet as removeSheet does, rewrite every reference to it as #REF!, drop the
@@ -64,7 +65,7 @@ export function buildWorkbook(order, loaded, bookNames = new Map()) {
       if (i < 0) throw makeError("#SHEET", String(name), `no sheet named ${name}`);
       const OLD = list[i].name.toUpperCase();
       const [e] = list.splice(i, 1);
-      CORE.get(e.sheet).bind(createEngine(engine.errorOrder), null);
+      CORE.get(e.sheet).bind(createEngine(engine.errorOrder, engine.decimal), null);
       CORE.get(e.sheet).history.clear();
       nameHistory.clear();
       for (const [n, d] of [...engine.bookNames]) if (d.sheet && d.sheet.toUpperCase() === OLD) engine.setBookName(n, undefined);
