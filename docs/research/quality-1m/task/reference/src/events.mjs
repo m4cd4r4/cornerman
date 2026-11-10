@@ -50,6 +50,8 @@ export function inCall(fn, name = "") {
 // cp75: true when a call starting now is one you made: no public call is in progress, other than
 // book.batch (whose fn is your code). A change listener runs when no call is in progress.
 export const userCalling = () => frames.every((f) => f === "batch");
+// cp76: the label of a step made now: the method you called (book.batch aside), or null.
+export const callLabel = () => frames.find((f) => f !== "batch") ?? null;
 
 // Wrap every method of obj so that it counts as one public call.
 export function wrapCalls(obj) {

@@ -9,9 +9,10 @@ import { addFill } from "./fill.mjs";
 import { addV2 } from "./api2.mjs";
 import { addV3, addDeprecations, SHEET_OLD } from "./api3.mjs";
 import { addEvents } from "./events.mjs";
+import { addUndoList } from "./undolist.mjs";
 
 export function extendSheet(sheet, core) {
   let s = sheet;
-  for (const add of [addFeatures, addNames, addHiding, addFindReplace, addFill, addV2, addV3, addEvents]) s = add(s, core);
+  for (const add of [addFeatures, addNames, addHiding, addFindReplace, addFill, addV2, addV3, addUndoList, addEvents]) s = add(s, core);
   return addDeprecations(s, SHEET_OLD);
 }

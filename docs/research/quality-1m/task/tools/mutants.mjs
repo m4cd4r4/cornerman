@@ -562,6 +562,14 @@ const MUTANTS = [
   { name: "clear-ignores-locks", file: "api3.mjs", find: "      core.writeRaw(core.layers.locked(writes)); // cp71: a locked cell with an input refuses", replace: "      core.writeRaw(writes);", target: "cp75" },
   { name: "clear-counts-range", file: "api3.mjs", find: "      return writes.length;", replace: "      return t.keys.length;", target: "cp75" },
   { name: "cell-input-null", file: "api3.mjs", find: "input: core.input(k) ?? \"\",", replace: "input: core.input(k),", target: "cp75" },
+  { name: "label-aliases-merged", file: "events.mjs", find: "export const callLabel = () => frames.find((f) => f !== \"batch\") ?? null;", replace: "export const callLabel = () => { const f = frames.find((x) => x !== \"batch\") ?? null; return f === \"setCell\" ? \"set\" : f; };", target: "cp76" },
+  { name: "label-innermost-call", file: "events.mjs", find: "export const callLabel = () => frames.find((f) => f !== \"batch\") ?? null;", replace: "export const callLabel = () => (frames.length ? frames[frames.length - 1] : null);", target: "cp76" },
+  { name: "label-batch-outer", file: "events.mjs", find: "export const callLabel = () => frames.find((f) => f !== \"batch\") ?? null;", replace: "export const callLabel = () => frames[0] ?? null;", target: "cp76" },
+  { name: "book-list-sheet-by-sheet", file: "undolist.mjs", find: "    return steps.sort((a, b) => b.at - a.at).map(", replace: "    return steps.map(", target: "cp76" },
+  { name: "redo-list-by-made-time", file: "history.mjs", find: "at: which === \"undo\" ? e.t : e.u", replace: "at: e.t", target: "cp76" },
+  { name: "undo-list-oldest-first", file: "history.mjs", find: "at: which === \"undo\" ? e.t : e.u })).reverse(),", replace: "at: which === \"undo\" ? e.t : e.u })),", target: "cp76" },
+  { name: "redo-relabels", file: "history.mjs", find: "      apply(e, \"after\");\n      e.t = ++CLOCK;", replace: "      apply(e, \"after\");\n      e.t = ++CLOCK;\n      e.label = callLabel();", target: "cp76" },
+  { name: "book-list-names-labelled", file: "undolist.mjs", find: "{ sheet: null, h: names }", replace: "{ sheet: \"\", h: names }", target: "cp76" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

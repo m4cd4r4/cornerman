@@ -7,8 +7,9 @@
 //   { bookName, before, after }               a workbook name (cp53), on the book's own list (cp55)
 // sheet.mjs owns applying an entry; this file only keeps the order and unpacks groups.
 // cp55: every entry is stamped from one clock shared by all lists: t when it was made or redone,
-// u when it was undone, so a workbook can find the newest step across its sheets.
+// u when it was undone, so a workbook can find the newest step across its sheets. cp76: and label.
 import { sameLayers } from "./layers.mjs";
+import { callLabel } from "./events.mjs";
 
 export const HISTORY_LIMIT = 100;
 let CLOCK = 0;
@@ -28,6 +29,7 @@ export function createHistory(limit = HISTORY_LIMIT) {
       if (!entry) return;
       if (buffer) { buffer.push(entry); return; }
       entry.t = ++CLOCK;
+      entry.label = callLabel(); // cp76
       done.push(entry);
       if (done.length > limit) done.shift();
       undone.length = 0;
@@ -47,6 +49,8 @@ export function createHistory(limit = HISTORY_LIMIT) {
     // cp55: the stamp of the step undo() or redo() would take next, or -1 when there is none.
     nextUndo: () => (done.length ? done[done.length - 1].t : -1),
     nextRedo: () => (undone.length ? undone[undone.length - 1].u : -1),
+    // cp76: { label, at } for each step undo() or redo() would take, next first.
+    steps: (which) => (which === "undo" ? done : undone).map((e) => ({ label: e.label, at: which === "undo" ? e.t : e.u })).reverse(),
     // cp66: both lists and their stamps, to put back when a batch rolls back.
     save: () => [done, undone].map((list) => list.map((e) => [e, e.t, e.u])),
     restore(saved) {
