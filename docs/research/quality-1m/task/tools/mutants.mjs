@@ -90,7 +90,7 @@ const MUTANTS = [
     ["      const raw = inputs.get(colName(c) + r) ?? \"\";", "      const raw = seen.get(colName(c) + r) ?? inputs.get(colName(c) + r) ?? \"\";"],
     ["      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);", "      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);\n      seen.set(colName(c + dc) + (r + dr), out);"],
   ] },
-  { name: "copy-skips-empty", file: "copy.mjs", find: "      const out = raw.startsWith", replace: "      if (raw === \"\") continue;\n      const out = raw.startsWith", target: "cp26" },
+  { name: "copy-skips-empty", file: "copy.mjs", find: "      const out = shiftFormula(raw, dr, dc);", replace: "      if (raw === \"\") continue;\n      const out = shiftFormula(raw, dr, dc);", target: "cp26" },
   { name: "copy-range-one-corner", file: "copy.mjs", find: "    return qx === null || qy === null ? null : [qx, qy];", replace: "    return qx === null && qy === null ? null : [qx || x, qy || y];", target: "cp26" },
   { name: "copy-no-col-edge", file: "copy.mjs", find: "if (r2 + dr > MAX_ROW || c2 + dc > MAX_COL)", replace: "if (r2 + dr > MAX_ROW)", target: "cp26" },
   { name: "copy-offset-typed-corner", file: "copy.mjs", find: "  const dr = t.row - r1;\n  const dc = t.col - c1;", replace: "  const dr = t.row - a.row;\n  const dc = t.col - a.col;", target: "cp26" },
@@ -449,6 +449,15 @@ const MUTANTS = [
   { name: "decimal-load-ignored", file: "bookio.mjs", find: "sheets, bookNames(v3 ? doc.names ?? null : doc.names), decimal);", replace: "sheets, bookNames(v3 ? doc.names ?? null : doc.names));", target: "cp63" },
   { name: "decimal-bad-value-ignored", file: "locale.mjs", find: "  if (d !== undefined && d !== \".\" && d !== \",\") throw", replace: "  if (false) throw", target: "cp63" },
   { name: "decimal-checked-first", file: "locale.mjs", find: "  const errorOrder = errorOrderOption(opts);\n  const d = opts === undefined ? undefined : opts.decimal;\n  if (d !== undefined && d !== \".\" && d !== \",\") throw makeError(\"#ARG\", String(d), `unknown decimal ${d}`);", replace: "  const d = opts === undefined || opts === null ? undefined : opts.decimal;\n  if (d !== undefined && d !== \".\" && d !== \",\") throw makeError(\"#ARG\", String(d), `unknown decimal ${d}`);\n  const errorOrder = errorOrderOption(opts);", target: "cp63" },
+  { name: "fill-never-series", file: "fill.mjs", find: "  if (keys.length > 1 && NUMBER.test(a) && NUMBER.test(b)) {", replace: "  if (false) {", target: "cp64" },
+  { name: "fill-text-counts-up", file: "fill.mjs", find: "  return keys.slice(1).map((k, i) => [k, move(a, i + 1), keys[0]]);", replace: "  const up = !a.startsWith(\"=\") && /\\d+$/.test(a);\n  return keys.slice(1).map((k, i) => [k, up ? a.replace(/\\d+$/, (d) => String(Number(d) + i + 1)) : move(a, i + 1), keys[0]]);", target: "cp64" },
+  { name: "fill-unchecked", file: "fill.mjs", find: "      core.writeAll(writes);", replace: "      core.writeRaw(writes);", target: "cp64" },
+  { name: "fill-column-major-check", file: "fill.mjs", find: "    writes.sort((x, y) => compareAddresses(x[0], y[0]));\n", replace: "", target: "cp64" },
+  { name: "fill-series-unrounded", file: "fill.mjs", find: "numberText(roundDecimal(x + (i + 2) * step, 10, \"even\"))", replace: "numberText(x + (i + 2) * step)", target: "cp64" },
+  { name: "fill-series-off-by-one", file: "fill.mjs", find: "x + (i + 2) * step", replace: "x + (i + 1) * step", target: "cp64" },
+  { name: "fill-formats-left", file: "fill.mjs", find: "      history.record(layers.write(\"formats\", writes.map(([k, , s]) => [k, layers.L.formats.get(s)])));\n", replace: "", target: "cp64" },
+  { name: "fill-two-cells-copy", file: "fill.mjs", find: "  if (keys.length > 1 && NUMBER", replace: "  if (keys.length > 2 && NUMBER", target: "cp64" },
+  { name: "fill-merge-unchecked", file: "fill.mjs", find: "    if (layers.L.merges.some((m) => overlaps(m, t))) throw makeError(\"#MERGE\", String(target), `${target} overlaps a merge`);\n", replace: "", target: "cp64" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

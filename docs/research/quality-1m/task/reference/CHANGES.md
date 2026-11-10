@@ -63,3 +63,4 @@
 - cp61: SUBSTITUTE swaps text, FIND and SEARCH give its position or #N/A; SEARCH reads ? and * and has no escape.
 - cp62: LET names values inside one formula; a LET name is a value, never a range, and hides defined names.
 - cp63: a decimal option of "," shows numbers with a decimal comma; inputs, formulas, values and saves do not change.
+- cp64: fillDown and fillRight copy the first cell of each line, or continue two typed numbers as a series.

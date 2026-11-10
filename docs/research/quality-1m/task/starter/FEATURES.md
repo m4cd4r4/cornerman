@@ -65,3 +65,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp61: SUBSTITUTE, FIND and SEARCH
 - [ ] cp62: LET
 - [ ] cp63: decimal comma
+- [ ] cp64: fill down and fill right

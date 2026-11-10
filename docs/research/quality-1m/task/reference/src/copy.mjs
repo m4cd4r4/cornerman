@@ -1,4 +1,5 @@
-// copy.mjs: sheet.copy(from, to) - the writes a copy makes, worked out before any is applied (cp26).
+// copy.mjs: sheet.copy(from, to) - the writes a copy makes, worked out before any is applied (cp26) -
+// and shiftFormula, which fill (cp64) shares.
 import { parseAddress, rangeBox, rangeSize, colName, RANGE_LIMIT } from "./address.mjs";
 import { makeError, throwAddr } from "./errors.mjs";
 import { rewriteRefs, onSheet, MAX_ROW, MAX_COL } from "./refs.mjs";
@@ -16,7 +17,21 @@ export function copyWrites(inputs, from, to) {
   const dr = t.row - r1;
   const dc = t.col - c1;
   if (r2 + dr > MAX_ROW || c2 + dc > MAX_COL) throw makeError("#ARG", to, `copy to ${to} would pass the sheet edge`);
+  const writes = [];
+  for (let r = r1; r <= r2; r++) {
+    for (let c = c1; c <= c2; c++) {
+      const raw = inputs.get(colName(c) + r) ?? "";
+      const out = shiftFormula(raw, dr, dc);
+      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);
+    }
+  }
+  return writes;
+}
 
+// An input moved dr rows and dc columns as a copy moves it (also fill, cp64): parts marked $ stay,
+// a reference moved off the sheet becomes #REF! (for a range, the whole range). Non-formulas as is.
+export function shiftFormula(raw, dr, dc) {
+  if (!raw.startsWith("=")) return raw;
   const one = (p) => {
     const q = { ...p, row: p.absRow ? p.row : p.row + dr, col: p.absCol ? p.col : p.col + dc };
     return onSheet(q) ? q : null;
@@ -26,13 +41,5 @@ export function copyWrites(inputs, from, to) {
     const qy = one(y);
     return qx === null || qy === null ? null : [qx, qy];
   };
-  const writes = [];
-  for (let r = r1; r <= r2; r++) {
-    for (let c = c1; c <= c2; c++) {
-      const raw = inputs.get(colName(c) + r) ?? "";
-      const out = raw.startsWith("=") ? "=" + rewriteRefs(raw.slice(1), one, range) : raw;
-      writes.push([colName(c + dc) + (r + dr), out, colName(c) + r]);
-    }
-  }
-  return writes;
+  return "=" + rewriteRefs(raw.slice(1), one, range);
 }
