@@ -28,7 +28,9 @@ git log --oneline -5
 A handover that narrows to the next step loses work that is settled but not yet done. Before
 writing, gather every key point that affects what to do next:
 
-- Rulings the user gave this session, and any decision log or review page the session touched.
+- Rulings the user gave this session, any decision log or review page the session touched, and every
+  decision record or log named in the handover this session was started from, even one this session never
+  opened. Read each one: a ruling recorded there is exactly what gets lost.
   List each one with no evidence it was applied. Do this even if the next action is a different item.
 - Work already built but not applied or fully tested (a trimmed file, a draft branch), and where it is.
 - Questions shown to the user for a choice with no answer recorded, and where the options live.
@@ -42,7 +44,8 @@ writing, gather every key point that affects what to do next:
 
 ## 2. Write it
 
-Aim for under 40 lines.
+Aim for under 40 lines, not counting the always-present sections ("Decided, not yet applied" and
+"Open questions").
 
 Write for someone who has never seen this project. The next session has none of
 this conversation and none of your reasoning, so every reference has to stand on
@@ -83,7 +86,7 @@ if there are none.
 ## Also read
 Other handovers or records on the same task, and what each still holds open.
 
-## Decisions already made
+## Settled, do not reopen
 Choices the user settled that the next session must not reopen. One line each,
 with the reason if the decision looks arbitrary without it.
 
