@@ -78,7 +78,7 @@ if (!h) {
   console.error(`cornerman: no waiting or loaded handover named ${want}. Run with no argument to list the waiting ones.`);
   process.exit(1);
 }
-const copySource = { id: h.id, title: h.meta.title, repoPath: h.meta.repo || top, branch: h.meta.branch, createdAt: h.meta.created, body: h.body };
+const copySource = { id: h.id, title: h.meta.title, repoPath: h.meta.repo || top, branch: h.meta.branch, createdAt: h.meta.created, body: h.body, loadedBy: process.env.CLAUDE_CODE_SESSION_ID };
 
 if (!wasLoaded && isOpenQuestion(h) && !h.meta.takenAt && !isRecent(h.meta.created) && !peek && !take) {
   console.error(`cornerman: this idle question snapshot belongs to session ${h.meta.sessionId || "unknown"} and may be stale. Use --peek to read it or --take to resume it explicitly.`);

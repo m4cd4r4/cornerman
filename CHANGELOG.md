@@ -2,6 +2,18 @@
 
 ## 0.7.2 (not released yet)
 
+- **Reading the save script no longer clears your session.** A session that printed the source
+  of `save.mjs` (with `cat`, `sed` or `grep`) looked to the relay like one that had saved a
+  handover, so it ran `/clear` mid-task with nothing saved. The relay now counts only a run of
+  `save.mjs` that prints its own "Saved handover" line (#199).
+- **Handovers keep what is decided but not done.** When a save leaves out a "Read first",
+  "Decided, not yet applied", "Open questions" or "Progress" line from the previous handover in
+  the same window, the save appends it word for word under "Carried forward from the previous
+  handover" and lists it. A loaded handover tells the next session to open its "Read first"
+  files before acting, and other waiting handovers show how many open items they hold (#194).
+- **The loaded copy says which session it belongs to**, so another tab in the same window does
+  not take it as its own (#198).
+
 - **An old idle question no longer resumes on its own.** When an idle handover saved a question
   that was waiting for you, and its session then closed, a later `/clear` could load it and carry
   on with unrelated work. It is now retired when its session closes, and one that cannot be checked
