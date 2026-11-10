@@ -77,3 +77,4 @@
 - cp75: cell() and clear() join the API; deprecations() counts your calls to set, get and the other v1 names.
 - cp76: undoList and redoList name each step by the method you called; book lists add the sheet, newest first.
 - cp77: exportJSON writes a range row by row as values or display texts, with formats on request; hidden lines too.
+- cp78: renameName renames a sheet or workbook name and rewrites the formulas using it, except where a LET hides it.

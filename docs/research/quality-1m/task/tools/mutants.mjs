@@ -579,6 +579,14 @@ const MUTANTS = [
   { name: "export-null-options-ok", file: "export.mjs", find: "  if (opts === undefined) return {};", replace: "  if (opts === undefined || opts === null) return {};", target: "cp77" },
   { name: "export-formats-checked-first", file: "export.mjs", find: "  for (const k of [\"display\", \"formats\"]) {", replace: "  for (const k of [\"formats\", \"display\"]) {", target: "cp77" },
   { name: "export-options-before-target", file: "export.mjs", find: "    const t = parseTarget(target);\n    const o = checkOptions(opts);", replace: "    const o = checkOptions(opts);\n    const t = parseTarget(target);", target: "cp77" },
+  { name: "rename-text-replace", file: "rename.mjs", find: "if (uses[i] === OLD) out =", replace: "if (words[i].v.toUpperCase() === OLD) out =", target: "cp78" },
+  { name: "rename-case-only-rewrites", file: "rename.mjs", find: "    if (NEW === OLD) return 0;\n    const writes", replace: "    const writes", target: "cp78" },
+  { name: "rename-book-into-own-names", file: "rename.mjs", find: "      if (core.names.has(OLD)) core.history.clear();\n      else count +=", replace: "      count +=", target: "cp78" },
+  { name: "rename-sheet-not-undoable", file: "rename.mjs", find: "    return writes.length;\n  };\n  return sheet;", replace: "    core.history.clear();\n    return writes.length;\n  };\n  return sheet;", target: "cp78" },
+  { name: "rename-checks-locks", file: "rename.mjs", find: "      core.writeRaw(writes); // not checked", replace: "      core.writeAll(writes); // not checked", target: "cp78" },
+  { name: "rename-new-checked-first", file: "rename.mjs", find: "  if (!has(OLD)) throw makeError(\"#BADNAME\", String(oldName), `no name ${oldName}`);\n  const NEW = checkName(newName);", replace: "  const NEW = checkName(newName);\n  if (!has(OLD)) throw makeError(\"#BADNAME\", String(oldName), `no name ${oldName}`);", target: "cp78" },
+  { name: "rename-book-keeps-name-undo", file: "rename.mjs", find: "    names.clear();\n", replace: "", target: "cp78" },
+  { name: "rename-sheet-prefix", file: "rename.mjs", find: " && !op(toks[i + 1], \"!\") &&", replace: " &&", target: "cp78" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
