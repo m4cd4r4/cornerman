@@ -10,6 +10,7 @@ import { createHistory } from "./history.mjs";
 import { hasV3Layers, sheetEntry } from "./save3.mjs";
 import { wrapCalls } from "./events.mjs";
 import { addBatch } from "./batch.mjs";
+import { addBookCopy } from "./xcopy.mjs";
 
 export const createWorkbook = (opts) => { const o = sheetOptions(opts); return buildWorkbook(o.errorOrder, [], new Map(), o.decimal); };
 
@@ -110,6 +111,7 @@ export function buildWorkbook(order, loaded, bookNames = new Map(), decimal = ".
   };
   for (const { name, init } of loaded) add(name, init);
   for (const [n, d] of bookNames) engine.setBookName(n, d);
+  addBookCopy(book, find, list); // cp68
   const sheets = () => list.map((e) => e.sheet);
   return wrapCalls(addBatch(addBookNames(book, engine, nameHistory), engine, nameHistory, sheets)); // cp65: one call each
 }

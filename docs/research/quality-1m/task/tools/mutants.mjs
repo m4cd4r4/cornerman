@@ -487,6 +487,16 @@ const MUTANTS = [
   { name: "limit-skips-unparsed", file: "limits.mjs", edits: [["import { makeError } from \"./errors.mjs\";", "import { makeError } from \"./errors.mjs\";\nimport { parseEntry } from \"./graph.mjs\";"], ["  if (!input.startsWith(\"=\")) return;", "  if (!input.startsWith(\"=\") || parseEntry(input).parseError) return;"]], target: "cp67" },
   { name: "limit-checked-on-copy", file: "sheet.mjs", edits: [["import { addFill } from \"./fill.mjs\";", "import { addFill } from \"./fill.mjs\";\nimport { checkLimits } from \"./limits.mjs\";"], ["      history.group(() => { writeAll(w);", "      for (const [t, x] of w) checkLimits(t, x);\n      history.group(() => { writeAll(w);"]], target: "cp67" },
   { name: "limit-before-merge", file: "layers.mjs", edits: [["        checkLimits(k, input);\n", ""], ["        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);", "        checkLimits(k, input);\n        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);"]], target: "cp67" },
+  { name: "xcopy-excel-unqualified", file: "xcopy.mjs", find: "    if (!op(toks[i - 1], \"!\")) edits.push([t.s, t.s, `${src}!`]);", replace: "    if (!op(toks[i - 1], \"!\")) return;", target: "cp68" },
+  { name: "xcopy-target-prefix-kept", file: "xcopy.mjs", find: "    else if (toks[i - 2].v.toUpperCase() === TGT) edits.push([toks[i - 2].s, t.s, \"\"]);\n", replace: "", target: "cp68" },
+  { name: "xcopy-same-sheet-requalified", file: "xcopy.mjs", find: "    if (i === j) return src.sheet.copy(f.cells, t.cells);\n", replace: "", target: "cp68" },
+  { name: "xcopy-prefix-on-range-end", file: "xcopy.mjs", find: " || op(toks[i - 1], \":\")) return;", replace: ") return;", target: "cp68" },
+  { name: "xcopy-prefix-upper-case", file: "xcopy.mjs", find: "edits.push([t.s, t.s, `${src}!`]);", replace: "edits.push([t.s, t.s, `${src.toUpperCase()}!`]);", target: "cp68" },
+  { name: "xcopy-target-case-sensitive", file: "xcopy.mjs", find: "toks[i - 2].v.toUpperCase() === TGT", replace: "toks[i - 2].v === TGT", target: "cp68" },
+  { name: "xcopy-no-formats", file: "xcopy.mjs", find: "      tc.history.record(tc.layers.write(\"formats\", w.map(([k, , s]) => [k, sc.layers.L.formats.get(s)])));\n", replace: "", target: "cp68" },
+  { name: "xcopy-target-formats", file: "xcopy.mjs", find: "sc.layers.L.formats.get(s)", replace: "tc.layers.L.formats.get(s)", target: "cp68" },
+  { name: "xcopy-checked", file: "xcopy.mjs", find: "      tc.writeRaw(w);", replace: "      tc.writeAll(w);", target: "cp68" },
+  { name: "xcopy-sheet-before-target-syntax", file: "xcopy.mjs", edits: [["    const t = parsePlace(to, false);\n    if (!t) throw makeError(\"#ADDR\", String(to), `invalid copy target: ${to}`);\n    const i = find(f.sheet);\n    if (i < 0) throw makeError(\"#SHEET\", f.sheet, `no sheet named ${f.sheet}`);", "    const i = find(f.sheet);\n    if (i < 0) throw makeError(\"#SHEET\", f.sheet, `no sheet named ${f.sheet}`);\n    const t = parsePlace(to, false);\n    if (!t) throw makeError(\"#ADDR\", String(to), `invalid copy target: ${to}`);"]], target: "cp68" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

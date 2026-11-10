@@ -69,3 +69,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp65: change events
 - [ ] cp66: batches with rollback
 - [ ] cp67: formula limits
+- [ ] cp68: copying across sheets
