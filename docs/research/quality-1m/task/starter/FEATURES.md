@@ -80,3 +80,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp76: undo history labels
 - [ ] cp77: range export to JSON
 - [ ] cp78: renaming names
+- [ ] cp79: cell styles

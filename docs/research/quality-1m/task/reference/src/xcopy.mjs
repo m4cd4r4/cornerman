@@ -69,6 +69,7 @@ export function addBookCopy(book, find, list) {
     tc.history.group(() => {
       tc.writeRaw(w);
       tc.history.record(tc.layers.write("formats", w.map(([k, , s]) => [k, sc.layers.L.formats.get(s)])));
+      tc.history.record(tc.layers.write("styles", w.map(([k, , s]) => [k, sc.layers.L.styles.get(s)]))); // cp79
     });
   };
   return book;

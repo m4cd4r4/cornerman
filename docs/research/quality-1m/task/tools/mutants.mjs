@@ -587,6 +587,15 @@ const MUTANTS = [
   { name: "rename-new-checked-first", file: "rename.mjs", find: "  if (!has(OLD)) throw makeError(\"#BADNAME\", String(oldName), `no name ${oldName}`);\n  const NEW = checkName(newName);", replace: "  const NEW = checkName(newName);\n  if (!has(OLD)) throw makeError(\"#BADNAME\", String(oldName), `no name ${oldName}`);", target: "cp78" },
   { name: "rename-book-keeps-name-undo", file: "rename.mjs", find: "    names.clear();\n", replace: "", target: "cp78" },
   { name: "rename-sheet-prefix", file: "rename.mjs", find: " && !op(toks[i + 1], \"!\") &&", replace: " &&", target: "cp78" },
+  { name: "style-replaces", file: "styles.mjs", find: "  const all = { ...(before || {}), ...changes };", replace: "  const all = { ...changes };", target: "cp79" },
+  { name: "style-sorted-with-rows", file: "features.mjs", edits: [["      const formats = [];\n", "      const formats = [];\n      const styles = [];\n"], ["          formats.push([to, layers.L.formats.get(colName(c) + src)]);\n", "          formats.push([to, layers.L.formats.get(colName(c) + src)]);\n          styles.push([to, layers.L.styles.get(colName(c) + src)]);\n"], ["        history.record(layers.write(\"formats\", formats));\n", "        history.record(layers.write(\"formats\", formats));\n        history.record(layers.write(\"styles\", styles));\n"]], target: "cp79" },
+  { name: "style-copy-merges", file: "styles.mjs", find: "w.map(([k, , s]) => [k, layers.L.styles.get(s)])", replace: "w.map(([k, , s]) => [k, layers.L.styles.get(s) ? { ...(layers.L.styles.get(k) || {}), ...layers.L.styles.get(s) } : layers.L.styles.get(k)])", target: "cp79" },
+  { name: "style-copy-skips-empty", file: "styles.mjs", find: "w.map(([k, , s]) => [k, layers.L.styles.get(s)])", replace: "w.filter(([, x]) => x !== \"\").map(([k, , s]) => [k, layers.L.styles.get(s)])", target: "cp79" },
+  { name: "style-copy-own-step", file: "styles.mjs", find: "      history.group(() => {\n        copy(from, to);", replace: "      ((f) => f())(() => {\n        copy(from, to);", target: "cp79" },
+  { name: "style-fill-left", file: "fill.mjs", find: "      history.record(layers.write(\"styles\", writes.map(([k, , s]) => [k, layers.L.styles.get(s)]))); // cp79\n", replace: "", target: "cp79" },
+  { name: "style-xcopy-left", file: "xcopy.mjs", find: "      tc.history.record(tc.layers.write(\"styles\", w.map(([k, , s]) => [k, sc.layers.L.styles.get(s)]))); // cp79\n", replace: "", target: "cp79" },
+  { name: "style-colour-case-kept", file: "styles.mjs", find: "    out[k] = typeof v === \"string\" ? v.toUpperCase() : v;", replace: "    out[k] = v;", target: "cp79" },
+  { name: "style-false-dropped", file: "styles.mjs", find: "  for (const k of KEYS) if (all[k] !== undefined && all[k] !== null) out[k] = all[k];", replace: "  for (const k of KEYS) if (all[k]) out[k] = all[k];", target: "cp79" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

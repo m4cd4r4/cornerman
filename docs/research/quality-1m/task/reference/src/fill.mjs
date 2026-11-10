@@ -41,6 +41,7 @@ export function addFill(sheet, core) {
     history.group(() => {
       core.writeAll(writes);
       history.record(layers.write("formats", writes.map(([k, , s]) => [k, layers.L.formats.get(s)])));
+      history.record(layers.write("styles", writes.map(([k, , s]) => [k, layers.L.styles.get(s)]))); // cp79
     });
   }
   Object.assign(sheet, {

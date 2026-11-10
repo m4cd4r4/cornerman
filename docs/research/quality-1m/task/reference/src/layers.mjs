@@ -10,7 +10,7 @@ import { coveredBy, moveMerges, sortMerges } from "./merges.mjs";
 import { checkLimits } from "./limits.mjs";
 
 // Layers keyed by cell address. A value is a string (format text, note text) or a rule object.
-export const CELL_LAYERS = ["formats", "notes", "rules", "locks"]; // locks: cp71, value true
+export const CELL_LAYERS = ["formats", "notes", "rules", "locks", "styles"]; // locks: cp71, value true; styles: cp79
 // cp49: layers keyed by row number ("rows") or column number ("cols"); the value is true.
 export const LINE_LAYERS = ["rows", "cols"];
 const ALL = [...CELL_LAYERS, ...LINE_LAYERS];
