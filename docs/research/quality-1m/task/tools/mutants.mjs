@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 // Scorer self-test: each mutant is the reference with one plausible mistake. Its target
 // checkpoint's hidden tests must fail; the report also lists collateral failures.
-//   node mutants.mjs --work <empty dir>
+//   node mutants.mjs --work <empty dir> [--jobs N]
 // Exit 0 only if every mutant applied cleanly AND failed its target.
 import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REF = resolve(HERE, "..", "reference");
 const CHECK = join(HERE, "check-tree.mjs");
+const CPS = resolve(HERE, "..", "checkpoints");
 
 const MUTANTS = [
   { name: "excel-number-grammar", file: "sheet.mjs", find: "if (NUMBER.test(raw)) {", replace: "if (raw.trim() !== \"\" && !Number.isNaN(Number(raw))) {", target: "cp01" },
@@ -541,8 +542,26 @@ const work = process.argv[process.argv.indexOf("--work") + 1];
 if (!work || process.argv.indexOf("--work") === -1) throw new Error("need --work <empty dir>");
 if (existsSync(work) && readdirSync(work).length) throw new Error(`--work ${work} is not empty`);
 
+// --jobs N runs N mutants at once. A mutant counts as killed only when its TARGET fails, so
+// load can only mislead where the target has a timing test (a test that fails under load would
+// hide a survivor). Those mutants run after the pool drains, one at a time, with nothing beside
+// them. Collateral timing failures under load are noise in the "also fails" list only.
+const JOBS = process.argv.includes("--jobs") ? Math.max(1, Number(process.argv[process.argv.indexOf("--jobs") + 1])) : 1;
+const timed = new Map();
+const isTimed = (cp) => {
+  if (!timed.has(cp)) {
+    const f = join(CPS, cp, "hidden.test.mjs");
+    timed.set(cp, existsSync(f) && /performance\.now|hrtime|Date\.now/.test(readFileSync(f, "utf8")));
+  }
+  return timed.get(cp);
+};
+
 let ok = true;
-for (const m of MUTANTS) {
+const out = new Array(MUTANTS.length);
+let printed = 0;
+const flush = () => { while (printed < out.length && out[printed] !== undefined) { if (out[printed]) console.log(out[printed]); printed++; } };
+
+function prepare(m) {
   const dir = join(work, m.name);
   mkdirSync(dir, { recursive: true });
   cpSync(join(REF, "src"), join(dir, "src"), { recursive: true });
@@ -550,16 +569,43 @@ for (const m of MUTANTS) {
   const f = join(dir, "src", m.file);
   let text = readFileSync(f, "utf8");
   const edits = m.edits || [[m.find, m.replace]];
-  const missing = edits.filter(([find]) => !text.includes(find));
-  if (missing.length) { console.log(`${m.name}: DID NOT APPLY (find text missing)`); ok = false; continue; }
+  if (edits.some(([find]) => !text.includes(find))) return null;
   for (const [find, replace] of edits) text = text.replace(find, replace);
   writeFileSync(f, text);
-  const r = spawnSync(process.execPath, [CHECK, "--src", dir, "--out", join(work, `${m.name}-run`), "--kind", "hidden", "--json"], { encoding: "utf8" });
-  const rows = JSON.parse(r.stdout.trim().split("\n").pop());
+  return dir;
+}
+
+function check(m, dir) {
+  return new Promise((done) => {
+    const p = spawn(process.execPath, [CHECK, "--src", dir, "--out", join(work, `${m.name}-run`), "--kind", "hidden", "--json"]);
+    let stdout = "";
+    p.stdout.on("data", (d) => { stdout += d; });
+    p.on("close", () => done(stdout));
+  });
+}
+
+function verdict(m, stdout) {
+  const rows = JSON.parse(stdout.trim().split("\n").pop());
   const failing = rows.filter((x) => x.hidden && (x.hidden.failed.length || x.hidden.total === 0)).map((x) => x.cp);
   const hit = failing.includes(m.target);
   if (!hit) ok = false;
   const collateral = failing.filter((c) => c !== m.target);
-  console.log(`${hit ? "KILLED " : "SURVIVED"} ${m.name.padEnd(22)} target ${m.target}${collateral.length ? `  also fails ${collateral.join(" ")}` : ""}`);
+  return `${hit ? "KILLED " : "SURVIVED"} ${m.name.padEnd(22)} target ${m.target}${collateral.length ? `  also fails ${collateral.join(" ")}` : ""}`;
 }
+
+async function runOne(i) {
+  const m = MUTANTS[i];
+  const dir = prepare(m);
+  if (!dir) { ok = false; out[i] = `${m.name}: DID NOT APPLY (find text missing)`; return; }
+  out[i] = verdict(m, await check(m, dir));
+}
+
+const pooled = [], alone = [];
+MUTANTS.forEach((m, i) => (JOBS > 1 && isTimed(m.target) ? alone : pooled).push(i));
+let next = 0;
+await Promise.all(Array.from({ length: JOBS }, async () => {
+  while (next < pooled.length) { const i = pooled[next++]; await runOne(i); flush(); }
+}));
+for (const i of alone) { await runOne(i); flush(); }
+flush();
 process.exitCode = ok ? 0 : 1;
