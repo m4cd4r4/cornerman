@@ -378,6 +378,30 @@ describe('relay', () => {
     expect(w.commands).toEqual(['clear', 'clear', 'clear', 'clear'])
   })
 
+  // #195: work that never commits (a Squarespace edit, research) still moves on when
+  // each handover says something new. Only a repeat of the same handover is a stall.
+  test('a handover that changed counts as progress without a commit', { options: { relay: 'unlimited' } }, async ($, on) => {
+    const { w, clock, reply } = world(on)
+    for (let i = 0; i < 5; i++) {
+      reply(`Saved handover "step ${i}" (id a${i}).`)
+      await relayOnce($, clock)
+    }
+    expect(w.commands).toEqual(['clear', 'clear', 'clear', 'clear', 'clear'])
+    expect(w.toasts.some(t => t.includes('stopped'))).toBe(false)
+  })
+
+  // #195: a Bash cd moves the session's cwd; git is read at the folder the window
+  // started in, so the guard sees the session's own repo.
+  test('reads HEAD at the folder the window started in, not the drifted cwd', { options: { relay: '3' } }, async ($, on) => {
+    const { w, clock } = world(on)
+    // Started in /start; the session's cwd now reads /repo, as after a Bash cd.
+    await $.session.start({ sessionId: 's1', source: 'startup', cwd: '/start' } as never)
+    await relayOnce($, clock)
+    const git = w.runs.filter(a => a[0] === 'git')
+    expect(git.length).toBeGreaterThan(0)
+    for (const a of git) expect(a.slice(0, 3)).toEqual(['git', '-C', '/start'])
+  })
+
   test('with no git the stall guard stands aside and the budget still holds', { options: { relay: '3' } }, async ($, on) => {
     const { w, clock, commit } = world(on)
     commit(null)

@@ -162,9 +162,12 @@ type Engine = Parameters<Parameters<Parameters<Register>[0]>[2]>[0]
 // HEAD of the session's repo, or undefined with no git (or no $.process, which
 // is CLI only). Unknown counts as progress: the stall guard stands aside and the
 // budget still holds.
-async function headOf($: Engine): Promise<string | undefined> {
+// Read at `root`, the folder the window started in, when known: a Bash cd moves the
+// session's cwd, and HEAD of whatever folder it moved into says nothing (#195).
+async function headOf($: Engine, root: string | undefined): Promise<string | undefined> {
   try {
-    const r = await $.process.run(['git', 'rev-parse', 'HEAD'], { timeoutMs: 5000 })
+    const argv = root ? ['git', '-C', root, 'rev-parse', 'HEAD'] : ['git', 'rev-parse', 'HEAD']
+    const r = await $.process.run(argv, { timeoutMs: 5000 })
     return r.exitCode === 0 ? r.stdout.trim() || undefined : undefined
   } catch {
     return undefined
@@ -229,6 +232,13 @@ type Relay = {
   // last relay, and how many continued sessions in a row ended without a commit.
   lastHead: string | undefined
   stalled: number
+  // What the last save printed, its ids taken out, and the same at the last relay.
+  // Work that never commits (a Squarespace edit, research) moves on when each
+  // handover says something new; a repeat of the same one is a stall (#195).
+  saveSig: string | undefined
+  lastSig: string | undefined
+  // The cwd session.start reported: the folder the window started in. /clear keeps it.
+  root: string | undefined
   headless: boolean
   // The `at` of the last hand-over request taken from <key>.handover.json, and
   // whether the poll for it is running. The poll's timer outlives /clear.
@@ -335,6 +345,7 @@ function setLimit(r: Relay, limit: number, at: number): void {
   r.used = 0
   r.stalled = 0
   r.lastHead = undefined
+  r.lastSig = undefined
   if (limit === 0) r.pending = false
 }
 
@@ -691,13 +702,16 @@ async function decide($: Engine, r: Relay, reason: string): Promise<void> {
     })
     return
   }
-  const head = await headOf($)
-  r.stalled = head !== undefined && head === r.lastHead ? r.stalled + 1 : 0
+  const head = await headOf($, r.root)
+  const sameHead = head !== undefined && head === r.lastHead
+  const sameSave = r.saveSig !== undefined && r.saveSig === r.lastSig
+  r.stalled = sameHead && sameSave ? r.stalled + 1 : 0
   r.lastHead = head
+  r.lastSig = r.saveSig
   if (r.stalled >= 2) {
     r.pending = false
     $.ui.toast(
-      'cornerman relay: stopped. Two continued sessions in a row made no new commit. Type /clear to continue from the handover.',
+      'cornerman relay: stopped. Two continued sessions in a row made no new commit and saved the same handover. Type /clear to continue from the handover.',
       { timeoutMs: 15000 },
     )
     return
@@ -729,6 +743,9 @@ export const register: Register = (on, options) => {
     pending: false,
     lastHead: undefined,
     stalled: 0,
+    saveSig: undefined,
+    lastSig: undefined,
+    root: undefined,
     headless: false,
     asked: 0,
     polling: false,
@@ -753,6 +770,8 @@ export const register: Register = (on, options) => {
   on('session.start', async ($, e, next) => {
     const result = await next(e)
     r.headless = await headlessRun($)
+    const cwd = (e as { cwd?: string }).cwd
+    if (cwd) r.root ??= cwd
     resetIdle(r)
     // A session that is not interactive (-p, the SDK) has nobody to message. The VS Code
     // extension also reports isInteractive:false (surface null), but a person is there;
@@ -856,6 +875,7 @@ export const register: Register = (on, options) => {
     ) {
       r.pending = true
       r.saved = true
+      r.saveSig = (ran.text ?? '').replace(/\(id [0-9a-z]+\)/g, '').trim()
     }
     return ran
   })
