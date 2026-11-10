@@ -431,6 +431,15 @@ const MUTANTS = [
   { name: "substitute-instance-ignored", file: "search.mjs", find: "  if (n === undefined) return t.split(old).join(rep);", replace: "  return t.split(old).join(rep);", target: "cp61" },
   { name: "substitute-overlapping-count", file: "search.mjs", find: "at < 0 ? 0 : at + old.length", replace: "at < 0 ? 0 : at + 1", target: "cp61" },
   { name: "search-start-past-end", file: "search.mjs", find: " || start > w.length + 1)", replace: ")", target: "cp61" },
+  { name: "let-holds-range", file: "let.mjs", edits: [["  const scope = { ...ctx, name: (n) => (local.has(n) ? { value: local.get(n) } : ctx.name(n)) };", "  const ranges = new Map();\n  const scope = { ...ctx, name: (n) => (ranges.has(n) ? ranges.get(n) : local.has(n) ? { value: local.get(n) } : ctx.name(n)) };"], ["  names.forEach((n, j) => local.set(n, evaluate(args[2 * j + 1], scope)));", "  names.forEach((n, j) => {\n    const a = args[2 * j + 1];\n    if (a.k === \"range\" && a.a.k === \"ref\" && a.b.k === \"ref\") ranges.set(n, { a: a.a.addr, b: a.b.addr, range: true, sheet: a.sheet });\n    else local.set(n, evaluate(a, scope));\n  });"]], target: "cp62" },
+  { name: "let-defined-names-first", file: "let.mjs", find: "(local.has(n) ? { value: local.get(n) } : ctx.name(n))", replace: "(ctx.name(n) || (local.has(n) ? { value: local.get(n) } : null))", target: "cp62" },
+  { name: "let-value-errors-poison", file: "let.mjs", find: "  return evaluate(args[args.length - 1], scope);", replace: "  const bad = [...local.values()].find((v) => v && typeof v === \"object\" && \"code\" in v);\n  if (bad) return bad;\n  return evaluate(args[args.length - 1], scope);", target: "cp62" },
+  { name: "let-own-name-visible", file: "let.mjs", find: "  names.forEach((n, j) => local.set(n, evaluate(args[2 * j + 1], scope)));", replace: "  names.forEach((n, j) => { local.set(n, null); local.set(n, evaluate(args[2 * j + 1], scope)); });", target: "cp62" },
+  { name: "let-duplicates-allowed", file: "let.mjs", find: "    if (a.k !== \"name\" || out.includes(a.v)) return null;", replace: "    if (a.k !== \"name\") return null;", target: "cp62" },
+  { name: "let-even-args", file: "let.mjs", find: "  if (args.length < 3 || args.length % 2 === 0) return null;", replace: "  if (args.length < 3) return null;", target: "cp62" },
+  { name: "let-hidden-name-is-precedent", file: "graph.mjs", find: "case \"name\": if (!scope.has(n.v)) names.add(n.v); break;", replace: "case \"name\": names.add(n.v); break;", target: "cp62" },
+  { name: "let-calculation-unscoped", file: "graph.mjs", find: "walk(n.args[n.args.length - 1], inner);", replace: "walk(n.args[n.args.length - 1], scope);", target: "cp62" },
+  { name: "let-values-unscoped", file: "graph.mjs", find: "walk(n.args[2 * j + 1], inner); inner =", replace: "walk(n.args[2 * j + 1], scope); inner =", target: "cp62" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

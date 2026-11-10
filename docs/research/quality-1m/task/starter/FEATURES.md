@@ -63,3 +63,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp59: NETWORKDAYS
 - [ ] cp60: CHOOSE and SWITCH
 - [ ] cp61: SUBSTITUTE, FIND and SEARCH
+- [ ] cp62: LET

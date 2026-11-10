@@ -1,6 +1,7 @@
 // graph.mjs: dependency graph helpers: parsed inputs, references in a tree, cycles, recalc order (cp09-cp14).
 import { rangeKeys, compareAddresses } from "./address.mjs";
 import { parseFormula, ParseError } from "./parser.mjs";
+import { letNames } from "./let.mjs";
 
 // What a sheet keeps for an input: { ast, refs } for a formula, { parseError } for one that does
 // not parse, null for a value.
@@ -16,13 +17,14 @@ export function parseEntry(input) {
 }
 
 // Cells, names and sheet names written in a formula tree. Bad or over-size ranges add no cells.
-// A cell on another sheet is "NAME!A1" (cp31).
+// A cell on another sheet is "NAME!A1" (cp31). Names a LET defines (cp62) are not names used
+// where they are in scope: in the values after their own and in the calculation.
 export function collectRefs(ast) {
   const cells = new Set();
   const names = new Set();
   const sheets = new Set();
   const at = (n, k) => (n.sheet ? `${n.sheet}!${k}` : k);
-  (function walk(n) {
+  (function walk(n, scope) {
     if (n.sheet) sheets.add(n.sheet);
     switch (n.k) {
       case "ref": cells.add(at(n, n.addr)); break;
@@ -32,12 +34,19 @@ export function collectRefs(ast) {
           if (ks) for (const k of ks) cells.add(at(n, k));
         }
         break;
-      case "name": names.add(n.v); break;
-      case "bin": walk(n.left); walk(n.right); break;
-      case "neg": case "pct": walk(n.arg); break;
-      case "call": n.args.forEach(walk); break;
+      case "name": if (!scope.has(n.v)) names.add(n.v); break;
+      case "bin": walk(n.left, scope); walk(n.right, scope); break;
+      case "neg": case "pct": walk(n.arg, scope); break;
+      case "call": {
+        const local = n.fn === "LET" ? letNames(n.args) : null;
+        if (!local) { n.args.forEach((a) => walk(a, scope)); break; }
+        let inner = scope;
+        local.forEach((name, j) => { walk(n.args[2 * j + 1], inner); inner = new Set([...inner, name]); });
+        walk(n.args[n.args.length - 1], inner);
+        break;
+      }
     }
-  })(ast);
+  })(ast, new Set());
   return { cells: [...cells], names: [...names], sheets: [...sheets] };
 }
 
