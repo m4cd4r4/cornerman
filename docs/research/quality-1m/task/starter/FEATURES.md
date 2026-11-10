@@ -75,3 +75,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp71: protected cells
 - [ ] cp72: error audit
 - [ ] cp73: lint
+- [ ] cp74: performance budget for wide fan-out

@@ -73,3 +73,4 @@
 - cp71: protect locks cells against writes that change their input; undo, insert and delete pass through.
 - cp72: errorCells lists every error value by priority code, #PARSE! last, then sheet and address; never reading order.
 - cp73: lint() lists names no formula uses, then one-cell references to empty cells; ranges and names are not checked.
+- cp74: a cell read by 10,000 formulas, or by layers of SUMs, recalculates in budget; equal values never cut off.
