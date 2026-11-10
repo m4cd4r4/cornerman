@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.7.2
+
+- **The relay no longer stops on work that never commits.** It stopped after two continued
+  sessions with no new commit, so a Squarespace edit or research ran out after two. A handover
+  that says something new now counts as progress too, and the commit check reads the folder the
+  window started in, not wherever a `cd` left the session (#195).
+- **Reading the save script no longer clears your session.** A session that printed the source
+  of `save.mjs` (with `cat`, `sed` or `grep`) looked to the relay like one that had saved a
+  handover, so it ran `/clear` mid-task with nothing saved. The relay now counts only a run of
+  `save.mjs` that prints its own "Saved handover" line (#199).
+- **Handovers keep what is decided but not done.** When a save leaves out a "Read first",
+  "Decided, not yet applied", "Open questions" or "Progress" line from the previous handover in
+  the same window, the save appends it word for word under "Carried forward from the previous
+  handover" and lists it. A loaded handover tells the next session to open its "Read first"
+  files before acting, and other waiting handovers show how many open items they hold (#194).
+- **The loaded copy says which session it belongs to**, so another tab in the same window does
+  not take it as its own (#198).
+- **The save output is shorter and steadier.** Each folder is named one way (`~/...` under your
+  home folder), the line saying what happens after `/clear` comes second instead of last, the
+  auto-mode nudges are about half as long, and the sidebar search box stays in place (#186).
+
+- **An old idle question no longer resumes on its own.** When an idle handover saved a question
+  that was waiting for you, and its session then closed, a later `/clear` could load it and carry
+  on with unrelated work. It is now retired when its session closes, and one that cannot be checked
+  is listed for you to pick instead of loaded. When your newest handover is for another folder, the
+  session start says which folder to open.
+- **A large store no longer freezes the Claude Code panel in VS Code.** The sidebar refresh, the
+  status bar check and the worktree lookup read files and ran git while holding VS Code's extension
+  host, which made the Claude Code panel report "stopped responding". They now run in the
+  background and reread only the files that changed.
+- **Old relay files are cleared away.** Once a day, a session start removes the relay's files for
+  windows idle 14 days or more, after writing one line per window to `~/.cornerman/ledger/`. A
+  window that is still open is never touched. The sidebar's Archived group is sent only while it
+  is open.
+
 ## 0.7.1
 
 - **The footer shows again for new Claude tabs.** Questlog 1.0.0 (formerly Session Compass) moved

@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.2 (not released yet)
+## 0.7.2
 
 - **The relay no longer stops on work that never commits.** It stopped after two continued
   sessions with no new commit, so a Squarespace edit or research ran out after two. A handover
@@ -17,6 +17,9 @@
   files before acting, and other waiting handovers show how many open items they hold (#194).
 - **The loaded copy says which session it belongs to**, so another tab in the same window does
   not take it as its own (#198).
+- **The save output is shorter and steadier.** Each folder is named one way (`~/...` under your
+  home folder), the line saying what happens after `/clear` comes second instead of last, the
+  auto-mode nudges are about half as long, and the sidebar search box stays in place (#186).
 
 - **An old idle question no longer resumes on its own.** When an idle handover saved a question
   that was waiting for you, and its session then closed, a later `/clear` could load it and carry
