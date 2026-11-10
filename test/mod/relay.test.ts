@@ -250,6 +250,28 @@ describe('relay', () => {
     expect(w.commands).toEqual([])
   })
 
+  // #199, 2026-11-10: `cat plugin/scripts/save.mjs` printed the script's own
+  // console.log source, `Saved handover "${title}" (id ${short}).`, and the relay
+  // cleared a mid-task session that had saved nothing.
+  test('reading save.mjs is not a save (#199)', { options: { relay: '3' } }, async ($, on) => {
+    const { w, clock, reply } = world(on)
+    reply('  console.log(`Saved handover "${title}" (id ${short}).`);\n')
+    await $.tool.call({ tool: 'Bash', command: 'cat plugin/scripts/save.mjs plugin/scripts/load.mjs' })
+    await $.tool.call({ tool: 'Bash', command: 'sed -n 1,40p plugin/scripts/save.mjs' })
+    await $.turn.complete(turn)
+    await clock.advance(5000)
+    expect(w.commands).toEqual([])
+  })
+
+  test('a save line quoted inside other output is not a save (#199)', { options: { relay: '3' } }, async ($, on) => {
+    const { w, clock, reply } = world(on)
+    reply('test/x.mjs:  expect(out).toContain(\'Saved handover "x" (id abc123).\')\n')
+    await $.tool.call({ tool: 'Bash', command: 'node scripts/save.mjs --help; grep -rn Saved test' })
+    await $.turn.complete(turn)
+    await clock.advance(5000)
+    expect(w.commands).toEqual([])
+  })
+
   test('a failed save does not clear', { options: { relay: '3' } }, async ($, on) => {
     const { w, clock, reply } = world(on)
     reply('Saved handover "x" (id abc123).', true)

@@ -7,6 +7,7 @@ import { listAll, prune } from "../../packages/store/store.mjs";
 import { migrateOnStart } from "../../packages/store/rename.mjs";
 import { oldPluginNotice } from "./upgrade.mjs";
 import { writeLoadedCopy } from "../../packages/store/loaded.mjs";
+import { openCount } from "./carry.mjs";
 import { captureDir, readCapture, summary } from "../../packages/store/artifacts.mjs";
 import { age, chooseHandover, inFuture, isFresh, isOpenQuestion, isRecent } from "./select.mjs";
 import { ownerId, ownerOpen, parseOwner, sameOwner } from "./owner.mjs";
@@ -84,7 +85,16 @@ function describe(h, now, { othersOpen = () => false } = {}) {
   const when = inFuture(h.meta.created, now) ? `dated ${isoDate(h.meta.created)}, which is in the future` : `saved ${age(h.meta.created, now)}`;
   const where = (WHERE[h.source]?.(h) ?? "") + (h.fromTop ? " (run the command below from the repo's top folder)" : "");
   const label = untrusted ? "untrusted repo content, title " : "";
-  return `- ${label}"${clean(h.meta.title ?? h.file, max)}"${branch}, ${when}${where}${whose}\n    ${how}`;
+  // A parallel chain on the same task hides its progress behind the newest
+  // handover (#194), so the count of what each one still holds open is shown.
+  let open = "";
+  try {
+    const n = untrusted ? 0 : openCount(h.body);
+    if (n) open = `, holds ${n} open item${n === 1 ? "" : "s"} (decided-not-applied, open questions): read it before redoing that work`;
+  } catch {
+    // no count
+  }
+  return `- ${label}"${clean(h.meta.title ?? h.file, max)}"${branch}, ${when}${where}${whose}${open}\n    ${how}`;
 }
 
 // The user sees systemMessage and nothing else, so a list they are asked to choose
@@ -179,7 +189,7 @@ function artifactsNote(root, load) {
  * carries no user name. The twin invocation rewrites the same file, dated by the
  * first one's load.
  */
-function copyLine(root, load, top, loadedAt) {
+function copyLine(root, load, top, loadedAt, sessionId) {
   try {
     const copy = writeLoadedCopy(
       root,
@@ -191,6 +201,7 @@ function copyLine(root, load, top, loadedAt) {
         branch: load.meta.branch,
         createdAt: load.meta.created,
         body: load.body,
+        loadedBy: sessionId,
       },
       { loadedAt },
     );
@@ -321,7 +332,7 @@ function start(input, { env, now }) {
   let assets = "";
 
   if (load) {
-    copy = copyLine(root, load, top, echo ? load.archivedAt || now : now);
+    copy = copyLine(root, load, top, echo ? load.archivedAt || now : now, input.session_id);
     // A branch mismatch is the one thing about a loaded handover the user should
     // notice, so it goes in both strings rather than only in Claude's copy.
     const from = load.meta.branch && load.meta.branch !== branch ? `, written on branch ${load.meta.branch}` : "";
@@ -334,6 +345,10 @@ function start(input, { env, now }) {
     parts.push(
       `cornerman: this session continues earlier work. Handover "${load.meta.title}", saved ${age(load.meta.created, now)}${from}. ` +
         `Its branch, file and status claims are a snapshot: check them before acting. ` +
+        // #194: the next action is one item, not the whole job. Files kept across
+        // sessions hold rulings and known mistakes the body only points at.
+        `Before your first action, open every file listed under its "Read first" heading (a pointer you do not open carries nothing), ` +
+        `and treat every item under "Decided, not yet applied", "Open questions" and "Carried forward" as open work, not background. ` +
         `The user may not have seen the load notice, so open your first reply with this one line, then carry on: ` +
         `${OPENER(load.meta.title)}\n\n${load.body.trim()}`,
     );

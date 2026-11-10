@@ -7,12 +7,14 @@
 // cornerman/<branch>, for cloud sessions whose home folder does not survive.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
+import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
+import { carryForward, missingSections, previousHandover } from "./lib/carry.mjs";
+import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
 import { buildTrail, emptyTrail, trailSection, withTrail } from "./lib/trail.mjs";
 import { normalisePath } from "../packages/store/schema.mjs";
 import { commitHandover, webEnabled } from "./lib/web.mjs";
-import { ownerId, PATIENT_TIMEOUT_MS } from "./lib/owner.mjs";
+import { isOwnHandover, ownerId, PATIENT_TIMEOUT_MS, sameOwner } from "./lib/owner.mjs";
 import { shellPath, tildePath } from "./lib/display.mjs";
 import { headless } from "./lib/auto-flag.mjs";
 
@@ -33,7 +35,8 @@ try {
 // not exist yet (--unowned) has no trail to give, and CORNERMAN_TRAIL=0 turns it off. Any failure here
 // leaves the handover exactly as the model wrote it: a save must never depend on the trail.
 // An empty body stays empty so the save still fails on it: a trail alone is not a handover.
-if (body.trim() && !process.argv.includes("--unowned") && process.env.CORNERMAN_TRAIL !== "0") {
+function addTrail() {
+  if (!body.trim() || process.argv.includes("--unowned") || process.env.CORNERMAN_TRAIL === "0") return;
   try {
     const transcript = sessionTranscript();
     if (transcript) {
@@ -61,11 +64,38 @@ try {
   // Under the headless runner every save is an auto one: the store is the
   // runner's own, and the runner sets which segment this is and what is left.
   const auto = headless() ? { chain: process.env.CORNERMAN_CHAIN, budget: process.env.CORNERMAN_BUDGET } : undefined;
+  // Carry forward every open item of the handover this one continues that it no
+  // longer mentions (lib/carry.mjs, #194). Before the trail, so the trail stays last.
+  // Off with CORNERMAN_CARRY=0. A failure here saves the body as written.
+  let carried = [];
+  let previous = null;
+  if (body.trim() && owner && process.env.CORNERMAN_CARRY !== "0") {
+    try {
+      const top = repoInfo(startedIn).top;
+      const own = listWaiting(storeRoot(), top).filter((h) => isOwnHandover(owner, h.meta.owner, claimedAt(h), { machine: h.meta.machine }));
+      previous = previousHandover({ own, loaded: listLoaded(storeRoot(), top), owner, sameOwner });
+      if (previous) ({ body, carried } = carryForward(body, { title: previous.meta.title, body: previous.body }));
+    } catch {
+      // save as written
+    }
+  }
+  addTrail();
   const { path, id, short, title, top, main, replaced } = saveHandover({ cwd: startedIn, title: arg("--title"), body, owner, auto, sessionId: process.argv.includes("--unowned") ? "" : process.env.CLAUDE_CODE_SESSION_ID, openQuestion: process.argv.includes("--open-question") });
   // The title and a short id, never the record path: its file name carries the
   // machine name and the path the home folder, and this line reaches the user.
   console.log(`Saved handover "${title}" (id ${short}).`);
   for (const r of replaced) console.log(`Archived the older handover it replaces: "${r.title}" (id ${r.short}).`);
+  if (carried.length) {
+    // Printed so the saving session sees what it dropped and can correct it now.
+    console.log(
+      `Carried forward ${carried.length} open item${carried.length === 1 ? "" : "s"} from "${previous.meta.title}" that this handover did not mention:\n` +
+        carried.map((it) => `  - [${it.tag}] ${it.text}`).join("\n") +
+        `\nIf any is done or dropped, save again and say so in the handover; otherwise leave it, the next session sees it.`,
+    );
+  }
+  const gaps = missingSections(body);
+  if (gaps.length && !process.argv.includes("--open-question"))
+    console.log(`Note: this handover has no ${gaps.map((g) => `"${g}"`).join(" or ")} section. If there is anything there, save again with it (write "None" if empty).`);
   if (normalisePath(startedIn) !== normalisePath(process.cwd()))
     console.log(`Filed against the session root ${tildePath(normalisePath(startedIn))}, not the current directory.`);
   // A handover nobody can find is worse than none: the session is told to /clear

@@ -44,8 +44,8 @@ writing, gather every key point that affects what to do next:
 
 ## 2. Write it
 
-Aim for under 40 lines, not counting the always-present sections ("Decided, not yet applied" and
-"Open questions").
+Aim for under 40 lines, not counting the always-present sections ("Read first", "Decided, not yet
+applied" and "Open questions").
 
 Write for someone who has never seen this project. The next session has none of
 this conversation and none of your reasoning, so every reference has to stand on
@@ -64,6 +64,13 @@ One or two sentences: what this work is for, and what "done" means.
 ## Next action
 The single first thing to do, concrete enough to run: a command, or a file:line
 and the change to make there. Not a topic to look into.
+
+## Read first
+Files kept across sessions that the next session must open before acting: a decision log, a
+review page with rulings, a client or workspace map (a folder's CLAUDE.md), a do-not or mistakes
+list. One per line: path - what it holds and, for a record, how many open items. Carry every one
+forward from the handover you started from unless it no longer exists. Write "None" if there are none.
+The SessionStart hook tells the next session to open each of these before its first action.
 
 ## Progress
 Only when the goal has a number: start, now, target. Carry the start and target forward from the
@@ -102,8 +109,13 @@ Do not write a "Recent trail" section. Saving adds one from this session's own t
 files written, edited and read, and the last commands that succeeded and failed), and replaces any
 you wrote, so it is exact. `CORNERMAN_TRAIL=0` turns it off.
 
-Leave out sections that would be empty, except "Decided, not yet applied" and "Open questions",
-which always appear (say "None"); an empty heading costs the reader a stop.
+Leave out sections that would be empty, except "Read first", "Decided, not yet applied" and
+"Open questions", which always appear (say "None"); an empty heading costs the reader a stop.
+
+Saving checks your work: any "Read first", "Decided, not yet applied", "Open questions" or
+"Progress" line in the handover you started from that yours does not mention is appended under
+"Carried forward from the previous handover", and the save prints the list. If one is really done
+or dropped, save again saying so; otherwise leave it.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it

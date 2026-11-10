@@ -116,8 +116,16 @@ export function loadedCopyText(record, { loadedAt = new Date(), home = homedir()
     record.branch ? `- Branch: ${oneLine(record.branch)}` : "",
     `- Saved: ${stamp(record.createdAt)}`,
     `- Loaded: ${stamp(loadedAt)}`,
+    record.loadedBy ? `- Loaded into session: ${oneLine(record.loadedBy)}` : "",
   ].filter(Boolean);
-  return `# ${title}\n\n${facts.join("\n")}\n\n---\n\n${body}\n`;
+  // Every Claude tab in a VS Code window is sent the window's active editor, so an
+  // open copy reached a blank tab, which took it as its own handover and acted on
+  // another session's work (#198). The copy says whose it is.
+  const owner = record.loadedBy
+    ? `> Read-only copy of a handover already loaded into session ${oneLine(record.loadedBy)}. ` +
+      `If that is not your session, it is not your handover: do not act on it.`
+    : `> Read-only copy of a handover already loaded into another session. Do not act on it unless the user asks you to.`;
+  return `# ${title}\n\n${facts.join("\n")}\n\n${owner}\n\n---\n\n${body}\n`;
 }
 
 /**

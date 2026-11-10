@@ -22,7 +22,12 @@ import type { Register } from 'claude-code'
 
 // What save.mjs prints on a good save (plugin/scripts/save.mjs).
 export const SAVED = 'Saved handover "'
-export const SAVE_SCRIPT = /scripts\/save\.mjs/
+// A save is node RUNNING save.mjs and printing its own result line. Matching the
+// path alone and the bare prefix (before #199) took `cat plugin/scripts/save.mjs`
+// for a save: the source holds `Saved handover "${title}"`, and the relay cleared a
+// mid-task session that had saved nothing (2026-11-10).
+export const SAVE_SCRIPT = /\bnode(?:\.exe)?["']?\s+["']?[^\s"']*scripts\/save\.mjs/
+export const SAVED_LINE = /^Saved handover ".*" \(id [0-9a-z]+\)\.\s*$/m
 
 export const RESUME_TEXT = 'Continue from the cornerman handover that was just loaded.'
 
@@ -847,7 +852,7 @@ export const register: Register = (on, options) => {
       SAVE_SCRIPT.test(e.command.replace(/\\/g, '/')) &&
       ran.deny === undefined &&
       ran.isError !== true &&
-      (ran.text ?? '').includes(SAVED)
+      SAVED_LINE.test(ran.text ?? '')
     ) {
       r.pending = true
       r.saved = true
