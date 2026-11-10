@@ -462,3 +462,59 @@ is NOT what Excel does" / "...what you might expect".
   copy-skips-empty (cp64 shiftFormula). The cp63 commit message says "Three" and lists four.
 - functions.mjs: the cp58-cp62 tables join TABLE through one Object.assign line. sheet.mjs is
   295 lines; new sheet features should go in their own module (as fill.mjs, features.mjs).
+
+## Block I progress (2026-11-10)
+
+Fixture designer's calls, not yet reviewed by Macdara. Each spec states its departures with "This
+is NOT what Excel does" / "...what you might expect".
+- cp65 change events (events.mjs; sheet.mjs `write` and `rebuild` record each touched cell's input
+  before the call; every public sheet and workbook method is wrapped as one call). Departures:
+  events carry inputs only (a value changed through a formula, formats, notes and names never
+  fire); a listener that throws is ignored and the call returns normally; an event caused by a
+  listener is delivered after every listener has had the current one. Also: one event per call
+  per sheet, row-major, cells changed back within the call left out, listeners fixed when the
+  call ends. 9 mutants.
+- cp66 `book.batch(fn)` (batch.mjs; core exposes `state`/`rebuild`, history.mjs `save`/`restore`).
+  Departures: a batch is NOT one undo step; nested batches and the sheet-list methods throw
+  `#BATCH`; only this workbook rolls back (createSheet sheets, other books and removed sheets keep
+  fn's changes). Rollback restores every sheet's inputs, names and layers, every undo/redo list
+  and the workbook names, and rethrows the same value; events wait for the end, none for a
+  rolled-back sheet. 9 mutants.
+- cp67 formula limits (limits.mjs, called from layers.check). Departures: 1,000 characters
+  counting the `=` (Excel 8,192); grouping parentheses count toward the 16-deep nesting (Excel
+  counts functions); limits apply only to typed inputs (set, setMany, fromCSV, fill, replace),
+  while copy, sort, insert/delete, rename, undo and loading keep over-limit formulas. Strings are
+  skipped, a stray `)` is ignored, unparseable text is checked too; per cell `#MERGE`, `#LIMIT`,
+  `#INVALID`. 10 mutants.
+- cp68 `book.copy(from, to)` (xcopy.mjs). Departures: unqualified references gain the source
+  sheet's name (Excel's would read the target); references naming the target lose their prefix;
+  on one sheet it is exactly `sheet.copy`. Formats copied, notes/rules/merges not, limits and
+  rules unchecked, one undo step on the target. 10 mutants.
+- cp69 `fromCSV(text, at, { delimiter, header, types })` (csv.mjs; fromCSV returns the header).
+  Departures: the decimal comma never changes reading; `#CSV` record numbers count the header;
+  `types: "text"` writes numbers and formulas as `="..."` text formulas, which therefore pass any
+  validation rule (and the written text is what the limits check). Option errors after `at`,
+  before the text. 10 mutants.
+- cp70 `diffWorkbooks(before, after)` (diff.mjs, new index.mjs export). Departures: inputs are
+  compared as typed; a renamed sheet is one removed plus one added (a case-only rename and a new
+  sheet order are no difference); layers, errorOrder and version are not compared. `#LOAD` cells
+  get a `before` / `after` prefix. 9 mutants.
+- cp71 protected cells (protect.mjs; `locks` is a cell layer in layers.mjs; copy, sort and
+  book.copy call `layers.locked`). Departures: only a change is refused (writing the same input is
+  allowed); undo/redo are never checked and protect is not an undo step; insert/delete are allowed
+  and move locks (Excel refuses). Per cell `#MERGE`, `#LOCKED`, `#LIMIT`, `#INVALID`; locks are not
+  saved; undoing an insert or delete restores locks as they were before it. 11 mutants.
+- cp72 `sheet.errorCells()` / `book.errorCells()` (audit.mjs). Departures: priority order with
+  `#PARSE!` last, never reading order, also under errorOrder "first"; the book list orders by code
+  across sheets before sheet order. `cell` is where the error began (unqualified across sheets).
+  8 mutants.
+- Probe P5 after cp65 (blocks A-G): #PARSE! -> cp02, SUBTOTAL codes 1,2,4,5,9, note limit 200,
+  0.575 with 0% -> "58%", ROUND(2.5, 0) -> 2, #N/A -> cp21, SUMPRODUCT(1/0) -> #VALUE!,
+  deleteSheet rewrite "=#REF!*2", git-files for cp47, invalidCells -> cp46. probe-selftest's
+  scratch repo gains a cp47 commit.
+- Older mutants given new find text, same intent: csv-in-skip-empty, csv-in-step-per-cell,
+  fromcsv-unchecked, csv-in-edge-before-parse, csv-in-text-before-at (cp69 options), and
+  merge-check-after-rule (went stale at the cp67 limit check; caught by a find-text check before
+  the full run). cp69, cp70 and cp72 got a tenth hidden test after the first pass had nine.
+- sheet.mjs is 296 lines: block J sheet features must go in their own modules (features.mjs now
+  chains protect.mjs and audit.mjs).
