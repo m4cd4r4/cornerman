@@ -72,3 +72,4 @@
 - cp70: diffWorkbooks(before, after) lists removed and added sheets, then changed inputs and names, compared as typed.
 - cp71: protect locks cells against writes that change their input; undo, insert and delete pass through.
 - cp72: errorCells lists every error value by priority code, #PARSE! last, then sheet and address; never reading order.
+- cp73: lint() lists names no formula uses, then one-cell references to empty cells; ranges and names are not checked.

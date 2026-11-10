@@ -79,6 +79,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
   const invalidate = (keys) => engine.invalidate(keys.map(g));
   const nameOf = (n) => names.get(n) || engine.bookName(n); // cp53: own names hide workbook names
   const edgesOf = (k) => engine.ownPrecs(id, k);
+  const peer = (n) => { const sid = n ? engine.resolve(n) : id; return sid === null ? null : { core: engine.coreOf(sid), rank: sid === id ? 0 : sid, label: (a) => engine.label([sid, a], id) }; }; // cp73: sheet n (null = this one)
 
   // A cell reference in a formula: own cell, or "NAME!A1" on another sheet.
   function read(k, a) {
@@ -234,7 +235,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
   }
 
   const shown = (k) => { const v = valueOf(k); const t = layers.show(k, v); return typeof v === "number" ? localize(t, engine.decimal) : t; };
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys(), touch() {}, state, rebuild };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys(), touch() {}, state, rebuild, peer };
   bind(createEngine(order, decimal), null);
   if (init) rebuild(init);
 

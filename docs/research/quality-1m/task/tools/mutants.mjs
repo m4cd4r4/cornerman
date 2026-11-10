@@ -536,6 +536,15 @@ const MUTANTS = [
   { name: "audit-address-descending", file: "audit.mjs", find: "list.sort((x, y) => rank(x.code) - rank(y.code));", replace: "list.sort((x, y) => rank(x.code) - rank(y.code) || compareAddresses(y.address, x.address));", target: "cp72" },
   { name: "audit-sheet-upper-case", file: "audit.mjs", find: "({ sheet: e.name, ...x })", replace: "({ sheet: e.name.toUpperCase(), ...x })", target: "cp72" },
   { name: "audit-text-errors", file: "audit.mjs", find: "    if (isError(v)) out.push({ address: k, code: v.code, cell: v.cell });", replace: "    if (isError(v)) out.push({ address: k, code: v.code, cell: v.cell });\n    else if (typeof v === \"string\" && /^#[A-Z/0!?]+$/.test(v)) out.push({ address: k, code: v, cell: k });", target: "cp72" },
+  // Block J. Excel-prior mutants first in each checkpoint, then plausible implementation slips.
+  { name: "lint-range-corners", file: "lint.mjs", find: "      case \"ref\": out.push(n); break;\n", replace: "      case \"ref\": out.push(n); break;\n      case \"range\": if (n.a.k === \"ref\") out.push({ ...n.a, sheet: n.sheet }); if (n.b.k === \"ref\") out.push({ ...n.b, sheet: n.sheet }); break;\n", target: "cp73" },
+  { name: "lint-taken-branches-only", file: "lint.mjs", find: "      case \"call\": n.args.forEach(walk); break;", replace: "      case \"call\": (n.fn === \"IF\" || n.fn === \"IFERROR\" || n.fn === \"CHOOSE\" ? n.args.slice(0, 2) : n.args).forEach(walk); break;", target: "cp73" },
+  { name: "lint-name-text-search", file: "lint.mjs", find: "      for (const n of e.refs.names) used.add(n);", replace: "      for (const n of core.names.keys()) if (core.input(k).toUpperCase().includes(n)) used.add(n);", target: "cp73" },
+  { name: "lint-covered-not-empty", file: "lint.mjs", find: "const empty = p.core.input(r.addr) === null || p.core.layers.L.covered.has(r.addr);", replace: "const empty = p.core.input(r.addr) === null;", target: "cp73" },
+  { name: "lint-refs-before-names", file: "lint.mjs", find: "    return [...unused, ...refs];", replace: "    return [...refs, ...unused];", target: "cp73" },
+  { name: "lint-sheet-as-written", file: "lint.mjs", find: "    const label = p.label(r.addr);", replace: "    const label = r.sheet ? `${r.sheet}!${r.addr}` : r.addr;", target: "cp73" },
+  { name: "lint-repeats-pairs", file: "lint.mjs", find: "    if (!empty || seen.has(label)) continue;", replace: "    if (!empty) continue;", target: "cp73" },
+  { name: "lint-refs-text-order", file: "lint.mjs", find: "  here.sort((x, y) => x.rank - y.rank || compareAddresses(x.addr, y.addr));", replace: "  here.sort((x, y) => (x.label < y.label ? -1 : x.label > y.label ? 1 : 0));", target: "cp73" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
