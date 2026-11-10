@@ -21,6 +21,7 @@ import { addHiding } from "./hiding.mjs";
 import { leftOut } from "./subtotal.mjs";
 import { addFindReplace } from "./findreplace.mjs";
 import { addFill } from "./fill.mjs";
+import { addEvents } from "./events.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -149,6 +150,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
   // After a structural change: swap in the moved inputs, names and layers, rebuild every index.
   // Cells on other sheets that read this one are invalidated before and after the swap.
   function rebuild(next) {
+    for (const k of new Set([...inputs.keys(), ...next.inputs.keys()])) core.touch(k, inputs.get(k) ?? "");
     invalidate([...inputs.keys()]);
     for (const k of inputs.keys()) engine.unlink(g(k));
     inputs.clear();
@@ -165,6 +167,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
   // One cell's new input; false when it already held it.
   function write(k, input) {
     if ((inputs.get(k) ?? "") === input) return false;
+    core.touch(k, inputs.get(k) ?? ""); // cp65: the input before this call, for change events
     setNameUsers(k, false);
     if (input === "") {
       inputs.delete(k);
@@ -231,7 +234,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
   }
 
   const shown = (k) => { const v = valueOf(k); const t = layers.show(k, v); return typeof v === "number" ? localize(t, engine.decimal) : t; };
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys() };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys(), touch() {} };
   bind(createEngine(order, decimal), null);
   if (init) rebuild(init);
 
@@ -253,12 +256,8 @@ export function makeSheet(init, order = "priority", decimal = ".") {
     fromCSV(text, at = "A1") {
       writeAll(layers.check(csvWrites(text, at)));
     },
-    undo() {
-      return history.undo(applyEntry);
-    },
-    redo() {
-      return history.redo(applyEntry);
-    },
+    undo: () => history.undo(applyEntry),
+    redo: () => history.redo(applyEntry),
     get(address) {
       return valueOf(key(address));
     },
@@ -291,5 +290,5 @@ export function makeSheet(init, order = "priority", decimal = ".") {
     deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count, state())),
   };
   CORE.set(sheet, core);
-  return addV2(addFill(addFindReplace(addHiding(addNames(addFeatures(sheet, core), core), core), core), core), core);
+  return addEvents(addV2(addFill(addFindReplace(addHiding(addNames(addFeatures(sheet, core), core), core), core), core), core), core);
 }

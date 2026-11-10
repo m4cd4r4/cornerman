@@ -66,3 +66,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp62: LET
 - [ ] cp63: decimal comma
 - [ ] cp64: fill down and fill right
+- [ ] cp65: change events

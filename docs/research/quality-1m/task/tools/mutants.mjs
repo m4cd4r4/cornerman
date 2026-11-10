@@ -458,6 +458,16 @@ const MUTANTS = [
   { name: "fill-formats-left", file: "fill.mjs", find: "      history.record(layers.write(\"formats\", writes.map(([k, , s]) => [k, layers.L.formats.get(s)])));\n", replace: "", target: "cp64" },
   { name: "fill-two-cells-copy", file: "fill.mjs", find: "  if (keys.length > 1 && NUMBER", replace: "  if (keys.length > 2 && NUMBER", target: "cp64" },
   { name: "fill-merge-unchecked", file: "fill.mjs", find: "    if (layers.L.merges.some((m) => overlaps(m, t))) throw makeError(\"#MERGE\", String(target), `${target} overlaps a merge`);\n", replace: "", target: "cp64" },
+  // Block I. Excel-prior mutants first in each checkpoint, then plausible implementation slips.
+  { name: "event-per-write", file: "events.mjs", find: "    pending.add(s);\n  };", replace: "    pending.add(s);\n    flush();\n  };", target: "cp65" },
+  { name: "event-lists-touched", file: "events.mjs", find: ".filter(([k, v]) => (s.core.input(k) ?? \"\") !== v)", replace: "", target: "cp65" },
+  { name: "event-write-order", file: "events.mjs", find: ".map(([k]) => k).sort(compareAddresses);", replace: ".map(([k]) => k);", target: "cp65" },
+  { name: "listener-error-propagates", file: "events.mjs", find: "        } catch {\n", replace: "        } catch (e) {\n          throw e;\n", target: "cp65" },
+  { name: "listener-error-stops-others", file: "events.mjs", find: "        } catch {\n", replace: "        } catch {\n          break;\n", target: "cp65" },
+  { name: "nested-event-first", file: "events.mjs", find: "  if (delivering) return; // a listener's own call: delivered after the current event\n", replace: "", target: "cp65" },
+  { name: "listeners-live", file: "events.mjs", edits: [["queue.push([s.listeners.map((e) => e.f), cells]);", "queue.push([s.listeners, cells]);"], ["          f({ cells: [...cells] });", "          f.f({ cells: [...cells] });"]], target: "cp65" },
+  { name: "shared-event-object", file: "events.mjs", edits: [["      for (const f of fs) {", "      const ev = { cells: [...cells] };\n      for (const f of fs) {"], ["          f({ cells: [...cells] });", "          f(ev);"]], target: "cp65" },
+  { name: "book-calls-unwrapped", file: "workbook.mjs", find: "  return wrapCalls(addBookNames(book, engine, nameHistory));", replace: "  return addBookNames(book, engine, nameHistory);", target: "cp65" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
