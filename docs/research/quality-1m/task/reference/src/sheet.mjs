@@ -13,15 +13,9 @@ import { explainTree } from "./explain.mjs";
 import { createHistory, snapshot, sameState } from "./history.mjs";
 import { toCSV, csvWrites } from "./csv.mjs";
 import { saveText, parseSave } from "./persist.mjs";
-import { addV2 } from "./api2.mjs";
 import { createLayers } from "./layers.mjs";
-import { addFeatures } from "./features.mjs";
-import { addNames } from "./namedefs.mjs";
-import { addHiding } from "./hiding.mjs";
 import { leftOut } from "./subtotal.mjs";
-import { addFindReplace } from "./findreplace.mjs";
-import { addFill } from "./fill.mjs";
-import { addEvents } from "./events.mjs";
+import { extendSheet } from "./extend.mjs";
 
 const NUMBER = /^-?\d+(\.\d+)?$/;
 const sorted = (xs) => [...xs].sort(compareAddresses);
@@ -293,5 +287,5 @@ export function makeSheet(init, order = "priority", decimal = ".") {
     deleteCols: (at, count = 1) => restructure(deleteCols(inputs, names, at, count, state())),
   };
   CORE.set(sheet, core);
-  return addEvents(addV2(addFill(addFindReplace(addHiding(addNames(addFeatures(sheet, core), core), core), core), core), core), core);
+  return extendSheet(sheet, core); // extend.mjs: every method added beside these, cp41 on
 }

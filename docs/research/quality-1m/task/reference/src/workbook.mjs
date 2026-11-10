@@ -12,6 +12,7 @@ import { wrapCalls } from "./events.mjs";
 import { addBatch } from "./batch.mjs";
 import { addBookCopy } from "./xcopy.mjs";
 import { addBookAudit } from "./audit.mjs";
+import { addDeprecations, BOOK_OLD } from "./api3.mjs";
 
 export const createWorkbook = (opts) => { const o = sheetOptions(opts); return buildWorkbook(o.errorOrder, [], new Map(), o.decimal); };
 
@@ -115,5 +116,5 @@ export function buildWorkbook(order, loaded, bookNames = new Map(), decimal = ".
   addBookCopy(book, find, list); // cp68
   addBookAudit(book, list); // cp72
   const sheets = () => list.map((e) => e.sheet);
-  return wrapCalls(addBatch(addBookNames(book, engine, nameHistory), engine, nameHistory, sheets)); // cp65: one call each
+  return addDeprecations(wrapCalls(addBatch(addBookNames(book, engine, nameHistory), engine, nameHistory, sheets)), BOOK_OLD); // cp65, cp75
 }

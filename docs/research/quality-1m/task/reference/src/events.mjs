@@ -1,9 +1,10 @@
-// events.mjs: change events (cp65). sheet.onChange(listener), and the wrapper around every public
+// events.mjs: change events (cp65) and the calls in progress (cp75). sheet.onChange(listener), and the wrapper around every public
 // sheet and workbook method that delivers one event per changed sheet when the outermost call ends.
 import { makeError } from "./errors.mjs";
 import { compareAddresses } from "./address.mjs";
 
 let depth = 0; // public calls in progress, on any sheet or workbook
+const frames = []; // cp75: the names of those calls, outermost first
 const pending = new Set(); // sheets with inputs touched since the outermost call began
 const queue = []; // [listeners, cells] waiting to be delivered, oldest first
 let delivering = false;
@@ -35,18 +36,24 @@ function flush() {
   }
 }
 
-export function inCall(fn) {
+export function inCall(fn, name = "") {
   depth++;
+  frames.push(name);
   try {
     return fn();
   } finally {
+    frames.pop();
     if (--depth === 0) flush();
   }
 }
 
+// cp75: true when a call starting now is one you made: no public call is in progress, other than
+// book.batch (whose fn is your code). A change listener runs when no call is in progress.
+export const userCalling = () => frames.every((f) => f === "batch");
+
 // Wrap every method of obj so that it counts as one public call.
 export function wrapCalls(obj) {
-  for (const [k, f] of Object.entries(obj)) if (typeof f === "function") obj[k] = (...args) => inCall(() => f(...args));
+  for (const [k, f] of Object.entries(obj)) if (typeof f === "function") obj[k] = (...args) => inCall(() => f(...args), k);
   return obj;
 }
 
