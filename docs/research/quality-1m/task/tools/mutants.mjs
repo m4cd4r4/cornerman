@@ -527,6 +527,14 @@ const MUTANTS = [
   { name: "lock-after-limits", file: "layers.mjs", find: "        refuseLocked(k, input);\n        checkLimits(k, input);", replace: "        checkLimits(k, input);\n        refuseLocked(k, input);", target: "cp71" },
   { name: "lock-before-merge", file: "layers.mjs", find: "        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);\n        refuseLocked(k, input);", replace: "        refuseLocked(k, input);\n        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);", target: "cp71" },
   { name: "lock-copied", file: "sheet.mjs", find: "history.record(layers.write(\"formats\", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); });", replace: "history.record(layers.write(\"formats\", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); layers.write(\"locks\", w.map(([t, , s]) => [t, layers.L.locks.get(s)])); });", target: "cp71" },
+  { name: "audit-reading-order", file: "audit.mjs", find: "const byCode = (list) => list.sort((x, y) => rank(x.code) - rank(y.code));", replace: "const byCode = (list) => list;", target: "cp72" },
+  { name: "audit-sheet-by-sheet", file: "audit.mjs", find: "byCode(list.flatMap((e) => errorsOf(CORE.get(e.sheet)).map(", replace: "(list.flatMap((e) => byCode(errorsOf(CORE.get(e.sheet))).map(", target: "cp72" },
+  { name: "audit-parse-first", file: "audit.mjs", find: "const ORDER = [...PRIORITY, \"#PARSE!\"];", replace: "const ORDER = [\"#PARSE!\", ...PRIORITY];", target: "cp72" },
+  { name: "audit-skips-hidden", file: "audit.mjs", find: "    if (core.layers.L.covered.has(k)) continue;", replace: "    if (core.layers.L.covered.has(k) || core.layers.L.rows.has(Number(k.replace(/^[A-Z]+/, \"\")))) continue;", target: "cp72" },
+  { name: "audit-cell-is-address", file: "audit.mjs", find: "out.push({ address: k, code: v.code, cell: v.cell });", replace: "out.push({ address: k, code: v.code, cell: k });", target: "cp72" },
+  { name: "audit-address-descending", file: "audit.mjs", find: "list.sort((x, y) => rank(x.code) - rank(y.code));", replace: "list.sort((x, y) => rank(x.code) - rank(y.code) || compareAddresses(y.address, x.address));", target: "cp72" },
+  { name: "audit-sheet-upper-case", file: "audit.mjs", find: "({ sheet: e.name, ...x })", replace: "({ sheet: e.name.toUpperCase(), ...x })", target: "cp72" },
+  { name: "audit-text-errors", file: "audit.mjs", find: "    if (isError(v)) out.push({ address: k, code: v.code, cell: v.cell });", replace: "    if (isError(v)) out.push({ address: k, code: v.code, cell: v.cell });\n    else if (typeof v === \"string\" && /^#[A-Z/0!?]+$/.test(v)) out.push({ address: k, code: v, cell: k });", target: "cp72" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

@@ -71,3 +71,4 @@
 - cp69: fromCSV takes delimiter, header and types options; types "text" writes numbers and formulas as ="..." text.
 - cp70: diffWorkbooks(before, after) lists removed and added sheets, then changed inputs and names, compared as typed.
 - cp71: protect locks cells against writes that change their input; undo, insert and delete pass through.
+- cp72: errorCells lists every error value by priority code, #PARSE! last, then sheet and address; never reading order.

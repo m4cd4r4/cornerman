@@ -1,5 +1,5 @@
 // features.mjs: the sheet methods for its layers: number formats (cp41), notes (cp42), locks (cp71),
-// validation (cp46), merged ranges (cp47), and sorting a range (cp48).
+// validation (cp46), merged ranges (cp47), and sorting a range (cp48); the error audit (cp72).
 import { parseTarget, NOTE_LIMIT } from "./layers.mjs";
 import { checkFormat } from "./numfmt.mjs";
 import { makeError } from "./errors.mjs";
@@ -8,6 +8,7 @@ import { checkRule, copyRule, passes } from "./validation.mjs";
 import { mergeText, overlaps, mergeAt } from "./merges.mjs";
 import { sortPlan } from "./sort.mjs";
 import { addProtection } from "./protect.mjs";
+import { addAudit } from "./audit.mjs";
 
 export function addFeatures(sheet, core) {
   const { layers, history } = core;
@@ -77,5 +78,5 @@ export function addFeatures(sheet, core) {
     },
     invalidCells: () => [...layers.L.rules].filter(([k, r]) => !passes(r, core.input(k) ?? "")).map(([k]) => k).sort(compareAddresses),
   });
-  return addProtection(sheet, core); // cp71
+  return addAudit(addProtection(sheet, core), core); // cp71, cp72
 }
