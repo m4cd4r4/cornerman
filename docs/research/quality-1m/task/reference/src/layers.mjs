@@ -124,6 +124,8 @@ export function createLayers(onCovered, onLines = () => {}) {
       }
       return writes;
     },
+    // cp79: each written cell [target, input, source] takes its source's whole value of a layer.
+    carry: (layer, writes) => write(layer, writes.map(([t, , s]) => [t, L[layer].get(s)])),
     // The text display() shows for value v in cell k: its number format applies to numbers only.
     show(k, v) {
       const f = typeof v === "number" ? parseFormat(L.formats.get(k)) : null;

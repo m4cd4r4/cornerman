@@ -242,7 +242,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
     },
     copy(from, to) {
       const w = layers.locked(copyWrites(inputs, from, to)); // cp71: locks checked, nothing else
-      history.group(() => { writeAll(w); history.record(layers.write("formats", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); });
+      history.group(() => { writeAll(w); history.record(layers.write("formats", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); history.record(layers.carry("styles", w)); });
     },
     toCSV(opts = {}) {
       const text = opts.formulas ? (k) => (layers.L.covered.has(k) ? "" : inputs.get(k) ?? "") : shown;

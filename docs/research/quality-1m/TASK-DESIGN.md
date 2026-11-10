@@ -561,8 +561,10 @@ is NOT what Excel does" / "...what you might expect".
   (unlike renameSheet); LET-hidden uses and LET names are not rewritten; `book.renameName` skips a
   sheet with its own name of that name; rewrites ignore locks and limits; the sheet rename is one
   undo step while the book rename clears every undo list. 8 mutants.
-- cp79 cell styles (styles.mjs; `styles` joins CELL_LAYERS in layers.mjs; fill.mjs and xcopy.mjs
-  write styles beside formats; styles.mjs wraps `sheet.copy` in a group). Departures: setStyle
+- cp79 cell styles (styles.mjs; `styles` joins CELL_LAYERS in layers.mjs; sheet.copy, fill.mjs and
+  xcopy.mjs write styles beside formats, sheet.copy through `layers.carry`). A first version wrapped
+  `sheet.copy` in an outer undo group, which hid `copy-step-per-cell` (cp27) in the full run; the
+  styles write moved inside copy's own group. Departures: setStyle
   merges keys into the cell's style; sort leaves styles where they are; inserted lines have no
   style (Excel copies the row above). Copy pastes whole styles, also from empty cells; not saved
   (a styles-only book still saves v2). 9 mutants.
@@ -573,7 +575,8 @@ is NOT what Excel does" / "...what you might expect".
   (3 edit CHANGES.md).
 - Older mutants given new find text by the refactors, same intent: `book-calls-unwrapped` (the
   workbook return line now starts with addDeprecations), `limit-checked-on-copy` (its import
-  anchor moved to extend.mjs). 579 mutants.
+  anchor moved to extend.mjs), `copy-skips-formats` and `lock-copied` (the copy line gained the
+  styles write). 579 mutants; each also checked against its target alone before the full run.
 - Verified before the full mutant run: check-tree cp01-80 all green (visible 134/134, hidden
   701/701), SMOKE OK, probe-selftest right 50/50 wrong 0/50 absent 0/50, every mutant's find text
   applies.

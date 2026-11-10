@@ -1,9 +1,8 @@
 // styles.mjs: cell styles (cp79): bold, italic, text colour and fill colour, a cell layer like the
-// number formats of cp41. setStyle merges into a cell's style; copy, fills and book.copy paste each
-// source cell's whole style; sort leaves styles where they are. Not saved.
+// number formats of cp41. setStyle merges into a cell's style; copy (sheet.mjs, layers.carry), fills
+// and book.copy paste each source cell's whole style; sort leaves styles where they are. Not saved.
 import { parseTarget } from "./layers.mjs";
 import { makeError } from "./errors.mjs";
-import { copyWrites } from "./copy.mjs";
 
 const KEYS = ["bold", "italic", "color", "fill"];
 const HEX = /^#[0-9A-Fa-f]{6}$/;
@@ -33,7 +32,6 @@ function merged(before, changes) {
 
 export function addStyles(sheet, core) {
   const { layers, history } = core;
-  const copy = sheet.copy;
   Object.assign(sheet, {
     // One undo step for the whole target, none when nothing changes.
     setStyle(target, style) {
@@ -44,14 +42,6 @@ export function addStyles(sheet, core) {
     getStyle(address) {
       const s = layers.L.styles.get(core.key(address));
       return s ? { ...s } : null;
-    },
-    // cp26's copy, then each target cell takes its source cell's whole style: one undo step.
-    copy(from, to) {
-      history.group(() => {
-        copy(from, to);
-        const w = copyWrites({ get: core.input }, from, to);
-        history.record(layers.write("styles", w.map(([k, , s]) => [k, layers.L.styles.get(s)])));
-      });
     },
   });
   return sheet;
