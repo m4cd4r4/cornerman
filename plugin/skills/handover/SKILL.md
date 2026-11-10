@@ -86,7 +86,7 @@ if there are none.
 ## Also read
 Other handovers or records on the same task, and what each still holds open.
 
-## Settled, do not reopen
+## Decisions already made
 Choices the user settled that the next session must not reopen. One line each,
 with the reason if the decision looks arbitrary without it.
 
