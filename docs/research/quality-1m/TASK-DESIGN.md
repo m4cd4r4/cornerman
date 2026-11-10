@@ -518,3 +518,62 @@ is NOT what Excel does" / "...what you might expect".
   the full run). cp69, cp70 and cp72 got a tenth hidden test after the first pass had nine.
 - sheet.mjs is 296 lines: block J sheet features must go in their own modules (features.mjs now
   chains protect.mjs and audit.mjs).
+
+## Block J progress (2026-11-10)
+
+Fixture designer's calls, not yet reviewed by Macdara. Each spec states its departures with "This
+is NOT what Excel does" / "...what you might expect".
+- cp73 `sheet.lint()` (lint.mjs; sheet.mjs `core.peer`). Departures: only one-cell references
+  count (cells inside ranges and behind defined names are never listed); every reference in the
+  text counts, also in an untaken `IF` branch (nothing is evaluated); a name used only where a
+  `LET` hides it is unused. Unused names first by name, then `empty-ref` by address and
+  precedents() order; covered merge cells are empty; missing sheets and `#PARSE!` formulas skipped;
+  `ref` labelled as precedents() labels it. 8 mutants.
+- cp74 wide fan-out budgets (no new code). Departures: no early cut-off (a re-evaluated cell with
+  the same value, or `1` to `1.0`, still re-evaluates every reader); a reference in an untaken
+  `IF` branch is a dependent and is evaluated again. Budgets, each measured after every formula was
+  read once: (1) 10,000 formulas `=$A$1+n`: set `A1` and reread all, 1 s, exactly 10,000
+  evaluations; `dependents("A1")` (direct and transitive) 1 s each; (2) four layers of 60, each
+  `=SUM(previous layer)+r`: set and read the last layer, 1 s, 240 evaluations; (3) 2,000 pairs of
+  setting an unread cell and reading a fan-out cell, 1 s, 0 evaluations. Reference alone, 10 runs:
+  (1) 27-52 ms, dependents 5-11 ms; (2) 32-82 ms; (3) 8-17 ms. The first budget started at 1.5 s
+  and was cut to 1 s because the `invalidate-scans-edges` mutant took 1.77 s there (the
+  `invalidate-per-path` mutant takes 2.7 s on budget 2). Only cp74's hidden file uses
+  `performance.now`, so its 6 mutants run alone after the pool. 6 mutants.
+- cp75 API v3 (api3.mjs: `cell`, `clear`, deprecation log; events.mjs keeps a frame stack of the
+  public calls in progress). Departures: `clear` removes inputs only and skips covered cells (their
+  hidden inputs come back on unmerge); a deprecated call that throws still counts; calls the
+  library makes (v2 names, `cell`, `book.get`, ...) never count, while your calls in a listener or
+  a batch do; the log is not undone, not saved, not rolled back. Deprecated: set, get, display,
+  cells, getInput, book.sheet. sheet.mjs hands its `add*` chain to extend.mjs (291 lines now).
+  11 mutants.
+- cp76 `undoList`/`redoList` on sheets and books (undolist.mjs; history.mjs stamps `label` from
+  events.mjs `callLabel()` and adds `steps(which)`). Departures: aliases keep their own labels
+  (`set` vs `setCell`); a step inside `book.batch` is labelled with the inner call, never `batch`;
+  the book lists are ordered by time across sheets, not sheet by sheet (`sheet: null` for workbook
+  name steps). 8 mutants.
+- cp77 `sheet.exportJSON(target, opts)` (export.mjs). Departures: the range is always two corners
+  (`B2:B2`); hidden rows and columns are included (unlike toCSV); values are full JSON numbers,
+  errors `{ error, cell }`, non-finite numbers `null`, typed `TRUE` the string. `display` and
+  `formats` options; target checked before options. 9 mutants.
+- cp78 `sheet.renameName` / `book.renameName` (rename.mjs: name tokens mapped to the AST's name
+  nodes in source order, scoped as collectRefs). Departures: a case-only rename does nothing at all
+  (unlike renameSheet); LET-hidden uses and LET names are not rewritten; `book.renameName` skips a
+  sheet with its own name of that name; rewrites ignore locks and limits; the sheet rename is one
+  undo step while the book rename clears every undo list. 8 mutants.
+- cp79 cell styles (styles.mjs; `styles` joins CELL_LAYERS in layers.mjs; fill.mjs and xcopy.mjs
+  write styles beside formats; styles.mjs wraps `sheet.copy` in a group). Departures: setStyle
+  merges keys into the cell's style; sort leaves styles where they are; inserted lines have no
+  style (Excel copies the row above). Copy pastes whole styles, also from empty cells; not saved
+  (a styles-only book still saves v2). 9 mutants.
+- cp80 `apiIndex()` (apiindex.mjs, new index.mjs export) with the stated lists: 6 exports, 69 sheet
+  methods, 21 workbook methods. Departures: deprecated names stay in the index; a sheet or
+  workbook object may have no other function-valued own property. CHANGES.md now holds exactly 80
+  entries; the cp80 test also checks every cp41-cp80 text against its FEATURES.md title. 8 mutants
+  (3 edit CHANGES.md).
+- Older mutants given new find text by the refactors, same intent: `book-calls-unwrapped` (the
+  workbook return line now starts with addDeprecations), `limit-checked-on-copy` (its import
+  anchor moved to extend.mjs). 579 mutants.
+- Verified before the full mutant run: check-tree cp01-80 all green (visible 134/134, hidden
+  701/701), SMOKE OK, probe-selftest right 50/50 wrong 0/50 absent 0/50, every mutant's find text
+  applies.
