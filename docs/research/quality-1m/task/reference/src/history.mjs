@@ -47,6 +47,14 @@ export function createHistory(limit = HISTORY_LIMIT) {
     // cp55: the stamp of the step undo() or redo() would take next, or -1 when there is none.
     nextUndo: () => (done.length ? done[done.length - 1].t : -1),
     nextRedo: () => (undone.length ? undone[undone.length - 1].u : -1),
+    // cp66: both lists and their stamps, to put back when a batch rolls back.
+    save: () => [done, undone].map((list) => list.map((e) => [e, e.t, e.u])),
+    restore(saved) {
+      [done, undone].forEach((list, i) => {
+        list.length = 0;
+        for (const [e, t, u] of saved[i]) list.push(Object.assign(e, { t, u }));
+      });
+    },
     clear() {
       done.length = 0;
       undone.length = 0;

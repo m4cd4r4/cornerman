@@ -467,7 +467,16 @@ const MUTANTS = [
   { name: "nested-event-first", file: "events.mjs", find: "  if (delivering) return; // a listener's own call: delivered after the current event\n", replace: "", target: "cp65" },
   { name: "listeners-live", file: "events.mjs", edits: [["queue.push([s.listeners.map((e) => e.f), cells]);", "queue.push([s.listeners, cells]);"], ["          f({ cells: [...cells] });", "          f.f({ cells: [...cells] });"]], target: "cp65" },
   { name: "shared-event-object", file: "events.mjs", edits: [["      for (const f of fs) {", "      const ev = { cells: [...cells] };\n      for (const f of fs) {"], ["          f({ cells: [...cells] });", "          f(ev);"]], target: "cp65" },
-  { name: "book-calls-unwrapped", file: "workbook.mjs", find: "  return wrapCalls(addBookNames(book, engine, nameHistory));", replace: "  return addBookNames(book, engine, nameHistory);", target: "cp65" },
+  { name: "book-calls-unwrapped", file: "workbook.mjs", find: "  return wrapCalls(addBatch(", replace: "  return ((x) => x)(addBatch(", target: "cp65" },
+  { name: "nested-batch-joins", file: "batch.mjs", find: "    if (open) refuse(\"batch\");", replace: "    if (open) return fn(book);", target: "cp66" },
+  { name: "rollback-keeps-undo", file: "batch.mjs", find: "      core.history.restore(steps);\n", replace: "", target: "cp66" },
+  { name: "rollback-inputs-only", file: "batch.mjs", find: "      core.rebuild(state);", replace: "      core.rebuild({ ...core.state(), inputs: state.inputs });", target: "cp66" },
+  { name: "rollback-keeps-book-names", file: "batch.mjs", find: "engine.setBookName(n, names.get(n));", replace: "void n;", target: "cp66" },
+  { name: "rollback-keeps-name-steps", file: "batch.mjs", find: "    nameHistory.restore(nameSteps);\n", replace: "", target: "cp66" },
+  { name: "sheet-list-allowed", file: "batch.mjs", find: "    book[k] = (...args) => (open ? refuse(k) : f(...args));", replace: "    book[k] = f;", target: "cp66" },
+  { name: "batch-arg-checked-first", file: "batch.mjs", edits: [["    if (open) refuse(\"batch\");\n", ""], ["throw makeError(\"#ARG\", String(fn), \"batch takes a function\");", "throw makeError(\"#ARG\", String(fn), \"batch takes a function\");\n    if (open) refuse(\"batch\");"]], target: "cp66" },
+  { name: "rollback-wraps-error", file: "batch.mjs", find: "      rollback(saved, names, nameSteps);\n      throw e;", replace: "      rollback(saved, names, nameSteps);\n      throw makeError(\"#BATCH\", \"batch\", String(e));", target: "cp66" },
+  { name: "batch-left-open", file: "batch.mjs", find: "    } finally {\n      open = false;\n    }", replace: "    } finally {\n      void 0;\n    }", target: "cp66" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

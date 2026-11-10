@@ -234,7 +234,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
   }
 
   const shown = (k) => { const v = valueOf(k); const t = layers.show(k, v); return typeof v === "number" ? localize(t, engine.decimal) : t; };
-  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys(), touch() {} };
+  const core = { valueOf, compute, relink, bind, key, writeAll: (w) => writeAll(layers.check(w)), writeRaw: writeAll, renamed, layers, history, names, setName, nameChanged, skipped, input: (k) => inputs.get(k) ?? null, keys: () => inputs.keys(), touch() {}, state, rebuild };
   bind(createEngine(order, decimal), null);
   if (init) rebuild(init);
 

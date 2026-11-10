@@ -9,6 +9,7 @@ import { addBookNames } from "./booknames.mjs";
 import { createHistory } from "./history.mjs";
 import { hasV3Layers, sheetEntry } from "./save3.mjs";
 import { wrapCalls } from "./events.mjs";
+import { addBatch } from "./batch.mjs";
 
 export const createWorkbook = (opts) => { const o = sheetOptions(opts); return buildWorkbook(o.errorOrder, [], new Map(), o.decimal); };
 
@@ -109,5 +110,6 @@ export function buildWorkbook(order, loaded, bookNames = new Map(), decimal = ".
   };
   for (const { name, init } of loaded) add(name, init);
   for (const [n, d] of bookNames) engine.setBookName(n, d);
-  return wrapCalls(addBookNames(book, engine, nameHistory)); // cp65: each method is one call
+  const sheets = () => list.map((e) => e.sheet);
+  return wrapCalls(addBatch(addBookNames(book, engine, nameHistory), engine, nameHistory, sheets)); // cp65: one call each
 }
