@@ -388,6 +388,14 @@ const MUTANTS = [
   { name: "hidden-cols-saved-as-numbers", file: "save3.mjs", find: "    hiddenCols: numbers(L.cols).map(colName),", replace: "    hiddenCols: numbers(L.cols),", target: "cp56" },
   { name: "v3-names-optional", file: "bookio.mjs", find: "bookNames(v3 ? doc.names ?? null : doc.names)", replace: "bookNames(doc.names)", target: "cp56" },
   { name: "v3-notes-optional", file: "bookio.mjs", find: "parseBody({ ...s, notes: s.notes ?? null }, `${at}.`)", replace: "parseBody(s, `${at}.`)", target: "cp56" },
+  // Block H. Excel-prior mutants first in each checkpoint, then plausible implementation slips.
+  { name: "text-number-coerced", file: "text.mjs", find: "    if (v === null || typeof v === \"number\") return formatNumber(v ?? 0, fmt);", replace: "    if (typeof v === \"string\" && /^ *-?\\d+(\\.\\d+)? *$/.test(v)) return formatNumber(Number(v), fmt);\n    if (v === null || typeof v === \"number\") return formatNumber(v ?? 0, fmt);", target: "cp57" },
+  { name: "text-tofixed", file: "text.mjs", find: "return formatNumber(v ?? 0, fmt);", replace: "return (v ?? 0).toFixed(fmt.decimals);", target: "cp57" },
+  { name: "text-bad-format-plain", file: "text.mjs", find: "    if (!fmt) return makeError(\"#VALUE!\", ctx.cell, `TEXT: not a number format: ${f}`);", replace: "    if (!fmt) return displayValue(v);", target: "cp57" },
+  { name: "text-empty-is-blank", file: "text.mjs", find: "    if (v === null || typeof v === \"number\") return formatNumber(v ?? 0, fmt);", replace: "    if (v === null) return \"\";\n    if (typeof v === \"number\") return formatNumber(v, fmt);", target: "cp57" },
+  { name: "text-format-trimmed", file: "text.mjs", find: "const fmt = parseFormat(f);", replace: "const fmt = parseFormat(f.trim());", target: "cp57" },
+  { name: "text-format-checked-first", file: "text.mjs", find: "    const err = pickError([v, f]);\n    if (err) return err;\n    const fmt = parseFormat(f);", replace: "    const fmt = parseFormat(f);\n    if (!fmt && typeof f === \"string\") return makeError(\"#VALUE!\", ctx.cell, \"TEXT: bad format\");\n    const err = pickError([v, f]);\n    if (err) return err;", target: "cp57" },
+  { name: "text-result-number", file: "text.mjs", find: "    if (v === null || typeof v === \"number\") return formatNumber(v ?? 0, fmt);", replace: "    if (v === null || typeof v === \"number\") { const o = formatNumber(v ?? 0, fmt); return /^-?\\d+(\\.\\d+)?$/.test(o) ? Number(o) : o; }", target: "cp57" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

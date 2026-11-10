@@ -56,3 +56,4 @@
 - cp54: book.deleteSheet rewrites references to the sheet as #REF! and drops the workbook names that point at it.
 - cp55: book.undo and book.redo take the newest step of any sheet or of the workbook names, by time.
 - cp56: book.save writes version 3 with formats, rules, merges and hidden lines when a sheet has any, else v2.
+- cp57: TEXT(value, format) gives a number as text in a cp41 format; other values come back as display shows them.

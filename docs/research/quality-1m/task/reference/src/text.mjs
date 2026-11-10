@@ -1,6 +1,8 @@
-// text.mjs: LEN, UPPER, LOWER, LEFT, RIGHT, MID, TRIM (cp18).
+// text.mjs: LEN, UPPER, LOWER, LEFT, RIGHT, MID, TRIM (cp18) and TEXT(value, format) (cp57).
 import { makeError, pickError } from "./errors.mjs";
 import { textArg, intArg, arity } from "./args.mjs";
+import { parseFormat, formatNumber } from "./numfmt.mjs";
+import { displayValue } from "./display.mjs";
 
 // Evaluate every argument (text first, then whole numbers), then apply f or return the winning error.
 function textFn(fn, lo, hi, f) {
@@ -28,4 +30,17 @@ export const TEXT = {
     if (n < 0) return negative(ctx, "MID");
     return t.slice(start - 1, start - 1 + n);
   }),
+  // cp57: a number (an empty cell is 0) in a checkpoint 41 format; anything else as display shows it.
+  TEXT(args, ctx, evaluate) {
+    const bad = arity("TEXT", args, ctx, 2);
+    if (bad) return bad;
+    const v = evaluate(args[0], ctx);
+    const f = textArg(args[1], ctx, evaluate);
+    const err = pickError([v, f]);
+    if (err) return err;
+    const fmt = parseFormat(f);
+    if (!fmt) return makeError("#VALUE!", ctx.cell, `TEXT: not a number format: ${f}`);
+    if (v === null || typeof v === "number") return formatNumber(v ?? 0, fmt);
+    return displayValue(v);
+  },
 };

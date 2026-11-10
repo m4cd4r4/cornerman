@@ -58,3 +58,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp54: deleting a sheet
 - [ ] cp55: undo across a workbook
 - [ ] cp56: save format version 3
+- [ ] cp57: TEXT
