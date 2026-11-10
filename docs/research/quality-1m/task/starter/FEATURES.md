@@ -78,3 +78,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp74: performance budget for wide fan-out
 - [ ] cp75: API v3 and deprecations
 - [ ] cp76: undo history labels
+- [ ] cp77: range export to JSON

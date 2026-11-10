@@ -1,5 +1,5 @@
 // features.mjs: the sheet methods for its layers: number formats (cp41), notes (cp42), locks (cp71),
-// validation (cp46), merged ranges (cp47), and sorting a range (cp48); the error audit (cp72), lint (cp73).
+// validation (cp46), merged ranges (cp47), and sorting a range (cp48); the error audit (cp72), lint (cp73), JSON export (cp77).
 import { parseTarget, NOTE_LIMIT } from "./layers.mjs";
 import { checkFormat } from "./numfmt.mjs";
 import { makeError } from "./errors.mjs";
@@ -10,6 +10,7 @@ import { sortPlan } from "./sort.mjs";
 import { addProtection } from "./protect.mjs";
 import { addAudit } from "./audit.mjs";
 import { addLint } from "./lint.mjs";
+import { addExport } from "./export.mjs";
 
 export function addFeatures(sheet, core) {
   const { layers, history } = core;
@@ -79,5 +80,5 @@ export function addFeatures(sheet, core) {
     },
     invalidCells: () => [...layers.L.rules].filter(([k, r]) => !passes(r, core.input(k) ?? "")).map(([k]) => k).sort(compareAddresses),
   });
-  return addLint(addAudit(addProtection(sheet, core), core), core); // cp71, cp72, cp73
+  return addExport(addLint(addAudit(addProtection(sheet, core), core), core), core); // cp71, cp72, cp73, cp77
 }

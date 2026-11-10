@@ -570,6 +570,15 @@ const MUTANTS = [
   { name: "undo-list-oldest-first", file: "history.mjs", find: "at: which === \"undo\" ? e.t : e.u })).reverse(),", replace: "at: which === \"undo\" ? e.t : e.u })),", target: "cp76" },
   { name: "redo-relabels", file: "history.mjs", find: "      apply(e, \"after\");\n      e.t = ++CLOCK;", replace: "      apply(e, \"after\");\n      e.t = ++CLOCK;\n      e.label = callLabel();", target: "cp76" },
   { name: "book-list-names-labelled", file: "undolist.mjs", find: "{ sheet: null, h: names }", replace: "{ sheet: \"\", h: names }", target: "cp76" },
+  { name: "export-skips-hidden", file: "export.mjs", find: "    for (let r = t.r1; r <= t.r2; r++) {\n      const vs = [];", replace: "    for (let r = t.r1; r <= t.r2; r++) {\n      if (core.layers.L.rows.has(r)) continue;\n      const vs = [];", target: "cp77" },
+  { name: "export-one-cell-range", file: "export.mjs", find: "    const doc = { range: `${t.a}:${t.b}`, values };", replace: "    const doc = { range: t.a === t.b ? t.a : `${t.a}:${t.b}`, values };", target: "cp77" },
+  { name: "export-rounded-values", file: "export.mjs", find: "jsonValue(sheet.value(k))", replace: "jsonValue(typeof sheet.value(k) === \"number\" ? Number(sheet.text(k)) : sheet.value(k))", target: "cp77" },
+  { name: "export-error-code-text", file: "export.mjs", find: "isError(v) ? { error: v.code, cell: v.cell }", replace: "isError(v) ? v.code", target: "cp77" },
+  { name: "export-empty-string", file: "export.mjs", find: "const jsonValue = (v) => (v === null ? null :", replace: "const jsonValue = (v) => (v === null ? \"\" :", target: "cp77" },
+  { name: "export-covered-input", file: "export.mjs", find: "jsonValue(sheet.value(k))", replace: "jsonValue(core.layers.L.covered.has(k) ? core.input(k) : sheet.value(k))", target: "cp77" },
+  { name: "export-null-options-ok", file: "export.mjs", find: "  if (opts === undefined) return {};", replace: "  if (opts === undefined || opts === null) return {};", target: "cp77" },
+  { name: "export-formats-checked-first", file: "export.mjs", find: "  for (const k of [\"display\", \"formats\"]) {", replace: "  for (const k of [\"formats\", \"display\"]) {", target: "cp77" },
+  { name: "export-options-before-target", file: "export.mjs", find: "    const t = parseTarget(target);\n    const o = checkOptions(opts);", replace: "    const o = checkOptions(opts);\n    const t = parseTarget(target);", target: "cp77" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
