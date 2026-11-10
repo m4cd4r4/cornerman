@@ -415,3 +415,50 @@ in each cpNN/spec.md.
 - Verified by the orchestrator 2026-11-10: check-tree cp01-56 green, mutants 367/367 killed,
   probe-selftest right 40/40 wrong 0/40 absent 0/40, SMOKE OK. cp50 spec: dropped a
   "checkpoint 3:" cross-reference (the agent's last edit).
+
+## Block H progress (2026-11-10)
+
+Fixture designer's calls, not yet reviewed by Macdara. Each spec states its departures with "This
+is NOT what Excel does" / "...what you might expect".
+- cp57 TEXT (text.mjs): departures: the format must be a checkpoint 41 format (anything else,
+  `""` and `General` included, is #VALUE!), text is never read as a number (`TEXT("5","0.00")` is
+  "5"), an empty cell is the number 0 (unlike the cp18 text functions). Format checked only after
+  both arguments gave no error; result always text; cell formats play no part. 7 mutants.
+- cp58 EDATE, EOMONTH, WEEKDAY (calendar.mjs; dates.mjs exports parts/daysIn/MAX): departures:
+  months must be a whole number (Excel truncates), WEEKDAY defaults to type 2 (Monday = 1), a last
+  day does not stay a last day under EDATE. Types 1/2/3 only, not truncated; results outside
+  2000-9999 #VALUE!. 8 mutants.
+- cp59 NETWORKDAYS (calendar.mjs): departures: end before start counts the same (never negative),
+  text/booleans/empty in holidays are skipped, holidays must be a range argument and are not
+  evaluated otherwise (as SUMPRODUCT). A `#REF!` holidays argument left by a delete is #REF!
+  (found while writing the tests: it was #VALUE!). Counted by whole weeks, not day by day; no
+  timing test. 9 mutants.
+- cp60 CHOOSE and SWITCH (choose.mjs): departures: CHOOSE never gives a range
+  (`SUM(CHOOSE(1, A1:A3))` is #VALUE!), SWITCH text matches with case; also stated: an error in a
+  reached case is the result, an empty cell is 0, no match and no default #N/A. Both lazy with
+  static dependencies, as IF. 9 mutants.
+- cp61 SUBSTITUTE, FIND, SEARCH (search.mjs): departures: no match is #N/A (Excel #VALUE!),
+  SEARCH has `?` and `*` but no `~` escape. SUBSTITUTE counts non-overlapping occurrences from the
+  left; start must be 1 to LEN+1. 9 mutants.
+- cp62 LET (let.mjs; graph.mjs collectRefs now walks LET scopes): departures: a LET name is a
+  value, never a range (`LET(r, A1:A3, SUM(r))` and `LET(x, 5, SUM(x))` are #VALUE!, as cp52
+  constants); where a LET name hides a defined name, that name's cells are not precedents and
+  redefining it evaluates nothing again. Also stated: every value evaluated once in order, an error
+  in a value matters only where the name is used, inside its own value a name means what it means
+  outside. Structure errors #VALUE!; `abc12` is #PARSE! as before. 9 mutants.
+- cp63 decimal comma (locale.mjs; sheet.mjs, engine.mjs, workbook.mjs, bookio.mjs): option
+  `decimal: "."|","` on createSheet, loadSheet, createWorkbook and now loadWorkbook(text, options)
+  (checked after errorOrder; loadWorkbook's error order still comes from the text). Departures:
+  inputs, formulas and fromCSV are read as before (`"1,5"` is text), toCSV keeps `,` and quotes
+  (Excel uses `;`), text values are shown as they are (`=A1&""` shows "0.5" beside "0,5"). Not
+  saved; shared by a workbook's sheets, kept after remove/delete. 9 mutants.
+- cp64 fill down and fill right (fill.mjs; copy.mjs `shiftFormula` split out of copyWrites):
+  departures: two typed numbers start a series (Excel's fill down copies), text is never counted
+  up (Excel's fill handle makes Item 2), a fill checks validation in row-major order (copy does
+  not). Series values rounded half-even to 10 places and written as plain number text; formats
+  follow each line's first cell; #MERGE when the target overlaps a merge. 9 mutants.
+- Older mutants given new find text by the refactors, same intent: removed-sheet-still-bound,
+  detached-loses-order, loadsheet-checks-text-first, migrate-skips-head-checks (cp63 options),
+  copy-skips-empty (cp64 shiftFormula). The cp63 commit message says "Three" and lists four.
+- functions.mjs: the cp58-cp62 tables join TABLE through one Object.assign line. sheet.mjs is
+  295 lines; new sheet features should go in their own module (as fill.mjs, features.mjs).
