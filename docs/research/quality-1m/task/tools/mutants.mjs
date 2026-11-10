@@ -477,6 +477,16 @@ const MUTANTS = [
   { name: "batch-arg-checked-first", file: "batch.mjs", edits: [["    if (open) refuse(\"batch\");\n", ""], ["throw makeError(\"#ARG\", String(fn), \"batch takes a function\");", "throw makeError(\"#ARG\", String(fn), \"batch takes a function\");\n    if (open) refuse(\"batch\");"]], target: "cp66" },
   { name: "rollback-wraps-error", file: "batch.mjs", find: "      rollback(saved, names, nameSteps);\n      throw e;", replace: "      rollback(saved, names, nameSteps);\n      throw makeError(\"#BATCH\", \"batch\", String(e));", target: "cp66" },
   { name: "batch-left-open", file: "batch.mjs", find: "    } finally {\n      open = false;\n    }", replace: "    } finally {\n      void 0;\n    }", target: "cp66" },
+  { name: "limit-excel-length", file: "limits.mjs", find: "export const MAX_LENGTH = 1000;", replace: "export const MAX_LENGTH = 8192;", target: "cp67" },
+  { name: "limit-functions-only", file: "limits.mjs", edits: [["  for (const ch of input) {", "  for (let i = 0; i < input.length; i++) {\n    const ch = input[i];"], ["    else if (ch === \"(\") max = Math.max(max, ++open);", "    else if (ch === \"(\" && /[A-Za-z0-9.]/.test(input[i - 1] || \"\")) max = Math.max(max, ++open);"]], target: "cp67" },
+  { name: "limit-length-without-equals", file: "limits.mjs", find: "  if (input.length > MAX_LENGTH)", replace: "  if (input.length - 1 > MAX_LENGTH)", target: "cp67" },
+  { name: "limit-length-off-by-one", file: "limits.mjs", find: "  if (input.length > MAX_LENGTH)", replace: "  if (input.length >= MAX_LENGTH)", target: "cp67" },
+  { name: "limit-depth-off-by-one", file: "limits.mjs", find: "  if (depthOf(input) > MAX_DEPTH)", replace: "  if (depthOf(input) >= MAX_DEPTH)", target: "cp67" },
+  { name: "limit-strings-counted", file: "limits.mjs", find: "    if (ch === '\"') quoted = !quoted;", replace: "    if (false) quoted = !quoted;", target: "cp67" },
+  { name: "limit-stray-close-counts", file: "limits.mjs", find: "    else if (ch === \")\" && open > 0) open--;", replace: "    else if (ch === \")\") open--;", target: "cp67" },
+  { name: "limit-skips-unparsed", file: "limits.mjs", edits: [["import { makeError } from \"./errors.mjs\";", "import { makeError } from \"./errors.mjs\";\nimport { parseEntry } from \"./graph.mjs\";"], ["  if (!input.startsWith(\"=\")) return;", "  if (!input.startsWith(\"=\") || parseEntry(input).parseError) return;"]], target: "cp67" },
+  { name: "limit-checked-on-copy", file: "sheet.mjs", edits: [["import { addFill } from \"./fill.mjs\";", "import { addFill } from \"./fill.mjs\";\nimport { checkLimits } from \"./limits.mjs\";"], ["      history.group(() => { writeAll(w);", "      for (const [t, x] of w) checkLimits(t, x);\n      history.group(() => { writeAll(w);"]], target: "cp67" },
+  { name: "limit-before-merge", file: "layers.mjs", edits: [["        checkLimits(k, input);\n", ""], ["        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);", "        checkLimits(k, input);\n        if (L.covered.has(k)) throw makeError(\"#MERGE\", k, `${k} is covered by a merge`);"]], target: "cp67" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

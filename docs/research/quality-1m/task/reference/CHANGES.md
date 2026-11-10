@@ -66,3 +66,4 @@
 - cp64: fillDown and fillRight copy the first cell of each line, or continue two typed numbers as a series.
 - cp65: onChange listeners get one event per call listing the cells whose input changed, never values.
 - cp66: book.batch(fn) puts every sheet, name and undo list back when fn throws; each change keeps its own undo step.
+- cp67: typed formulas hold at most 1,000 characters and 16 open parentheses, grouping included; else #LIMIT.

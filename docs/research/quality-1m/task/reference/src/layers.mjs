@@ -7,6 +7,7 @@ import { displayValue } from "./display.mjs";
 import { parseFormat, formatNumber } from "./numfmt.mjs";
 import { passes } from "./validation.mjs";
 import { coveredBy, moveMerges, sortMerges } from "./merges.mjs";
+import { checkLimits } from "./limits.mjs";
 
 // Layers keyed by cell address. A value is a string (format text, note text) or a rule object.
 export const CELL_LAYERS = ["formats", "notes", "rules"];
@@ -99,10 +100,11 @@ export function createLayers(onCovered, onLines = () => {}) {
       }
       if (LINE_LAYERS.includes(e.layer)) onLines();
     },
-    // cp46, cp47: throws #MERGE or #INVALID for the first [key, input] its cell refuses.
+    // cp46, cp47, cp67: throws #MERGE, #LIMIT or #INVALID for the first [key, input] refused.
     check(writes) {
       for (const [k, input] of writes) {
         if (L.covered.has(k)) throw makeError("#MERGE", k, `${k} is covered by a merge`);
+        checkLimits(k, input);
         const r = L.rules.get(k);
         if (r && !passes(r, input)) throw makeError("#INVALID", k, `${k} refuses ${JSON.stringify(input)}`);
       }
