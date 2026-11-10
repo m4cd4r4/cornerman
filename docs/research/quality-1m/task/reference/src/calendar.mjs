@@ -1,7 +1,7 @@
 // calendar.mjs: EDATE, EOMONTH and WEEKDAY (cp58) on the checkpoint 19 serials, where serial 1
-// (2000-01-01) is a Saturday.
-import { makeError, pickError } from "./errors.mjs";
-import { numberArg, intArg, arity } from "./args.mjs";
+// (2000-01-01) is a Saturday, and NETWORKDAYS (cp59).
+import { makeError, isError, pickError } from "./errors.mjs";
+import { numberArg, intArg, arity, isRangeArg, rangeArg } from "./args.mjs";
 import { dateSerial, parts, daysIn, MAX } from "./dates.mjs";
 
 const bad = (ctx, fn, why) => makeError("#VALUE!", ctx.cell, `${fn}: ${why}`);
@@ -46,4 +46,37 @@ function weekday(args, ctx, evaluate) {
   return t === 2 ? iso : t === 3 ? iso - 1 : (iso % 7) + 1;
 }
 
-export const CALENDAR = { EDATE: monthMove("EDATE", false), EOMONTH: monthMove("EOMONTH", true), WEEKDAY: weekday };
+// Monday-to-Friday days among serials 1 to s. Every 7 days in a row hold 5 of them.
+function weekdaysUpTo(s) {
+  const full = Math.floor(s / 7);
+  let n = full * 5;
+  for (let x = full * 7 + 1; x <= s; x++) if (isoDay(x) <= 5) n++;
+  return n;
+}
+
+// cp59: weekdays from start to end in either order, less the weekday holidays between them.
+// holidays is a range argument only (#REF! stays #REF!, anything else is #VALUE!, never evaluated); its numbers,
+// truncated, are holidays and every other value but an error is skipped.
+function networkdays(args, ctx, evaluate) {
+  const no = arity("NETWORKDAYS", args, ctx, 2, 3);
+  if (no) return no;
+  const a = intArg(args[0], ctx, evaluate);
+  const b = intArg(args[1], ctx, evaluate);
+  let hol = { values: [] };
+  const h = args[2];
+  if (h) hol = isRangeArg(h) ? rangeArg(h, ctx) : { err: h.k === "badref" ? evaluate(h, ctx) : bad(ctx, "NETWORKDAYS", "holidays must be a range") };
+  const err = pickError([a, b, hol.err, ...(hol.values || []).filter(isError)]);
+  if (err) return err;
+  if (!inRange(a) || !inRange(b)) return bad(ctx, "NETWORKDAYS", "date out of range");
+  const lo = Math.min(a, b);
+  const hi = Math.max(a, b);
+  const off = new Set();
+  for (const v of hol.values) {
+    if (typeof v !== "number") continue;
+    const d = Math.trunc(v);
+    if (d >= lo && d <= hi && isoDay(d) <= 5) off.add(d);
+  }
+  return weekdaysUpTo(hi) - weekdaysUpTo(lo - 1) - off.size;
+}
+
+export const CALENDAR = { EDATE: monthMove("EDATE", false), EOMONTH: monthMove("EOMONTH", true), WEEKDAY: weekday, NETWORKDAYS: networkdays };

@@ -60,3 +60,4 @@ Tick each checkpoint (`[x]`) when it is done and committed. `node gate.mjs next`
 - [ ] cp56: save format version 3
 - [ ] cp57: TEXT
 - [ ] cp58: EDATE, EOMONTH and WEEKDAY
+- [ ] cp59: NETWORKDAYS

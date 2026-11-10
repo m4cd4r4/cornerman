@@ -404,6 +404,15 @@ const MUTANTS = [
   { name: "weekday-epoch-sunday", file: "calendar.mjs", find: "((s + 4) % 7) + 1", replace: "((s + 5) % 7) + 1", target: "cp58" },
   { name: "weekday-type-truncated", file: "calendar.mjs", find: "numberArg(args[1], ctx, evaluate) : 2;", replace: "intArg(args[1], ctx, evaluate) : 2;", target: "cp58" },
   { name: "month-result-unchecked", file: "calendar.mjs", find: "    if (y < 2000 || y > 9999) return bad(ctx, fn, \"result out of range\");\n", replace: "", target: "cp58" },
+  { name: "networkdays-negative-reversed", file: "calendar.mjs", find: "  return weekdaysUpTo(hi) - weekdaysUpTo(lo - 1) - off.size;", replace: "  return (weekdaysUpTo(hi) - weekdaysUpTo(lo - 1) - off.size) * (b < a ? -1 : 1);", target: "cp59" },
+  { name: "holiday-text-error", file: "calendar.mjs", find: "    if (typeof v !== \"number\") continue;", replace: "    if (typeof v === \"string\") return bad(ctx, \"NETWORKDAYS\", \"text in holidays\");\n    if (typeof v !== \"number\") continue;", target: "cp59" },
+  { name: "holidays-direct-value", file: "calendar.mjs", find: ": { err: h.k === \"badref\"", replace: ": h.k !== \"badref\" ? { values: [evaluate(h, ctx)] } : { err: h.k === \"badref\"", target: "cp59" },
+  { name: "weekend-holidays-subtracted", file: "calendar.mjs", find: " && isoDay(d) <= 5) off.add(d);", replace: ") off.add(d);", target: "cp59" },
+  { name: "holidays-counted-twice", file: "calendar.mjs", edits: [["const off = new Set();", "const off = [];"], ["off.add(d)", "off.push(d)"], ["- off.size;", "- off.length;"]], target: "cp59" },
+  { name: "end-day-excluded", file: "calendar.mjs", find: "weekdaysUpTo(hi) - weekdaysUpTo(lo - 1)", replace: "weekdaysUpTo(hi - 1) - weekdaysUpTo(lo - 1)", target: "cp59" },
+  { name: "holiday-not-truncated", file: "calendar.mjs", find: "const d = Math.trunc(v);", replace: "const d = v;", target: "cp59" },
+  { name: "holiday-errors-skipped", file: "calendar.mjs", find: ", ...(hol.values || []).filter(isError)]", replace: "]", target: "cp59" },
+  { name: "holidays-outside-dates", file: "calendar.mjs", find: "if (d >= lo && d <= hi && isoDay(d) <= 5)", replace: "if (isoDay(d) <= 5)", target: "cp59" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
