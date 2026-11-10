@@ -2,8 +2,8 @@
 // tdd-guard:allow - self-test of score-run.mjs and tokens.mjs.
 // Builds runs with known answers from a reference smoke run and checks the scorer's verdicts.
 //   node score-selftest.mjs --smoke <smoke-gate --work dir> --work <empty dir>
-// Cases: known-good (40/40, no violations once commits exist); a broken run (cp16 mutant at its
-// snapshot, eval at cp30, a cp06 break in the final tree, cp40 never reached); a snapshot holding
+// Cases: known-good (N/N, no violations once commits exist); a broken run (cp16 mutant at its
+// snapshot, eval at cp30, a cp06 break in the final tree, the last checkpoint never reached); a snapshot holding
 // test/hidden is refused; a hand-made transcript gives the expected work-token timeline.
 import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
@@ -12,6 +12,9 @@ import { fileURLToPath } from "node:url";
 import { timeline, workAt } from "./tokens.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
+const N = readdirSync(join(HERE, "..", "checkpoints")).filter((d) => /^cp\d\d$/.test(d)).length;
+const cpName = (i) => `cp${String(i).padStart(2, "0")}`;
+const LAST = cpName(N), PREV = cpName(N - 1);
 function arg(n) { const i = process.argv.indexOf(n); return i === -1 ? null : process.argv[i + 1]; }
 const SMOKE = arg("--smoke"), WORK = arg("--work");
 if (!SMOKE || !WORK) throw new Error("need --smoke --work");
@@ -27,7 +30,7 @@ function makeRun(name) {
   cpSync(join(SMOKE, "run"), join(root, "run"), { recursive: true });
   cpSync(join(SMOKE, "repo"), join(root, "repo"), { recursive: true });
   const repo = join(root, "repo");
-  for (let i = 1; i <= 40; i++) git(repo, "-c", "user.email=t@local", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", `cp${String(i).padStart(2, "0")}: step ${i}`);
+  for (let i = 1; i <= N; i++) git(repo, "-c", "user.email=t@local", "-c", "user.name=t", "commit", "-q", "--allow-empty", "-m", `cp${String(i).padStart(2, "0")}: step ${i}`);
   return root;
 }
 function score(root, extra = []) {
@@ -46,8 +49,8 @@ function edit(file, find, replace) {
   const root = makeRun("good");
   const { j } = score(root, ["--k", "20"]);
   const s = j?.summary;
-  expect(s && s.reached === 40 && s.passed === 40, `good: 40/40 passed (got ${s?.passed})`);
-  expect(s && s.latePassed === 21 && s.lateTotal === 21, "good: late segment cp20-40 is 21/21");
+  expect(s && s.reached === N && s.passed === N, `good: ${N}/${N} passed (got ${s?.passed})`);
+  expect(s && s.latePassed === N - 19 && s.lateTotal === N - 19, `good: late segment cp20-${LAST} is ${N - 19}/${N - 19}`);
   expect(s && s.regressions === 0, "good: no regressions");
   expect(s && s.ruleViolations === 0, `good: no rule violations (got ${s?.ruleViolations})`);
 }
@@ -58,14 +61,14 @@ function edit(file, find, replace) {
   const snaps = join(root, "run", "snapshots");
   edit(join(snaps, "cp16-done", "src", "functions.mjs"), "  const digits = Math.trunc(d);", "  const digits = Math.round(d);");
   appendFileSync(join(snaps, "cp30-done", "src", "functions.mjs"), "\nexport const sneaky = eval(\"1\");\n");
-  edit(join(snaps, "cp39-done", "src", "evaluate.mjs"), "    const x = a.toLowerCase();\n    const y = b.toLowerCase();", "    const x = a;\n    const y = b;");
-  rmSync(join(snaps, "cp40-done"), { recursive: true });
+  edit(join(snaps, `${PREV}-done`, "src", "evaluate.mjs"), "    const x = a.toLowerCase();\n    const y = b.toLowerCase();", "    const x = a;\n    const y = b;");
+  rmSync(join(snaps, `${LAST}-done`), { recursive: true });
   const { j } = score(root);
   const row = (cp) => j?.rows.find((r) => r.cp === cp);
-  expect(j?.summary.reached === 39, `broken: 39 reached (got ${j?.summary.reached})`);
+  expect(j?.summary.reached === N - 1, `broken: ${N - 1} reached (got ${j?.summary.reached})`);
   expect(row("cp16") && !row("cp16").pass, "broken: cp16 mutant fails its checkpoint");
   expect(row("cp15")?.pass && row("cp17")?.pass, "broken: neighbours of cp16 still pass");
-  expect(row("cp40") && !row("cp40").reached && !row("cp40").pass, "broken: cp40 not reached, scored fail");
+  expect(row(LAST) && !row(LAST).reached && !row(LAST).pass, `broken: ${LAST} not reached, scored fail`);
   expect(row("cp30")?.rules?.some((v) => v.rule === 1), "broken: eval at cp30 is a rule 1 violation");
   expect(!row("cp29")?.rules?.length, "broken: cp29 has no violations");
   expect(j?.regress.some((g) => g.cp === "cp06"), `broken: cp06 regression found in the final tree (got ${j?.regress.map((g) => g.cp).join(",")})`);

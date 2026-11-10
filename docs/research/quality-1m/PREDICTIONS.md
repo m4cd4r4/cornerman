@@ -15,7 +15,7 @@ pilot data only.
 
 ## Primary analysis (fixed now)
 
-- Primary metric: hidden-test pass rate over the late segment, checkpoints K..40, K = the first
+- Primary metric: hidden-test pass rate over the late segment, checkpoints K..80, K = the first
   checkpoint the Default pilot requests after its work tokens pass 350,000 (tools/tokens.mjs).
 - Per arm vs Default: paired by checkpoint and run; bootstrap B = 10,000, 95% interval of the
   difference in late pass rate.
@@ -28,7 +28,7 @@ pilot data only.
 
 | # | Prediction | My confidence |
 |:--|:--|:--|
-| P1 | Default's peak context passes 800,000 and it auto-compacts at least once before cp40 | 70% |
+| P1 | Default's peak context passes 800,000 and it auto-compacts at least once before cp80 | 70% |
 | P2 | Default late pass rate in the pilot lands inside 40-80% (task neither ceiling nor floor) | 45% |
 | P3 | CM-250 late pass rate >= Default late pass rate (pilot, same task) | 60% |
 | P4 | In the full test, CM-250 vs Default interval is above 0 (clearing helps) | 30% |
@@ -47,3 +47,9 @@ before Stage 3, never a published comparison.
 
 - 2026-11-09 13:35 UTC: added `tools/compare.mjs` (the bootstrap named above, self-tested) while
   the pilot was at cp02, before any score existed. No prediction or threshold changed.
+- 2026-11-10 (before pilot 2): the task grew from 40 to 80 checkpoints after pilot 1, whose
+  Default run peaked at 414k tokens and never compacted, so it could not reach the regime the
+  test is about. Changed: "K..40" to "K..80" in the primary metric and "before cp40" to "before
+  cp80" in P1. `tools/mutants.mjs` gained `--jobs` and `tools/score-selftest.mjs` counts the
+  checkpoints instead of assuming 40. No confidence, threshold, claim rule or K rule changed.
+  Pilot 1 is calibration only and is not scored against these predictions.
