@@ -246,7 +246,7 @@ export function makeSheet(init, order = "priority", decimal = ".") {
       writeAll(layers.check([[key(address), input]]));
     },
     copy(from, to) {
-      const w = copyWrites(inputs, from, to);
+      const w = layers.locked(copyWrites(inputs, from, to)); // cp71: locks checked, nothing else
       history.group(() => { writeAll(w); history.record(layers.write("formats", w.map(([t, , s]) => [t, layers.L.formats.get(s)]))); });
     },
     toCSV(opts = {}) {

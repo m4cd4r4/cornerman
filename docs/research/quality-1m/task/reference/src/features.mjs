@@ -1,4 +1,4 @@
-// features.mjs: the sheet methods for its layers: number formats (cp41), notes (cp42),
+// features.mjs: the sheet methods for its layers: number formats (cp41), notes (cp42), locks (cp71),
 // validation (cp46), merged ranges (cp47), and sorting a range (cp48).
 import { parseTarget, NOTE_LIMIT } from "./layers.mjs";
 import { checkFormat } from "./numfmt.mjs";
@@ -7,6 +7,7 @@ import { compareAddresses, colName } from "./address.mjs";
 import { checkRule, copyRule, passes } from "./validation.mjs";
 import { mergeText, overlaps, mergeAt } from "./merges.mjs";
 import { sortPlan } from "./sort.mjs";
+import { addProtection } from "./protect.mjs";
 
 export function addFeatures(sheet, core) {
   const { layers, history } = core;
@@ -68,6 +69,7 @@ export function addFeatures(sheet, core) {
           formats.push([to, layers.L.formats.get(colName(c) + src)]);
         }
       });
+      layers.locked(writes); // cp71
       history.group(() => {
         core.writeRaw(writes);
         history.record(layers.write("formats", formats));
@@ -75,5 +77,5 @@ export function addFeatures(sheet, core) {
     },
     invalidCells: () => [...layers.L.rules].filter(([k, r]) => !passes(r, core.input(k) ?? "")).map(([k]) => k).sort(compareAddresses),
   });
-  return sheet;
+  return addProtection(sheet, core); // cp71
 }

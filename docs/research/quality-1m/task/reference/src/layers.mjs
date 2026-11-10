@@ -10,7 +10,7 @@ import { coveredBy, moveMerges, sortMerges } from "./merges.mjs";
 import { checkLimits } from "./limits.mjs";
 
 // Layers keyed by cell address. A value is a string (format text, note text) or a rule object.
-export const CELL_LAYERS = ["formats", "notes", "rules"];
+export const CELL_LAYERS = ["formats", "notes", "rules", "locks"]; // locks: cp71, value true
 // cp49: layers keyed by row number ("rows") or column number ("cols"); the value is true.
 export const LINE_LAYERS = ["rows", "cols"];
 const ALL = [...CELL_LAYERS, ...LINE_LAYERS];
@@ -54,6 +54,11 @@ export const sameLayers = (x, y) =>
 export function createLayers(onCovered, onLines = () => {}) {
   const L = { merges: [], covered: new Set() };
   for (const n of ALL) L[n] = new Map();
+  let inputOf = () => "";
+  // cp71: a locked cell refuses a write only when it would change the cell's input.
+  const refuseLocked = (k, input) => {
+    if (L.locks.has(k) && inputOf(k) !== input) throw makeError("#LOCKED", k, `${k} is protected`);
+  };
   function setMerges(list) {
     const before = L.covered;
     L.merges = sortMerges(list);
@@ -100,10 +105,19 @@ export function createLayers(onCovered, onLines = () => {}) {
       }
       if (LINE_LAYERS.includes(e.layer)) onLines();
     },
-    // cp46, cp47, cp67: throws #MERGE, #LIMIT or #INVALID for the first [key, input] refused.
+    // cp71: the sheet's inputs, for the lock check; and the check alone (copy, sort).
+    readInputs(fn) {
+      inputOf = fn;
+    },
+    locked(writes) {
+      for (const [k, input] of writes) refuseLocked(k, input);
+      return writes;
+    },
+    // cp46, cp47, cp67, cp71: throws #MERGE, #LOCKED, #LIMIT or #INVALID for the first write refused.
     check(writes) {
       for (const [k, input] of writes) {
         if (L.covered.has(k)) throw makeError("#MERGE", k, `${k} is covered by a merge`);
+        refuseLocked(k, input);
         checkLimits(k, input);
         const r = L.rules.get(k);
         if (r && !passes(r, input)) throw makeError("#INVALID", k, `${k} refuses ${JSON.stringify(input)}`);

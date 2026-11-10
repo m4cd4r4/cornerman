@@ -70,3 +70,4 @@
 - cp68: book.copy moves cells between sheets; plain refs gain the source sheet name, refs to the target lose theirs.
 - cp69: fromCSV takes delimiter, header and types options; types "text" writes numbers and formulas as ="..." text.
 - cp70: diffWorkbooks(before, after) lists removed and added sheets, then changed inputs and names, compared as typed.
+- cp71: protect locks cells against writes that change their input; undo, insert and delete pass through.

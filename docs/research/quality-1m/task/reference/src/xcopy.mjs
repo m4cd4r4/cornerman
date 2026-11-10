@@ -65,6 +65,7 @@ export function addBookCopy(book, find, list) {
     const sc = CORE.get(src.sheet);
     const tc = CORE.get(tgt.sheet);
     const w = copyWrites({ get: sc.input }, f.cells, t.cells).map(([k, x, s]) => [k, requalify(x, src.name, tgt.name.toUpperCase()), s]);
+    tc.layers.locked(w); // cp71
     tc.history.group(() => {
       tc.writeRaw(w);
       tc.history.record(tc.layers.write("formats", w.map(([k, , s]) => [k, sc.layers.L.formats.get(s)])));
