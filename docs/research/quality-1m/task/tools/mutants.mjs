@@ -422,6 +422,15 @@ const MUTANTS = [
   { name: "switch-default-always-last", file: "choose.mjs", find: "  if (args.length % 2 === 0) return", replace: "  if (args.length > 3) return", target: "cp60" },
   { name: "switch-eager-cases", file: "choose.mjs", find: "  for (let i = 1; i + 1 < args.length; i += 2) {", replace: "  for (let j = 1; j + 1 < args.length; j += 2) { const e = evaluate(args[j], ctx); if (isError(e)) return e; }\n  for (let i = 1; i + 1 < args.length; i += 2) {", target: "cp60" },
   { name: "switch-loose-types", file: "choose.mjs", find: "  if (typeof x !== typeof y) return false;", replace: "  if (typeof x !== typeof y) return String(x) === String(y);", target: "cp60" },
+  { name: "find-not-found-value", file: "search.mjs", find: "makeError(\"#N/A\", ctx.cell, `${fn}: not found`)", replace: "makeError(\"#VALUE!\", ctx.cell, `${fn}: not found`)", target: "cp61" },
+  { name: "search-tilde-escape", file: "search.mjs", find: "  for (const ch of p) src += ch === \"?\" ? ANY : ch === \"*\" ? RUN : literal(ch);", replace: "  for (let i = 0; i < p.length; i++) {\n    const ch = p[i];\n    if (ch === \"~\" && \"?*~\".includes(p[i + 1] || \"\")) { src += literal(p[++i]); continue; }\n    src += ch === \"?\" ? ANY : ch === \"*\" ? RUN : literal(ch);\n  }", target: "cp61" },
+  { name: "search-case-sensitive", file: "search.mjs", find: "  return new RegExp(src, \"i\");", replace: "  return new RegExp(src);", target: "cp61" },
+  { name: "find-ignores-case", file: "search.mjs", find: "    if (!search) at = w.indexOf(f, start - 1);", replace: "    if (!search) at = w.toLowerCase().indexOf(f.toLowerCase(), start - 1);", target: "cp61" },
+  { name: "search-no-wildcards", file: "search.mjs", find: "src += ch === \"?\" ? ANY : ch === \"*\" ? RUN : literal(ch);", replace: "src += literal(ch);", target: "cp61" },
+  { name: "find-has-wildcards", file: "search.mjs", find: "    if (!search) at = w.indexOf(f, start - 1);", replace: "    if (!search) { const m = new RegExp(wildcard(f).source).exec(w.slice(start - 1)); at = m ? m.index + start - 1 : -1; }", target: "cp61" },
+  { name: "substitute-instance-ignored", file: "search.mjs", find: "  if (n === undefined) return t.split(old).join(rep);", replace: "  return t.split(old).join(rep);", target: "cp61" },
+  { name: "substitute-overlapping-count", file: "search.mjs", find: "at < 0 ? 0 : at + old.length", replace: "at < 0 ? 0 : at + 1", target: "cp61" },
+  { name: "search-start-past-end", file: "search.mjs", find: " || start > w.length + 1)", replace: ")", target: "cp61" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
