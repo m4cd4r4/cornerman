@@ -253,8 +253,10 @@ export function makeSheet(init, order = "priority", decimal = ".") {
       const text = opts.formulas ? (k) => (layers.L.covered.has(k) ? "" : inputs.get(k) ?? "") : shown;
       return toCSV(sorted(inputs.keys()), text, layers.L);
     },
-    fromCSV(text, at = "A1") {
-      writeAll(layers.check(csvWrites(text, at)));
+    fromCSV(text, at = "A1", opts = undefined) {
+      const w = csvWrites(text, at, opts);
+      writeAll(layers.check(w));
+      return w.header; // cp69: the header record, with opts.header
     },
     undo: () => history.undo(applyEntry),
     redo: () => history.redo(applyEntry),
