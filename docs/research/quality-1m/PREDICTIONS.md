@@ -59,3 +59,14 @@ before Stage 3, never a published comparison.
   (`globalThis.eval(`), with two new cases in `tools/rule-negatives.mjs` (18/18 OK). A scorer
   bug fix found on CM pilot data; no prediction, threshold, claim rule or K rule changed.
   K = 32, from the Default pilot (work passed 350,000 before its cp32 request).
+- 2026-11-11 (before the full test): the cornerman install is pinned. Both pilots installed from
+  GitHub main unpinned and logged only "0.7.2": pilot 1 got 7728e73, pilot 2 got 90eb44d. The full
+  test installs tag v0.7.2 (a8c3653) from a checked local clone and logs the sha
+  (`harness/arm.mjs`, CM_SHA). On the headless relay path v0.7.2 differs from pilot 2 in what the
+  agent is told, not in the runner: the nudge text is reworded with the same steps, and save.mjs
+  now prints a "save again" note when a handover lacks "Read first", "Decided, not yet applied" or
+  "Open questions" (all 5 pilot 2 handovers lacked them, so it would have fired on each save).
+  The runner (`scripts/run.mjs`, `lib/run.mjs`, resume prompt, stall guard) is unchanged. Pilot 2's
+  CM-250 numbers therefore describe 90eb44d; they were calibration only and K comes from Default,
+  which has no plugin, so K stays 32. No prediction, threshold or claim rule changed. Pilot run
+  folders moved to I:/Scratch/_q1m-pilot so compare.mjs reads only full-test runs.

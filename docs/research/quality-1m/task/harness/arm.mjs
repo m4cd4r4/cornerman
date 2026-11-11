@@ -6,7 +6,7 @@
 // Every arm: its own HOME and CLAUDE_CONFIG_DIR with the same config floor (the "trim" profile:
 // ~/.claude CLAUDE.md + rules at 5468e7a8 plus each local skill's SKILL.md; no hooks, no MCPs),
 // the same start prompt (START-PROMPT.md), the same tools. CM arms add the cornerman plugin from
-// GitHub and run through its relay (plugin scripts/run.mjs --nudge-at N). Default and Compact-250
+// GitHub, pinned to tag v0.7.2 (CM_SHA below), and run through its relay (plugin scripts/run.mjs --nudge-at N). Default and Compact-250
 // run one session and resume that same session if the turn ends before ALL DONE.
 // A usage-limit stop waits and resumes; it is logged, never scored as a failure.
 import { execFileSync, spawn, spawnSync } from "node:child_process";
@@ -71,9 +71,9 @@ function setup() {
   sh("git", ["add", "-A"], { cwd: REPO });
   sh("git", ["commit", "-q", "-m", "start"], { cwd: REPO });
   if (nudge) {
-    sh(CLAUDE, ["plugin", "marketplace", "add", "https://github.com/m4cd4r4/cornerman"], { cwd: HOME });
+    sh(CLAUDE, ["plugin", "marketplace", "add", pinnedCornerman()], { cwd: HOME });
     sh(CLAUDE, ["plugin", "install", "cornerman@cornerman"], { cwd: HOME });
-    events(`setup ${name}: cornerman ${pluginVersion()} installed`);
+    events(`setup ${name}: cornerman ${pluginVersion()} installed from ${CM_TAG} at ${CM_SHA} (pinned)`);
   }
   events(`setup ${name}: ready at ${REPO}`);
 }
@@ -95,6 +95,23 @@ function copyProfile() {
     n++;
   }
   events(`setup ${name}: profile trim (${rev}), ${n} skills`);
+}
+
+// Pilots 1 and 2 installed from GitHub main, unpinned: they got 7728e73 and 90eb44d, both
+// reporting "0.7.2". The full test pins the released tag (re-freeze note 2026-11-11 in
+// PREDICTIONS.md). One clone, outside _q1m so compare.mjs never reads it, checked on every setup.
+const CM_TAG = "v0.7.2", CM_SHA = "a8c36539063ae3871745a41d46be376d873e84fd";
+const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}`;
+function pinnedCornerman() {
+  const git = (...a) => execFileSync("git", a, { encoding: "utf8" }).trim();
+  if (!existsSync(CM_DIR)) {
+    git("clone", "--quiet", "https://github.com/m4cd4r4/cornerman", CM_DIR);
+    git("-C", CM_DIR, "-c", "advice.detachedHead=false", "checkout", "--quiet", CM_SHA);
+  }
+  const head = git("-C", CM_DIR, "rev-parse", "HEAD");
+  const dirty = git("-C", CM_DIR, "status", "--porcelain");
+  if (head !== CM_SHA || dirty) throw new Error(`${CM_DIR} is at ${head}${dirty ? " with local changes" : ""}, expected clean ${CM_SHA}`);
+  return CM_DIR;
 }
 
 function pluginBase() { return join(CONFIG, "plugins", "cache", "cornerman", "cornerman"); }
