@@ -43,7 +43,9 @@ and no displayed text; it travels with copies and fills as number formats do (ch
   move, the styles stay with the cells. This is NOT what you might expect.
 - Inserted rows and columns have no style, and a style in a deleted row or column is gone; other
   styles move with their cells (checkpoints 23 to 25). This is NOT what Excel does (Excel gives an
-  inserted row the formatting of the row above). Undoing an insert or delete puts every style back.
+  inserted row the formatting of the row above). Undoing an insert or delete puts every style back. An insert or delete
+  that moves or removes a style is recorded as an undo step (checkpoint 27) even on a sheet where
+  no cell holds an input.
 - `clear` (checkpoint 75), `replace` (checkpoint 51) and writing inputs leave styles alone.
   Protected cells (checkpoint 71) and covered cells of a merge (checkpoint 47) can be styled.
 - Styles are not values: `value`, `text`, `toCSV`, `exportJSON` and the rest give what they gave

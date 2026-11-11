@@ -11,7 +11,8 @@
   column touched must not pass `ZZ`. Bad arguments throw `{ code: "#ARG", cell: String(at),
   message }` and change nothing.
 - If `insertCols` would move a non-empty cell past column `ZZ`, it throws `{ code: "#FULL",
-  cell: String(at), message }` and changes nothing.
+  cell: String(at), message }` and changes nothing. As in checkpoint 23, the argument checks come
+  first: a call that fails both is `#ARG`.
 
 ## Everything else
 

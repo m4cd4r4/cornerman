@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // tdd-guard:allow - research scorer, proven by tools/probe-selftest.mjs.
 // Score the recall probes the agent wrote into PROBES.md against harness/probes.json.
-//   node check-probes.mjs --answers <repo>/PROBES.md [--git <repo>] [--key <probes.json>] [--json]
+//   node check-probes.mjs --answers <repo>/PROBES.md [--git <repo> [--head <sha>]] [--key <probes.json>] [--json]
 // Answer lines look like `P1.3: 1e-9`. A missing line scores wrong. Exact match after the
 // normalisation below; no judge. git-files answers are keyed from the run's own git history.
 import { readFileSync, existsSync } from "node:fs";
@@ -13,6 +13,7 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 function arg(n) { const i = process.argv.indexOf(n); return i === -1 ? null : process.argv[i + 1]; }
 const ANSWERS = arg("--answers");
 const GIT = arg("--git");
+const HEAD = arg("--head");
 const KEY = arg("--key") || resolve(HERE, "..", "harness", "probes.json");
 const JSON_OUT = process.argv.includes("--json");
 if (!ANSWERS) throw new Error("need --answers <PROBES.md>");
@@ -31,14 +32,21 @@ const list = (s) => unwrap(s).split(/\s*[,;]\s*/).map(unwrap).filter(Boolean);
 const cpOf = (s) => { const m = norm(s).match(/^(?:cp|checkpoint)\s*0*(\d{1,2})$/); return m ? `cp${m[1].padStart(2, "0")}` : null; };
 const path = (s) => unwrap(s).replace(/\\/g, "/").replace(/^\.\//, "");
 
+// Key = the src files changed by EVERY `cpNN: ...` commit reachable from --head (the commit the
+// gate logged when the probe was answered; HEAD when not given). Both pilot 2 runs made more than
+// one commit for a checkpoint (Default 6, CM-250 5); keying on the newest alone marked a full
+// answer wrong, and a commit made after the probe could change the key.
 function gitFiles(cp) {
   if (!GIT) return null;
-  const log = spawnSync("git", ["log", "--format=%H %s"], { cwd: GIT, encoding: "utf8" });
+  const log = spawnSync("git", ["log", "--format=%H %s", HEAD || "HEAD"], { cwd: GIT, encoding: "utf8" });
   if (log.status !== 0) return null;
-  const hit = log.stdout.split("\n").find((l) => new RegExp(`^\\w+ ${cp}: \\S`).test(l));
-  if (!hit) return [];
-  const show = spawnSync("git", ["show", "--name-only", "--format=", hit.split(" ")[0]], { cwd: GIT, encoding: "utf8" });
-  return show.stdout.split("\n").map((s) => s.trim()).filter((f) => f.startsWith("src/")).sort();
+  const hits = log.stdout.split("\n").filter((l) => new RegExp(`^\\w+ ${cp}: \\S`).test(l));
+  const files = new Set();
+  for (const hit of hits) {
+    const show = spawnSync("git", ["show", "--name-only", "--format=", hit.split(" ")[0]], { cwd: GIT, encoding: "utf8" });
+    for (const f of show.stdout.split("\n").map((s) => s.trim())) if (f.startsWith("src/")) files.add(f);
+  }
+  return [...files].sort();
 }
 
 function score(q, raw) {

@@ -14,7 +14,10 @@ the given column of that row.
 - `column` is read as in arithmetic and truncated toward zero. Column 1 is the table's first
   column. A column below 1 or past the table's last column is `#REF!` (`cell` = the formula cell).
   This is NOT what Excel does (Excel gives `#VALUE!` for a column below 1).
-- All three arguments are evaluated, and errors among them follow the checkpoint 4 rules.
+- All three arguments are evaluated, and errors among them follow the checkpoint 4 rules. An
+  error in an argument comes before the function's own checks: if any argument is an error, the
+  result is the winning error among the arguments, and no column check or search is made. So
+  `VLOOKUP(1/0, A1:B9, 0)` is `#DIV/0!`, not the `#REF!` of column 0.
 
 ## Matching
 

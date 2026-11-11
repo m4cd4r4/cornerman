@@ -10,6 +10,8 @@ A value is read as a condition like this:
 - Text is `#VALUE!` (`cell` = the formula cell), even the text `"TRUE"`. This is NOT what Excel
   does.
 - An error stays that error.
+- A range, or a name for a range, is not a value: as the condition of `IF` or the argument of
+  `NOT` it is `#VALUE!` (checkpoint 13).
 
 ## IF
 

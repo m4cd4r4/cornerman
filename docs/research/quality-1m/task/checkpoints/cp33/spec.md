@@ -31,4 +31,6 @@ They throw the same errors as the methods they stand for (an invalid address is 
 
 ## Workbook
 
-`book.get(name)` is the same as `book.sheet(name)`.
+`book.get(name)` is the same as `book.sheet(name)`. Sheet and workbook methods do not
+depend on how they are called: `const { get } = book; get("Main")` and
+`const { set } = sheet; set("A1", "1")` both work.

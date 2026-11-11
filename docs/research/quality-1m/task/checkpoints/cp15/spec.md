@@ -17,5 +17,7 @@ text is `#VALUE!`. Errors follow the checkpoint 4 rules.
 - It skips error values: an error in a range cell, or a direct argument whose value is an error, is
   not counted and does not make COUNT an error.
 - The only errors COUNT can give come from the arguments themselves, not their values: a range that
-  is `#REF!` (checkpoint 13), or an undefined name used as an argument (`#NAME?`).
+  is `#REF!` (checkpoint 13), or an argument that is nothing but an undefined name
+  (`COUNT(nope)` is `#NAME?`). An undefined name inside a larger expression is a direct argument
+  whose value is an error, so it is skipped: `COUNT(nope+1, 5)` is 1.
 - `COUNT()` is `0`.

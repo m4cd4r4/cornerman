@@ -15,7 +15,9 @@ adds the products.
   arguments are wrong, the winner by the checkpoint 4 rules is the result.
 - All ranges must have the same width and the same height, otherwise `#VALUE!` (`cell` = the
   formula cell). A one-row range and a one-column range of the same length are not the same
-  shape.
+  shape. The shape check needs no cell values and comes before them: ranges of different shapes
+  give `#VALUE!` even when a cell of a range holds an error of higher priority. It still
+  competes with the wrong arguments above by the checkpoint 4 rules (a bad range is `#REF!`).
 
 ## Values
 

@@ -20,6 +20,8 @@
   cell). So does a range of more than 10,000 cells.
 - A range may only be used as a function argument. Anywhere else (`=A1:A3`, `=A1:A2+1`) it is
   `#VALUE!` (`cell` = the formula cell). This is NOT what Excel does.
+- `#REF!` comes first: an invalid or over-size range is `#REF!` wherever it is written, also
+  outside a function argument. `=A0:A2` and `=A0:A2+1` are `#REF!`, not `#VALUE!`.
 - Every cell of a valid range is referred to by the formula (checkpoints 9 and 10), including
   empty ones. An invalid or over-size range refers to no cells.
 

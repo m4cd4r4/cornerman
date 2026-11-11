@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Check the five chat-only house rules (START-PROMPT.md) on one tree.
+// Check the five chat-only house rules (harness/HOUSE-RULES.md, printed once by the gate) on one tree.
 //   node check-rules.mjs --tree <snapshot or repo> --state <run>/gate-state.json --upto <cp> [--git <repo with .git>] [--json]
 // Rules 1-4 read the tree; rule 5 reads git history when --git is given.
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";

@@ -12,7 +12,9 @@ Two numbers `a` and `b` are equal when `|a - b| <= 1e-9 * max(1, |a|, |b|)`.
 ## Evaluation counter
 
 - `sheet.stats()` returns an object with an `evaluations` field: the number of times any formula
-  cell has been evaluated since the sheet was created.
+  cell has been evaluated since the sheet was created. Each call returns a new object; an object
+  returned earlier does not change.
+- `set` never evaluates anything. Evaluation happens only inside `get` and `display`.
 - Calling `get` or `display` on a formula cell whose inputs have not changed since its last
   evaluation does not evaluate it again. `set` on any cell may mark every formula as needing
   evaluation; a later checkpoint narrows this.

@@ -46,6 +46,12 @@ that matches `key`, by `type`.
 
 ## Other rules
 
+- For both functions, an error in an argument comes before the function's own checks (as in
+  checkpoint 21). When any argument is an error (an error value, a bad range, an unknown name, or
+  a `range` that is not a range), the result is the winner among those errors by the checkpoint 4
+  rules. The one-row-or-column check, the `type` check and the row and column position checks
+  are made only when no argument is an error. So `MATCH(1/0, A5:A9, 7)` and
+  `INDEX(A1:C3, 1/0, 9)` are both `#DIV/0!`.
 - Every cell of the `range` of either function is referred to by the formula (checkpoints 9 and
   10), whichever cell is read, so it appears in `precedents`, and insert and delete rewrite the
   range as in checkpoints 23-25.

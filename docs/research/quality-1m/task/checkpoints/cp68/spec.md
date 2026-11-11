@@ -14,7 +14,9 @@ A workbook (checkpoint 31) can now copy cells from one of its sheets to another.
 
 Between two different sheets, each source cell's input is first moved as `copy` moves it (relative
 parts shift by the offset from the source's top-left to `to`, parts marked `$` stay, references
-with a sheet name shift too, and a reference moved off the sheet becomes `#REF!`). Then:
+with a sheet name shift too, and a reference moved off the sheet becomes `#REF!`). A reference
+whose row and column both stay where they are (an offset of 0) does not move, so it keeps the case
+it was typed in (checkpoint 23). Then:
 
 1. Every reference without a sheet name gets the **source** sheet's name, written as the workbook
    has it (as typed in `addSheet` or `renameSheet`), so it still reads the source sheet's cells.

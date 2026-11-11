@@ -13,8 +13,8 @@ counts. Only formula cells can be on a cycle.
 
 - Every cell on a cycle evaluates to the error `#CYCLE!`, whatever else its formula would give.
   Its `cell` is that cell's own address: in the two-cell example, `A1` gives `#CYCLE!` with `cell`
-  `A1` and `B1` gives `#CYCLE!` with `cell` `B1`. This is NOT what Excel does (Excel shows 0 and
-  a warning).
+  `A1` and `B1` gives `#CYCLE!` with `cell` `B1`. Its `message` is exactly `circular reference`.
+  This is NOT what Excel does (Excel shows 0 and a warning).
 - A cell that is not on a cycle but reads a cycle cell gets that error by the normal propagation
   rules (checkpoint 4): same `code`, same `cell` (the cycle cell it came from).
 - `#CYCLE!` has the highest priority of all errors:

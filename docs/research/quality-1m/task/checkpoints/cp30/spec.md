@@ -26,7 +26,7 @@
 ## Loading
 
 - The new sheet has the saved inputs and names and nothing else. Its formulas are evaluated when
-  first read, as for any sheet, and counted in its own `stats()`, which starts at `0`. Its undo and
+  first read, as for any sheet, and counted in its own `stats()`, which starts as exactly `{ evaluations: 0 }`. Its undo and
   redo lists are empty: `undo()` returns `false`.
 - `loadSheet(s.save()).save()` returns the same text as `s.save()`.
 - The loaded sheet and the sheet that was saved are independent: changing one does not change the

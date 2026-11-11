@@ -31,6 +31,9 @@ const expect = (cond, msg) => { if (!cond) fails.push(msg); };
 try {
   let r = gate("next");
   expect(r.status === 0 && /Checkpoint 1/.test(r.stdout), "first next reveals cp01");
+  expect(/House rules/.test(r.stdout) && /cpNN: <short title>/.test(r.stdout), "first reveal carries the house rules");
+  expect(!/House rules|new Function/.test(readFileSync(join(HERE, "START-PROMPT.md"), "utf8")), "start prompt holds no house rules");
+  let rulesAgain = 0;
   r = gate("next");
   expect(r.status === 1 && /Not yet/.test(r.stdout), "stub is refused");
   cpSync(join(TASK, "reference", "src"), join(repo, "src"), { recursive: true });
@@ -40,6 +43,7 @@ try {
   const stops = [];
   for (let i = 2; i <= total + 1; i++) {
     r = gate("next");
+    if (/House rules/.test(r.stdout)) rulesAgain++;
     const probe = probes.find((p) => p.after === `cp${String(i - 1).padStart(2, "0")}`);
     if (probe) {
       // Refused with only ids + asks; a partial PROBES.md is refused again; a full one passes.
@@ -59,6 +63,7 @@ try {
     else expect(r.status === 0 && new RegExp(`Checkpoint ${i}\\b`).test(r.stdout), `reveals cp${String(i).padStart(2, "0")}`);
   }
   expect(stops.join(",") === probes.map((p) => p.id).join(","), `probe stops ${stops.join(",")}`);
+  expect(rulesAgain === 0, `house rules shown once only (shown again ${rulesAgain} times)`);
   r = gate("status");
   expect(JSON.parse(r.stdout).done === true, "status done");
   const snaps = readdirSync(join(run, "snapshots"));

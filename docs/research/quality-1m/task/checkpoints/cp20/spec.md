@@ -14,6 +14,8 @@
 `fallback`.
 
 - Exactly two arguments. Any other number is `#VALUE!` (`cell` = the formula cell).
+- As in `ISERROR`, a range (or a name for a range) as `x` is `#VALUE!`, which is an error and is
+  caught: `IFERROR(A1:A3, 7)` is 7.
 - `fallback` is evaluated only when it is needed. If it is needed and is itself an error, that error
   is the result.
 - `#CYCLE!` is never caught: if `x` is `#CYCLE!`, so is the result. Every other error is caught.

@@ -35,7 +35,9 @@ even to the new spelling), no undo list changes, and it returns `0`. This is NOT
   written as `newName` exactly as typed; the rest of the formula keeps its text. A `LET`'s own name
   and the uses that name hides are not touched, so with a sheet name `RATE`,
   `=LET(rate, 3, rate) + rate` becomes `=LET(rate, 3, rate) + NewRate`. This is NOT what a search
-  and replace of the text would do.
+  and replace of the text would do. A `LET` whose arguments are not valid (checkpoint 62) defines
+  no name, so a name written where its name would stand is an ordinary use: `=LET(rate, 2)`
+  becomes `=LET(NewRate, 2)`.
 - Strings, function names (`RATE(...)` is a call), sheet names before `!` (a sheet called `Rate`,
   in `=Rate!A1`), and formulas that do not parse are never rewritten. Values are never rewritten.
 - A formula that already named `newName` (and gave `#NAME?`) now uses the renamed name.
@@ -46,7 +48,8 @@ even to the new spelling), no undo list changes, and it returns `0`. This is NOT
 - Rewritten inputs are not checked: a protected cell (checkpoint 71) is rewritten like any other,
   and a formula that the longer name takes past the limits of checkpoint 67 is kept as rewritten.
   This is NOT what you might expect.
-- Each sheet with rewritten inputs gets one change event (checkpoint 65) listing them.
+- Each sheet with rewritten inputs gets one change event (checkpoint 65) listing them. The events
+  are fired sheet by sheet in `sheetNames()` order.
 
 ## Undo and saving
 

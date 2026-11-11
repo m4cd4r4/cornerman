@@ -11,7 +11,7 @@ import { readFileSync, readdirSync, existsSync, mkdirSync, writeFileSync } from 
 import { join, dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { timeline, workAt } from "./tokens.mjs";
+import { timeline, workAt, stateAt } from "./tokens.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CPS = resolve(HERE, "..", "checkpoints");
@@ -79,20 +79,29 @@ const r5 = spawnSync(process.execPath, [join(HERE, "check-rules.mjs"), "--tree",
 let commitViolations = [];
 try { commitViolations = JSON.parse(r5.stdout.trim()).violations.filter((v) => v.rule === 5); } catch {}
 
-// Probes: each probe scored from the copy the gate froze when it was answered.
+// Probes: each probe scored from the copy the gate froze when it was answered, with git-files
+// answers keyed from history up to the head the gate logged then. atAsk says what the agent held
+// when it was asked: context size, and the work and time since its last clear or compaction.
 const key = JSON.parse(readFileSync(resolve(HERE, "..", "harness", "probes.json"), "utf8"));
 const probes = [];
 for (const p of key.probes) {
   const f = join(RUN, `probes-${p.id}.md`);
-  if (!existsSync(f)) { probes.push({ id: p.id, answered: false, right: 0, total: p.questions.length }); continue; }
-  const r = spawnSync(process.execPath, [join(HERE, "check-probes.mjs"), "--answers", f, "--git", REPO, "--json"], { encoding: "utf8" });
+  const askedAt = events.find((e) => e.event === "probe-asked" && e.probe === p.id);
+  const answeredAt = events.find((e) => e.event === "probe-answered" && e.probe === p.id);
+  const atAsk = tl && askedAt ? stateAt(tl, Date.parse(askedAt.ts)) : null;
+  const workAtAsk = tl && askedAt ? workAt(tl, Date.parse(askedAt.ts)) : null;
+  if (!existsSync(f)) { probes.push({ id: p.id, answered: false, right: 0, total: p.questions.length, workAtAsk, atAsk }); continue; }
+  const head = answeredAt?.head ? ["--head", answeredAt.head] : [];
+  const r = spawnSync(process.execPath, [join(HERE, "check-probes.mjs"), "--answers", f, "--git", REPO, ...head, "--json"], { encoding: "utf8" });
   let j = null;
   try { j = JSON.parse(r.stdout.trim()); } catch {}
   const mine = (j?.rows || []).filter((x) => x.probe === p.id);
-  const askedAt = events.find((e) => e.event === "probe-asked" && e.probe === p.id);
-  probes.push({ id: p.id, answered: true, right: mine.filter((x) => x.ok).length, total: p.questions.length, rows: mine,
-    workAtAsk: tl && askedAt ? workAt(tl, Date.parse(askedAt.ts)) : null });
+  probes.push({ id: p.id, answered: true, right: mine.filter((x) => x.ok).length, total: p.questions.length, rows: mine, workAtAsk, atAsk });
 }
+
+// A violation that stays in the tree is counted once per snapshot above. Distinct = one per
+// (rule, file) over the whole run, so a single unfixed file does not read as dozens of slips.
+const distinct = new Set([...rows.flatMap((r) => r.rules || []), ...commitViolations].map((v) => `${v.rule}|${v.file}|${v.rule === 5 ? v.detail : ""}`));
 
 const late = K ? rows.slice(K - 1) : [];
 const summary = {
@@ -102,13 +111,14 @@ const summary = {
   k: K, latePassed: late.filter((r) => r.pass).length, lateTotal: late.length,
   regressions: regress.length,
   ruleViolations: rows.reduce((s, r) => s + (r.rules?.length || 0), 0) + commitViolations.length,
+  ruleViolationsDistinct: distinct.size,
   probesRight: probes.reduce((s, p) => s + p.right, 0), probesTotal: probes.reduce((s, p) => s + p.total, 0),
   tokens: tl ? { sessions: tl.sessions, compactions: tl.compactions, peak: tl.peak, work: tl.work } : null,
 };
 const result = { summary, rows, regress, commitViolations, probes };
 if (JSON_FILE) writeFileSync(JSON_FILE, JSON.stringify(result, null, 2));
 
-console.log(`reached ${summary.reached}/${summary.total}  passed ${summary.passed}  late ${K ? `${summary.latePassed}/${summary.lateTotal} from cp${String(K).padStart(2, "0")}` : "-"}  regressions ${summary.regressions}  rule violations ${summary.ruleViolations}  probes ${summary.probesRight}/${summary.probesTotal}`);
+console.log(`reached ${summary.reached}/${summary.total}  passed ${summary.passed}  late ${K ? `${summary.latePassed}/${summary.lateTotal} from cp${String(K).padStart(2, "0")}` : "-"}  regressions ${summary.regressions}  rule violations ${summary.ruleViolations} (${summary.ruleViolationsDistinct} distinct)  probes ${summary.probesRight}/${summary.probesTotal}`);
 if (tl) console.log(`tokens: sessions ${tl.sessions}  compactions ${tl.compactions}  peak ${tl.peak}  work ${tl.work}`);
 for (const r of rows) {
   if (r.pass && !r.rules?.length) continue;

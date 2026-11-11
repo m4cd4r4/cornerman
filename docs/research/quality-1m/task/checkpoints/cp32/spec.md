@@ -52,6 +52,9 @@ sheet only.
 - Cells on other sheets that these formulas read are evaluated when read, if they need it, and
   counted on their own sheet. They are not in the returned array. A formula on another sheet that
   nothing on this sheet reads is not evaluated.
+- A cell on a cycle gets `#CYCLE!` without reading the cells it refers to. So `recalc()` never
+  evaluates a cell on another sheet only because a cycle cell of this sheet refers to it: in a
+  cycle `P!B1`, `Q!B1`, `P!B2`, `Q!B2`, `P.recalc()` leaves `Q`'s `evaluations` at 0.
 - The order rule of checkpoint 12 applies with one change: a cell comes after every cell on its own
   sheet that it depends on, directly or through cells on other sheets. So if `A1` = `=Beta!A1`,
   `Beta!A1` = `=Main!C2` and `C2` = `=3` on `Main`, then `Main.recalc()` returns `["C2", "A1"]`.

@@ -49,7 +49,8 @@ in that order. Changing the object it returned does not change the rule.
 - `copy` does not copy rules: target cells keep the rules they had, and its writes are not
   checked. This is NOT what Excel does (Excel's paste gives the target the source's validation).
 - Insert and delete (checkpoints 23-25) move a rule with its cell; a rule in a deleted row or
-  column is gone; inserted cells have none.
+  column is gone; inserted cells have none. An insert or delete that moves or removes a rule is
+  recorded as one undo step (checkpoint 27) even when it moves no input, formula or name.
 - Undo (checkpoint 27): one `setValidation` call is one undo step; a call that changes no cell's
   rule is not recorded. Undo and redo of other changes are never checked.
 - Rules are per sheet. `save()` and `book.save()` do not write rules in this checkpoint.

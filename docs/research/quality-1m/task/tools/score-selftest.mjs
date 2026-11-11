@@ -9,7 +9,7 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { timeline, workAt } from "./tokens.mjs";
+import { timeline, workAt, stateAt } from "./tokens.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const N = readdirSync(join(HERE, "..", "checkpoints")).filter((d) => /^cp\d\d$/.test(d)).length;
@@ -52,7 +52,7 @@ function edit(file, find, replace) {
   expect(s && s.reached === N && s.passed === N, `good: ${N}/${N} passed (got ${s?.passed})`);
   expect(s && s.latePassed === N - 19 && s.lateTotal === N - 19, `good: late segment cp20-${LAST} is ${N - 19}/${N - 19}`);
   expect(s && s.regressions === 0, "good: no regressions");
-  expect(s && s.ruleViolations === 0, `good: no rule violations (got ${s?.ruleViolations})`);
+  expect(s && s.ruleViolations === 0 && s.ruleViolationsDistinct === 0, `good: no rule violations (got ${s?.ruleViolations})`);
 }
 
 // 2. Broken run.
@@ -71,6 +71,7 @@ function edit(file, find, replace) {
   expect(row(LAST) && !row(LAST).reached && !row(LAST).pass, `broken: ${LAST} not reached, scored fail`);
   expect(row("cp30")?.rules?.some((v) => v.rule === 1), "broken: eval at cp30 is a rule 1 violation");
   expect(!row("cp29")?.rules?.length, "broken: cp29 has no violations");
+  expect(j?.summary.ruleViolations === 1 && j?.summary.ruleViolationsDistinct === 1, `broken: one violation, one distinct (got ${j?.summary.ruleViolations}, ${j?.summary.ruleViolationsDistinct})`);
   expect(j?.regress.some((g) => g.cp === "cp06"), `broken: cp06 regression found in the final tree (got ${j?.regress.map((g) => g.cp).join(",")})`);
   expect(!j?.regress.some((g) => g.cp === "cp16"), "broken: cp16 is not a regression (it never passed)");
 }
@@ -99,6 +100,11 @@ function edit(file, find, replace) {
   expect(tl.work === 430, `tokens: work 430 (got ${tl.work})`);
   expect(tl.peak === 300 && tl.sessions === 2 && tl.compactions === 1, `tokens: peak 300, 2 sessions, 1 compaction (got ${tl.peak}, ${tl.sessions}, ${tl.compactions})`);
   expect(workAt(tl, t0 + 3500) === 200 && workAt(tl, t0 + 4000) === 350, "tokens: workAt by time");
+  const same = (got, want) => JSON.stringify(got) === JSON.stringify(want);
+  expect(stateAt(tl, t0) === null, "tokens: stateAt before the first message is null");
+  expect(same(stateAt(tl, t0 + 2000), { ctx: 200, resetKind: "none", resets: 0, workSinceReset: 200, msSinceReset: 1000 }), `tokens: stateAt before any reset (got ${JSON.stringify(stateAt(tl, t0 + 2000))})`);
+  expect(same(stateAt(tl, t0 + 4000), { ctx: 300, resetKind: "compacted", resets: 1, workSinceReset: 150, msSinceReset: 1000 }), `tokens: stateAt after a compaction (got ${JSON.stringify(stateAt(tl, t0 + 4000))})`);
+  expect(same(stateAt(tl, t0 + 7500), { ctx: 80, resetKind: "new-session", resets: 2, workSinceReset: 80, msSinceReset: 1500 }), `tokens: stateAt in a new session (got ${JSON.stringify(stateAt(tl, t0 + 7500))})`);
 }
 
 console.log(fails.length ? `SCORE SELFTEST FAIL (${fails.length})` : "SCORE SELFTEST OK");

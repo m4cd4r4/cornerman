@@ -8,7 +8,7 @@
   `at + count - 1` must not pass 9999. Otherwise it throws `{ code: "#ARG", cell: String(at),
   message }` and changes nothing.
 - If any non-empty cell would move past row 9999, it throws `{ code: "#FULL", cell: String(at),
-  message }` and changes nothing.
+  message }` and changes nothing. The argument checks come first: a call that fails both is `#ARG`.
 
 ## Formula text
 

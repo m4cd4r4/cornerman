@@ -4,6 +4,7 @@
 // Writes <repo>/.gate.json with its URL (the repo's gate.mjs reads it).
 // POST /next  - if every visible test so far passes: snapshot, log, write the next visible
 //               test into the repo, return its spec. Otherwise return the failures.
+//               The first reveal alone also carries HOUSE-RULES.md (chat-only, shown once).
 // GET /status - { current, total, done }
 // State lives in <run>/gate-state.json so a restart resumes where it was.
 // Recall probes (probes.json, never copied into the repo): after the checkpoint a probe follows,
@@ -134,7 +135,11 @@ function next() {
   const tail = state.current === ALL.length
     ? "\nThis is the last checkpoint. When its visible tests pass, run `node gate.mjs next` once more to finish.\n"
     : "\nWhen this checkpoint is done and committed, run `node gate.mjs next`.\n";
-  return { status: 200, body: `${spec}\nVisible tests written to test/visible/${cp}.test.mjs.\n${tail}` };
+  // The house rules are printed once, with the first checkpoint, for every arm. They used to sit
+  // in START-PROMPT.md, which the cornerman relay sends again at the start of every segment
+  // (plugin lib/run.mjs), so CM arms were reminded of them and the other arms were not.
+  const rules = state.current === 1 ? `${readFileSync(join(HERE, "HOUSE-RULES.md"), "utf8")}\n` : "";
+  return { status: 200, body: `${rules}${spec}\nVisible tests written to test/visible/${cp}.test.mjs.\n${tail}` };
 }
 
 const server = createServer((req, res) => {

@@ -29,7 +29,7 @@
         { "id": "P2.6", "ask": "What is the largest serial number YEAR accepts without an error? Answer a number.", "kind": "number", "answer": 2921940 },
         { "id": "P2.7", "ask": "B1 is part of a circular reference. Which error code does =IFERROR(B1, 0) return? Answer the code.", "kind": "text", "answer": "#CYCLE!" },
         { "id": "P2.8", "ask": "Which checkpoint first defined the { code, cell, message } error shape? Answer cpNN.", "kind": "checkpoint", "answer": "cp01" },
-        { "id": "P2.9", "ask": "List every error code a formula can evaluate to, in priority order, highest first, comma-separated.", "kind": "ordered", "answer": ["#CYCLE!", "#REF!", "#NAME?", "#N/A", "#VALUE!", "#DIV/0!"] },
+        { "id": "P2.9", "ask": "List the error codes of the priority order, highest first, comma-separated. #PARSE! is not in the order: leave it out.", "kind": "ordered", "answer": ["#CYCLE!", "#REF!", "#NAME?", "#N/A", "#VALUE!", "#DIV/0!"] },
         { "id": "P2.10", "ask": "A9 holds =SUM(A1:C1). After insertCols(\"B\"), what does getInput(\"A9\") return? Answer the exact text.", "kind": "text", "answer": "=SUM(A1:D1)" }
       ]
     },

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 // tdd-guard:allow - research analysis; bootstrap checked by --selftest.
-// compare.mjs: late-segment pass rate per arm vs Default, paired bootstrap 95% interval.
-//   node compare.mjs --k <K> --runs <dir holding <arm>-<model>-rN/score.json> [--model sonnet] [--md <file>]
+// compare.mjs: late-segment pass rate per arm vs a base arm (Default), bootstrap 95% interval,
+// and the verdict word of the frozen claim rule.
+//   node compare.mjs --k <K> --runs <dir holding <arm>-<model>-rN/score.json> [--model sonnet] [--base default] [--md <file>]
 //   node compare.mjs --selftest
 // Pairing: for arm A vs Default, each bootstrap draw resamples run indices (with replacement)
 // within each arm and late checkpoints (shared across arms), so a checkpoint that is hard for
@@ -37,7 +38,10 @@ if (process.argv.includes("--selftest")) {
   const same = pairedBootstrap([ones, zeros], [ones, zeros]);
   const better = pairedBootstrap([ones, ones, ones], [zeros, zeros, zeros]);
   const mixed = pairedBootstrap([[1, 1, 1, 0, 0, 1, 1, 1, 1, 0]], [[1, 0, 1, 0, 0, 1, 0, 1, 1, 0]]);
-  const ok = Math.abs(same.diff) < 1e-12 && better.diff === 1 && better.lo === 1 && Math.abs(mixed.diff - 0.2) < 1e-12 && mixed.lo <= 0.2 && mixed.hi >= 0.2;
+  const word = (b) => (b.lo > 0 ? "helps" : b.hi < 0 ? "hurts" : "none");
+  const worse = pairedBootstrap([zeros, zeros, zeros], [ones, ones, ones]);
+  const ok = Math.abs(same.diff) < 1e-12 && better.diff === 1 && better.lo === 1 && Math.abs(mixed.diff - 0.2) < 1e-12 && mixed.lo <= 0.2 && mixed.hi >= 0.2
+    && word(better) === "helps" && word(worse) === "hurts" && word(same) === "none" && word({ lo: 0, hi: 0.1 }) === "none";
   console.log(ok ? "COMPARE SELFTEST OK" : `COMPARE SELFTEST FAIL ${JSON.stringify({ same, better, mixed })}`);
   process.exit(ok ? 0 : 1);
 }
@@ -59,21 +63,28 @@ for (const name of readdirSync(DIR)) {
   byArm.get(m[1]).push({ name, late, s: j.summary });
 }
 const order = ["default", "compact250", "cm180", "cm250", "cm350", "cm500"].filter((a) => byArm.has(a));
-const base = byArm.get("default");
+// --base picks the arm every other arm is compared with. Only cm250 vs default is confirmatory
+// (PREDICTIONS.md); every other pair, and any other base, is exploratory and labelled so.
+const BASE = arg("--base", "default");
+if (!order.includes(BASE) && byArm.size) throw new Error(`--base ${BASE} has no scored run`);
+const base = byArm.get(BASE);
+// The frozen claim rule. A bound of exactly 0 spans 0: the interval must exclude it.
+const verdict = (b, n) => (b.lo > 0 ? "helps" : b.hi < 0 ? "hurts" : `no large effect at n = ${n}`);
 const lastCp = Math.max(0, ...[...byArm.values()].flat().map((r) => K - 1 + r.late.length));
 const lines = [`Late segment cp${String(K).padStart(2, "0")}-cp${String(lastCp).padStart(2, "0")}, ${MODEL}.`, "",
-  "| Arm | Runs | Late pass | vs Default (95% interval) | Regressions | Rule violations | Probes right | Peak context | Work tokens |",
-  "|:--|--:|--:|:--|--:|--:|--:|--:|--:|"];
+  `| Arm | Runs | Late pass | vs ${BASE} (95% interval) | Verdict | Regressions | Rule violations (distinct) | Probes right | Peak context | Work tokens |`,
+  "|:--|--:|--:|:--|:--|--:|--:|--:|--:|--:|"];
 for (const a of order) {
   const runs = byArm.get(a);
   const passN = runs.reduce((s, r) => s + r.late.reduce((x, y) => x + y, 0), 0), tot = runs.reduce((s, r) => s + r.late.length, 0);
-  let vs = "-";
-  if (a !== "default" && base) {
+  let vs = "-", word = "-";
+  if (a !== BASE && base) {
     const b = pairedBootstrap(runs.map((r) => r.late), base.map((r) => r.late));
     vs = `${(b.diff * 100).toFixed(1)} pts (${(b.lo * 100).toFixed(1)} to ${(b.hi * 100).toFixed(1)})`;
+    word = `${verdict(b, Math.min(runs.length, base.length))}${a === "cm250" && BASE === "default" ? "" : " (exploratory)"}`;
   }
   const sum = (f) => runs.map(f).join(", ");
-  lines.push(`| ${a} | ${runs.length} | ${passN}/${tot} | ${vs} | ${sum((r) => r.s.regressions)} | ${sum((r) => r.s.ruleViolations)} | ${sum((r) => `${r.s.probesRight}/${r.s.probesTotal}`)} | ${sum((r) => r.s.tokens?.peak ?? "?")} | ${sum((r) => r.s.tokens?.work ?? "?")} |`);
+  lines.push(`| ${a} | ${runs.length} | ${passN}/${tot} | ${vs} | ${word} | ${sum((r) => r.s.regressions)} | ${sum((r) => `${r.s.ruleViolations} (${r.s.ruleViolationsDistinct ?? "?"})`)} | ${sum((r) => `${r.s.probesRight}/${r.s.probesTotal}`)} | ${sum((r) => r.s.tokens?.peak ?? "?")} | ${sum((r) => r.s.tokens?.work ?? "?")} |`);
 }
 if (invalid.length) lines.push("", `INVALID, excluded: ${invalid.join(", ")}`);
 const text = lines.join("\n");

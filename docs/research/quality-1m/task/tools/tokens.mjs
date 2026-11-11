@@ -3,7 +3,7 @@
 // "Work tokens" at time t = for every session so far, its first context size plus every later
 // increase of context size (a compaction drop is not work; the growth after it is). This is the
 // material the agent has handled, comparable across arms that clear, compact or fill.
-//   import { timeline, workAt } from "./tokens.mjs"
+//   import { timeline, workAt, stateAt } from "./tokens.mjs"
 //   node tokens.mjs --transcripts <CLAUDE_CONFIG_DIR>/projects [--json]
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { join } from "node:path";
@@ -63,6 +63,26 @@ export function workAt(tl, ts) {
   let w = 0;
   for (const p of tl.points) { if (p.ts > ts) break; w = p.work; }
   return w;
+}
+
+// What the agent was holding at time ts: context size of the last message at or before it, and
+// how far back the last reset was. A reset is the first message of a new session ("new-session",
+// a clear or a relay restart) or the first message after a compaction ("compacted"); "none" means
+// the run has not reset yet. workSinceReset counts the reset message's own context (what the
+// fresh session was handed) plus everything after it. null before the first message.
+export function stateAt(tl, ts) {
+  let at = -1;
+  for (let i = 0; i < tl.points.length; i++) { if (tl.points[i].ts > ts) break; at = i; }
+  if (at === -1) return null;
+  let reset = 0, kind = "none", resets = 0;
+  for (let i = 1; i <= at; i++) {
+    const p = tl.points[i];
+    const k = p.compacted ? "compacted" : p.session !== tl.points[i - 1].session ? "new-session" : null;
+    if (k) { reset = i; kind = k; resets++; }
+  }
+  const before = reset === 0 ? 0 : tl.points[reset - 1].work;
+  const p = tl.points[at];
+  return { ctx: p.ctx, resetKind: kind, resets, workSinceReset: p.work - before, msSinceReset: ts - tl.points[reset].ts };
 }
 
 if (process.argv[1] && process.argv[1].endsWith("tokens.mjs")) {

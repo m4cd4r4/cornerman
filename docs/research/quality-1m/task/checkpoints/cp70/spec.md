@@ -24,6 +24,8 @@
 4. `{ kind: "name", sheet: null, name, before, after }` for each workbook name (checkpoint 53) that
    differs, sorted by name, written as `book.names()` writes them.
 
+"Sorted by name" is the plain string comparison of checkpoint 14, so `AB` comes before `A_B`.
+
 ## What counts as a difference
 
 - Inputs are compared exactly as typed. `=a1` and `=A1` differ, and so do `2` and `=1+1`, or `5`

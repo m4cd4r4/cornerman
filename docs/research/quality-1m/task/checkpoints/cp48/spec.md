@@ -6,8 +6,9 @@ A sheet can now reorder the rows of a range by the values in one of its columns.
 
 - `sheet.sort(target, column)` or `sheet.sort(target, column, opts)`: sorts the rows of the range
   `target` (an address or a range, as for `setFormat` in checkpoint 41) by the cells of `column`
-  inside it. `column` is a column's letters (`"B"`, case-insensitive). `opts` is left out, or an
-  object whose `descending` key is left out or a boolean. Returns `undefined`.
+  inside it. `column` is a column's letters (`"B"`, case-insensitive). `opts` is left out, or a
+  plain object (not `null`, not an array) whose `descending` key is left out or a boolean.
+  Returns `undefined`.
 
 ## The order
 

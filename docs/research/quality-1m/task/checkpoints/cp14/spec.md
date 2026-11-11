@@ -7,7 +7,8 @@
 - `sheet.removeName(name)`: removes it. Returns `true` if the name existed, otherwise `false`.
 - `sheet.names()`: a plain object mapping each name, upper case, to its target, in sorted key
   order. A cell target is its upper-case address (`"B2"`). A range target is written top-left
-  corner, then bottom-right (`"B3:A1"` is stored as `"A1:B3"`).
+  corner, then bottom-right (`"B3:A1"` is stored as `"A1:B3"`). Keys are sorted by plain string
+  comparison (code units, the default of `Array.prototype.sort`), so `_M` comes after `ZETA`.
 
 ## Valid names
 

@@ -10,7 +10,8 @@ A sheet or a workbook can now show numbers with a decimal comma, as many countri
   or `","`.
 - Options are checked as in checkpoint 34, before anything else, in this order: `options` is an
   object (`#ARG`, `cell` `""`), then `errorOrder`, then `decimal`. Any `decimal` other than the two
-  above throws `{ code: "#ARG", cell: String(decimal), message }`.
+  above throws `{ code: "#ARG", cell: String(decimal), message }`. A `decimal` key that is missing
+  or `undefined` means `"."`; `null` throws.
 - `loadWorkbook` checks `errorOrder` in its options like the others, but its error order still comes
   from the save text (checkpoint 35). Only `decimal` is taken from its options.
 - All sheets of a workbook use the workbook's `decimal`, including a sheet after it is removed or
