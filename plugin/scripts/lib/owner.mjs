@@ -87,7 +87,9 @@ function budget(env, timeout, { self = false } = {}) {
     return () => t;
   }
   const cap = timeoutFor(env, self ? Infinity : HOOK_TIMEOUT_MS);
-  return () => Math.min(cap, HOOK_BUDGET_MS - (Date.now() - hookStart));
+  // Whole milliseconds: performance.timeOrigin has a fraction, and execFileSync
+  // throws at once on a timeout that is not an integer (#204).
+  return () => Math.floor(Math.min(cap, HOOK_BUDGET_MS - (Date.now() - hookStart)));
 }
 
 // ---- reading the process table -------------------------------------------

@@ -197,6 +197,17 @@ describe("the hook's lookup deadline", () => {
     expect(asked[1]).toBe(15_000);
   });
 
+  // A real hook's clock starts at performance.timeOrigin, which has a fraction.
+  // execFileSync throws at once on a timeout that is not an integer, so every
+  // hook's own lookup failed and this window's handover was never its own (#204).
+  it("hands the read a whole-millisecond timeout when the clock started mid-millisecond", () => {
+    const asked = [];
+    const readTable = (t) => (asked.push(t), [[LIVE, "1", "claude.exe", 1790503200000]]);
+    startHookClock(Date.now() - 1_000.004);
+    ownerId({ CLAUDE_PID: LIVE }, { readTable });
+    expect(Number.isInteger(asked[0])).toBe(true);
+  });
+
   // Not knowing this window's own start costs its own handover: listed, not
   // loaded, and after /compact not offered at all. Under load Get-Process took
   // over 2.5s (2026-09-28), so the window's own lookup may use all that is left of
