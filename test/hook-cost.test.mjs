@@ -13,12 +13,13 @@ vi.mock("../plugin/scripts/lib/owner.mjs", async (importOriginal) => {
 });
 vi.mock("../plugin/packages/store/sync.mjs", async (importOriginal) => ({ ...(await importOriginal()), isSynced: () => true, pull: vi.fn() }));
 
-const { ownerOpen } = await import("../plugin/scripts/lib/owner.mjs");
+const { ownerOpen, startFromEpochMs } = await import("../plugin/scripts/lib/owner.mjs");
 const { pull } = await import("../plugin/packages/store/sync.mjs");
 const { run } = await import("../plugin/scripts/lib/hook.mjs");
 const { saveHandover } = await import("../plugin/scripts/lib/store.mjs");
 
-const START = Date.now() - 60 * 60_000;
+// In this platform's form: on Linux a start time counts from boot, not the epoch.
+const START = startFromEpochMs(Date.now() - 60 * 60_000);
 const ME = `111@${START}`;
 
 let root, repo, env;

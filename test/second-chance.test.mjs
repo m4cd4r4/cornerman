@@ -10,6 +10,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { markStarted, run as promptRun } from "../plugin/scripts/lib/second-chance.mjs";
 import { listWaiting, saveHandover } from "../plugin/scripts/lib/store.mjs";
 import { listAll, prune } from "../plugin/packages/store/store.mjs";
+import { startFromEpochMs } from "../plugin/scripts/lib/owner.mjs";
 
 // The script writes the output, then settles the load; a direct call stands in for both.
 const settle = (out) => {
@@ -17,7 +18,8 @@ const settle = (out) => {
   return out;
 };
 // Every window here started an hour ago, before any handover in a test was saved.
-const START = Date.now() - 60 * 60_000;
+// In this platform's form: on Linux a start time counts from boot, not the epoch.
+const START = startFromEpochMs(Date.now() - 60 * 60_000);
 const ownerOf = (pid) => `${pid}@${START}`;
 
 let root, repo, transcript, env;
