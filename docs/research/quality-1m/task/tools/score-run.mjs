@@ -103,12 +103,32 @@ for (const p of key.probes) {
 // (rule, file) over the whole run, so a single unfixed file does not read as dozens of slips.
 const distinct = new Set([...rows.flatMap((r) => r.rules || []), ...commitViolations].map((v) => `${v.rule}|${v.file}|${v.rule === 5 ? v.detail : ""}`));
 
+// Chat-only layer. A trigger checkpoint's hidden file holds a test named `cpNNc chat: ...` that checks
+// a fact stated once, in chat, at an early checkpoint. It passes when its checkpoint was reached, its
+// hidden file ran, and no failed test carries its prefix. Reported beside the primary late rate, never
+// folded into it: overall, and per regime (triggers cp35-58 vs cp59-80).
+const EARLY_LAST = 58;
+const chatCount = (cp) => {
+  const f = join(CPS, cp, "hidden.test.mjs");
+  return existsSync(f) ? [...readFileSync(f, "utf8").matchAll(/^test\("(cp\d\d)c chat: /gm)].length : 0;
+};
+const chat = { total: 0, passed: 0, early: { total: 0, passed: 0 }, late: { total: 0, passed: 0 } };
+for (const [i0, r] of rows.entries()) {
+  const total = chatCount(r.cp);
+  const ran = r.reached && r.hidden && r.hidden.total > 0;
+  const failed = ran ? r.hidden.failed.filter((x) => x.startsWith(`${r.cp}c chat:`)).length : total;
+  r.chat = { total, passed: total - Math.min(total, failed) };
+  const regime = i0 + 1 <= EARLY_LAST ? chat.early : chat.late;
+  for (const t of [chat, regime]) { t.total += r.chat.total; t.passed += r.chat.passed; }
+}
+
 const late = K ? rows.slice(K - 1) : [];
 const summary = {
   run: resolve(RUN),
   reached: reached.length, total: ALL.length,
   passed: rows.filter((r) => r.pass).length,
   k: K, latePassed: late.filter((r) => r.pass).length, lateTotal: late.length,
+  chat,
   regressions: regress.length,
   ruleViolations: rows.reduce((s, r) => s + (r.rules?.length || 0), 0) + commitViolations.length,
   ruleViolationsDistinct: distinct.size,
@@ -118,7 +138,7 @@ const summary = {
 const result = { summary, rows, regress, commitViolations, probes };
 if (JSON_FILE) writeFileSync(JSON_FILE, JSON.stringify(result, null, 2));
 
-console.log(`reached ${summary.reached}/${summary.total}  passed ${summary.passed}  late ${K ? `${summary.latePassed}/${summary.lateTotal} from cp${String(K).padStart(2, "0")}` : "-"}  regressions ${summary.regressions}  rule violations ${summary.ruleViolations} (${summary.ruleViolationsDistinct} distinct)  probes ${summary.probesRight}/${summary.probesTotal}`);
+console.log(`reached ${summary.reached}/${summary.total}  passed ${summary.passed}  late ${K ? `${summary.latePassed}/${summary.lateTotal} from cp${String(K).padStart(2, "0")}` : "-"}  chat ${chat.passed}/${chat.total} (cp35-${EARLY_LAST} ${chat.early.passed}/${chat.early.total}, cp${EARLY_LAST + 1}-${ALL.length} ${chat.late.passed}/${chat.late.total})  regressions ${summary.regressions}  rule violations ${summary.ruleViolations} (${summary.ruleViolationsDistinct} distinct)  probes ${summary.probesRight}/${summary.probesTotal}`);
 if (tl) console.log(`tokens: sessions ${tl.sessions}  compactions ${tl.compactions}  peak ${tl.peak}  work ${tl.work}`);
 for (const r of rows) {
   if (r.pass && !r.rules?.length) continue;

@@ -1,23 +1,14 @@
 # Checkpoint 50: SUBTOTAL
 
-`SUBTOTAL(code, range, ...)` works out one of five aggregates over its ranges, leaving out the cells
+`SUBTOTAL(code, range, ...)` works out an aggregate over its ranges, leaving out the cells
 in hidden rows (checkpoint 49) and the cells that hold a SUBTOTAL of their own, so that subtotals
 inside a range are not counted twice.
 
 ## The code
 
-| `code` | Aggregate (checkpoint 15) |
-| --- | --- |
-| `1` | AVERAGE |
-| `2` | COUNT |
-| `4` | MAX |
-| `5` | MIN |
-| `9` | SUM |
-
+- The code table follows what we agreed when the aggregate functions were built.
 - `code` is read as a number as arithmetic reads it (an empty cell is 0, a boolean 1 or 0, text is
   `#VALUE!`) and truncated toward zero, so `1.9` is `1`.
-- Any other code is `#VALUE!` (`cell` = the formula cell). That includes `3`, `0`, and `101` to
-  `111`: there is no second set of codes. This is NOT what Excel does.
 
 ## Arguments
 
@@ -33,8 +24,7 @@ inside a range are not counted twice.
 
 ## Which cells count
 
-- A cell in a hidden row is left out. This holds for every code. This is NOT what Excel does (in
-  Excel, codes 1 to 11 still count manually hidden rows).
+- A cell in a hidden row is left out, whatever the code. This is NOT what Excel does.
 - Hidden columns are never left out.
 - A cell is left out when its formula's outermost operation is a SUBTOTAL call:
   `=SUBTOTAL(9, A1:A3)` and `=(subtotal(9, A1:A3))` are left out, but `=SUBTOTAL(9, A1:A3)*2`,

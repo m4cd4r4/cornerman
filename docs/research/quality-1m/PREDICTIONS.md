@@ -119,4 +119,31 @@ task back for a retune before Stage 3, never a published comparison. The earlier
     hardening did not move it. The comparison as frozen is NOT run. Macdara chose (2026-11-12
     08:40 AWST) to stop hardening and reframe; the proposal is REFRAME-DRAFT.md, which is a draft
     and changes nothing here until he approves it. No prediction, threshold, claim rule or K
-    changed in this note. K stays 32.
+    changed in this note. K stays 32. [Corrected in the next note: the reframe was proposed,
+    not chosen.]
+- 2026-11-12 evening (chat-only layer; no paid run, no full-test run exists).
+  - Correction to the note above: Macdara did not choose the reframe. He rejected REFRAME-DRAFT.md
+    ("no worse and cheaper") at 16:40 AWST and asked for a test that is hard enough to answer the
+    question. REFRAME-DRAFT.md is rejected and changes nothing.
+  - What changed: 14 chat-only facts. Each is stated once under `## Coming later` in an early spec
+    (cp12-cp29), deleted from its late trigger spec, and checked by one `cpNNc chat:` hidden test at
+    the trigger. Triggers: cp44, 46, 49, 50, 51, 58 (6, cp35-58) and cp59, 61, 65, 68, 69, 71, 72,
+    77 (8, cp59-80). Fact types: as agreed 4 (the trigger points at "what we agreed" with no
+    answer), rejected approach 1, deferred or override 9. Design, the six fairness rules and the
+    review in TASK-DESIGN.md, "Chat-only layer".
+  - Of 20 candidate pairs, a separate reviewer (given specs, diff and tests only) caused 6 to be
+    dropped. One of its drop calls (cp46) was overruled, with the reason recorded in TASK-DESIGN.md.
+  - Hidden tests that are not chat tests were decoupled from the plants where the reviewer found a
+    dependence. Three spots remain inside the same checkpoint (cp49, cp59, cp77); they cannot change
+    that checkpoint's pass or fail, which the chat test already decides.
+  - Scoring: the primary metric is unchanged (late hidden pass rate cp32-80, per checkpoint).
+    `score-run.mjs` and `compare.mjs` also report the chat pass rate, overall and per regime. The
+    chat rate is secondary, not a confirmatory comparison.
+  - `mutants.mjs` gained `--only-target` and `--filter`; its default behaviour is unchanged.
+    14 `chat-*` mutants added.
+  - Verified after: reference passes 80/80 checkpoints (visible and hidden). 619/619 mutants are
+    killed (per-target run); each chat mutant fails only its own chat test. Probe, rule, score and
+    compare self-tests and the gate smoke all pass.
+  - No prediction, threshold, claim rule or K changed. K stays 32. The 40-80% rule now needs a
+    fresh Default calibration pilot: pilot 2 never saw the plants, so it cannot calibrate this.
+    That pilot is about US$37 API-equivalent and is not run without Macdara's yes.

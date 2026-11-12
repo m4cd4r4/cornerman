@@ -34,7 +34,7 @@ test("cp59h counts agree with the calendar", () => {
   assert.equal(val("=NETWORKDAYS(DATE(2024, 1, 6), DATE(2024, 1, 7))"), 0);
 });
 
-test("cp59h end before start counts the same, never negative", () => {
+test("cp59c chat: an end before the start counts the same, never negative", () => {
   assert.equal(val("=NETWORKDAYS(DATE(2024, 1, 5), DATE(2024, 1, 1))"), 5);
   assert.equal(val("=NETWORKDAYS(D1, C1)", { C1: "=DATE(2024, 1, 1)", D1: "=DATE(2024, 1, 31)" }), 23);
   assert.equal(val("=NETWORKDAYS(2921940, 1)"), 2087100);

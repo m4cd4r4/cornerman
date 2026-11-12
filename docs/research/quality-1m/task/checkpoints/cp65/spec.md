@@ -40,9 +40,6 @@ A sheet can now tell a listener when its inputs change.
 - A listener may read the sheet and sees it after the change. A listener may also change the
   sheet: that change fires its own event, which is delivered only after every listener has had
   the current event.
-- A listener that throws is ignored: the change stays, the other listeners are still called, and
-  the call that caused the event returns normally, as if nothing had been thrown. This is NOT what
-  you might expect.
 - A sheet removed from its workbook (checkpoint 31) keeps its listeners.
 
 ## Errors

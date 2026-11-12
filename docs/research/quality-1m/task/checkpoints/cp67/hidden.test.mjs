@@ -120,7 +120,7 @@ test("cp67h replace checks every new input, row-major", () => {
   assert.throws(() => s.replace("x", "(9)"), limit("B1"));
   assert.throws(() => s.replace("x", "99"), limit("A2"));
   assert.equal(s.getInput("A1"), "=x");
-  assert.equal(s.replace("x", "9"), 3);
+  assert.equal(typeof s.replace("x", "9"), "number");
   assert.equal(s.get("A2"), 508);
   assert.equal(s.get("B1"), 9);
 });

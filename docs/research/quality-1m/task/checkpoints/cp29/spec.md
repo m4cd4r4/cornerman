@@ -57,3 +57,10 @@ A call that throws changes nothing.
 `fromCSV` is undoable as one step however many cells it wrote, recorded only if at least one
 cell's input changed (checkpoint 27). Undoing or redoing it counts, for evaluation, as setting
 the cells it changed.
+
+## Coming later
+
+- When CSV import options arrive, we agree: with `types: "text"`, a field that matches the number
+  grammar of checkpoint 1, or starts with `=`, is written as `="` + the field with every `"`
+  doubled + `"`, so `007` is written as the input `="007"`. Every other field, and the empty field,
+  is written as it is.

@@ -37,15 +37,9 @@ Without `opts`, or with every key at its default, `fromCSV` does exactly what ch
 ## types
 
 - `"auto"`: every field is written exactly as it is, as in checkpoint 29.
-- `"text"`: a field whose value would not be text is written as a text formula, so the cell's value
-  is the field's text. That is a field that matches the checkpoint 1 number grammar (`007`, `-2.5`)
-  or starts with `=`: it is written as `="` + the field with every `"` doubled + `"`. So `007` is
-  written as the input `="007"`, whose value is the text `"007"`, and `=1+1` as `="=1+1"`. Every
-  other field, and the empty field (which still clears its cell), is written as it is. This is NOT
-  what Excel does (Excel keeps text import columns as plain text in a text-formatted cell).
+- `"text"` follows what we agreed when CSV import was built.
 - Validation rules (checkpoint 46) and the formula limits (checkpoint 67) check the input as
-  written. A text formula is a formula, so it passes every rule: with `types: "text"`, a field `99`
-  is accepted by a cell whose rule is whole numbers from 1 to 9.
+  written.
 
 Everything else is as in checkpoint 29 and later: one undo step, merges refuse covered cells
 (checkpoint 47), one change event (checkpoint 65).

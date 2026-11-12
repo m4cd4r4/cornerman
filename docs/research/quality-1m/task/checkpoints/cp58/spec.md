@@ -35,12 +35,9 @@ Three functions on the date serials of checkpoint 19 (2000-01-01 is serial 1, 99
 
 | `type` | Monday | Tuesday | ... | Saturday | Sunday |
 | --- | --- | --- | --- | --- | --- |
-| 2 | 1 | 2 | ... | 6 | 7 |
 | 1 | 2 | 3 | ... | 7 | 1 |
+| 2 | 1 | 2 | ... | 6 | 7 |
 | 3 | 0 | 1 | ... | 5 | 6 |
-
-- Without `type`, the type is 2: Monday is 1 and Sunday is 7, so `WEEKDAY(1)` is 6. This is NOT
-  what Excel does (Excel's default is type 1, counting from Sunday).
 
 ## All three
 

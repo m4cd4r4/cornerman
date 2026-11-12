@@ -1,7 +1,7 @@
 # Checkpoint 49: hidden rows and columns
 
-Rows and columns can now be hidden. Hiding changes what `toCSV` writes (below) and, from the next
-checkpoint, what one function adds up. It never changes an input or a value.
+Rows and columns can now be hidden. Hiding never changes an input or a value, and from the next
+checkpoint it changes what one function adds up.
 
 ## API
 
@@ -20,15 +20,8 @@ is already hidden, or showing one that is not, is allowed and does nothing to th
 ## What hiding changes
 
 - Hidden belongs to the row or column number, not to the cells in it. A hidden row may be empty.
-- `get`, `display`, `getInput`, `cells()`, every formula, `precedents`, `dependents` and `recalc`
-  behave exactly as if nothing were hidden.
-- `toCSV()` and `toCSV({ formulas: true })` leave hidden rows and hidden columns out of the text
-  entirely: no record for a hidden row, no field for a hidden column. The rectangle is first worked
-  out as in checkpoint 28 (from `A1` to the lowest row and right-most column holding a non-empty
-  cell, hidden or not), and then its hidden rows and columns are removed. When that leaves no row or
-  no column, the text is `""`. This is NOT what Excel does (Excel writes hidden rows and columns).
-- `fromCSV` (checkpoint 29) is not changed: its records go into consecutive rows and its fields into
-  consecutive columns, hidden or not.
+- `get`, `display`, `getInput`, `cells()`, every formula, `precedents`, `dependents`, `recalc` and
+  `fromCSV` (checkpoint 29) behave exactly as if nothing were hidden.
 
 ## Hidden rows and other changes
 

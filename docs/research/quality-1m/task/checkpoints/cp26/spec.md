@@ -47,3 +47,8 @@ Each source cell's input is written to the cell at the same offset from `to`. Co
 - Each written cell then behaves as if `set` had been called on it (checkpoints 8 and 11): only
   cells whose input changed, and their dependents, need evaluation again.
 - Defined names are never changed by a copy.
+
+## Coming later
+
+- When copying between sheets arrives, a reference in the copied formula that names the target
+  sheet loses its sheet name and its `!`, because it now reads its own sheet.

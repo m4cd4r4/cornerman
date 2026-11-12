@@ -39,10 +39,8 @@ Three more text functions: `SUBSTITUTE(text, old, new)`, `SUBSTITUTE(text, old, 
   `FIND("z", "abc") + 1/0` is `#N/A`, and `IFERROR` catches it.
 - `FIND` matches with case and has no wildcards: every character of `find` stands for itself.
 - `SEARCH` matches ignoring case, and `find` is a pattern: `?` matches any one character and `*`
-  matches any run of characters, none included. Every other character stands for itself, so `.`,
-  `(`, `[` and `$` are ordinary. There is no escape character: `~` is an ordinary character, so a
-  pattern can never match a literal `?` or `*`. This is NOT what Excel does (in Excel, `~?` matches
-  a literal `?`). `SEARCH("~?", "a?b")` is `#N/A`, and `SEARCH("~?", "x~yz")` is 2.
+  matches any run of characters, none included. The characters `.`, `(`, `[`, `$`, `+`, `^` and
+  `\` are ordinary.
 
 ## How they meet earlier checkpoints
 

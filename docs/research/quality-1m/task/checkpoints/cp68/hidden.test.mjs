@@ -29,7 +29,7 @@ test("cp68h unqualified references gain the source sheet's name", () => {
   assert.equal(m.get("C9"), 50);
 });
 
-test("cp68h a reference to the target sheet loses its name; others keep theirs", () => {
+test("cp68c chat: a reference to the target sheet loses its name; others keep theirs", () => {
   const { b, m, d } = book();
   m.set("C1", "100");
   d.set("A1", "=Main!C1+main!C2+MAIN!$C$1+Extra!A1+extra!B2:C3+Data!A2+data!A3");

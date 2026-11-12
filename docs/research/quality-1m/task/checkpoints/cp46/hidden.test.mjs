@@ -26,10 +26,21 @@ test("cp46h whole numbers: the number grammar, whole values, bounds included", (
   assert.equal(passes({ type: "whole", min: 0, max: 0 }, "-0"), true);
 });
 
-test("cp46h lists match exactly; formulas and clearing always pass", () => {
+test("cp46c chat: a list rule compares case and spaces exactly", () => {
   const LIST = { type: "list", items: ["Yes", "No", "1"] };
-  for (const v of ["Yes", "No", "1", "", "=1", "=\"Maybe\""]) assert.equal(passes(LIST, v), true, v);
+  for (const v of ["Yes", "No", "1"]) assert.equal(passes(LIST, v), true, v);
   for (const v of ["yes", "YES", "No ", " No", "Maybe", "1.0", "01", "Yes,No"]) assert.equal(passes(LIST, v), false, v);
+  const s = createSheet();
+  s.setValidation("A1", LIST);
+  assert.throws(() => s.set("A1", "yes"), thrown("#INVALID", "A1"));
+  assert.throws(() => s.set("A1", "No "), thrown("#INVALID", "A1"));
+  s.set("A1", "No");
+  assert.equal(s.getInput("A1"), "No");
+});
+
+test("cp46h formulas and clearing always pass a list rule; invalidCells lists broken inputs", () => {
+  const LIST = { type: "list", items: ["Yes", "No", "1"] };
+  for (const v of ["", "=1", "=\"Maybe\""]) assert.equal(passes(LIST, v), true, v);
   const s = createSheet();
   s.set("A1", "Maybe");
   s.setValidation("A1", LIST);

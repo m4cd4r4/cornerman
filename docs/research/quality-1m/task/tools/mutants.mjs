@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // Scorer self-test: each mutant is the reference with one plausible mistake. Its target
 // checkpoint's hidden tests must fail; the report also lists collateral failures.
-//   node mutants.mjs --work <empty dir> [--jobs N]
+//   node mutants.mjs --work <empty dir> [--jobs N] [--only-target] [--filter <name prefix>]
+// --only-target runs just the target checkpoint hidden tests of each mutant (same kill verdict, far faster;
+// collateral failures in other checkpoints are then not listed). --filter keeps the mutants whose name starts
+// with the prefix. Defaults: every checkpoint, every mutant.
 // Exit 0 only if every mutant applied cleanly AND failed its target.
 import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
@@ -631,6 +634,21 @@ const MUTANTS = [
   { name: "recall-xsheet-error-cell-75", file: "sheet.mjs", find: "    return sid === null ? makeError(\"#REF!\", k, `no sheet named ${a.slice(0, i)}`) : engine.valueAt(sid, a.slice(i + 1));", replace: "    if (sid === null) return makeError(\"#REF!\", k, `no sheet named ${a.slice(0, i)}`);\n    const v = engine.valueAt(sid, a.slice(i + 1));\n    return v !== null && typeof v === \"object\" && \"code\" in v ? { ...v, cell: `${a.slice(0, i)}!${v.cell}` } : v;", target: "cp75" },
   { name: "recall-display-half-even", file: "decimal.mjs", find: "  return Number(lastKept) % 2 === 1;", replace: "  return true;", target: "cp77" },
   { name: "recall-events-row-major-cp78", file: "address.mjs", find: "  return pa.row - pb.row || pa.col - pb.col;", replace: "  return pa.col - pb.col || pa.row - pb.row;", target: "cp78" },
+  // Chat-only layer (cp12-cp31 plants, one hidden `cpNNc chat:` test per trigger): the reference forgets one early chat fact.
+  { name: "chat-weekday-default", file: "calendar.mjs", find: "numberArg(args[1], ctx, evaluate) : 2;", replace: "numberArg(args[1], ctx, evaluate) : 1;", target: "cp58" },
+  { name: "chat-match-default", file: "indexing.mjs", find: "intArg(args[2], ctx, evaluate) : 0;", replace: "intArg(args[2], ctx, evaluate) : 1;", target: "cp44" },
+  { name: "chat-subtotal-second-code-set", file: "subtotal.mjs", find: "  const fn = CODES[code];", replace: "  const fn = CODES[code] ?? CODES[code - 100];", target: "cp50" },
+  { name: "chat-replace-counts-occurrences", file: "findreplace.mjs", target: "cp51", edits: [["      const writes = [];\n      for (const k of searched()) {","      const writes = [];\n      let occ = 0;\n      for (const k of searched()) {"],["        if (out !== input) writes.push([k, out]);","        if (out !== input) { writes.push([k, out]); occ += at.length; }"],["      return writes.length;","      return occ;"]] },
+  { name: "chat-csv-writes-hidden", file: "csv.mjs", target: "cp49", edits: [["  for (let c = 1; c <= cols; c++) if (!hidden.cols.has(c)) shown.push(c);","  for (let c = 1; c <= cols; c++) shown.push(c);"],["    if (hidden.rows.has(r)) continue;\n",""]] },
+  { name: "chat-list-case-insensitive", file: "validation.mjs", find: "  if (rule.type === \"list\") return rule.items.includes(input);", replace: "  if (rule.type === \"list\") return rule.items.some((x) => x.toLowerCase() === input.toLowerCase());", target: "cp46" },
+  { name: "chat-networkdays-negative", file: "calendar.mjs", find: "  return weekdaysUpTo(hi) - weekdaysUpTo(lo - 1) - off.size;", replace: "  const n = weekdaysUpTo(hi) - weekdaysUpTo(lo - 1) - off.size;\n  return a > b ? -n : n;", target: "cp59" },
+  { name: "chat-search-tilde-escape", file: "search.mjs", find: "  for (const ch of p) src += ch === \"?\" ? ANY : ch === \"*\" ? RUN : literal(ch);", replace: "  const cs = [...p];\n  for (let i = 0; i < cs.length; i++) {\n    const ch = cs[i];\n    if (ch === \"~\" && i + 1 < cs.length && \"?*~\".includes(cs[i + 1])) { src += literal(cs[++i]); continue; }\n    src += ch === \"?\" ? ANY : ch === \"*\" ? RUN : literal(ch);\n  }", target: "cp61" },
+  { name: "chat-json-range-one-corner", file: "export.mjs", find: "    const doc = { range: `${t.a}:${t.b}`, values };", replace: "    const doc = { range: t.a === t.b ? t.a : `${t.a}:${t.b}`, values };", target: "cp77" },
+  { name: "chat-copy-keeps-target-sheet-name", file: "xcopy.mjs", find: "else if (toks[i - 2].v.toUpperCase() === TGT) edits.push(", replace: "else if (false) edits.push(", target: "cp68" },
+  { name: "chat-undo-checks-protection", file: "sheet.mjs", find: "      for (const [k, before, after] of list) write(k, side === \"before\" ? before : after);", replace: "      for (const [k, before, after] of list) { layers.locked([[k, side === \"before\" ? before : after]]); write(k, side === \"before\" ? before : after); }", target: "cp71" },
+  { name: "chat-errorcells-reading-order", file: "audit.mjs", find: "const byCode = (list) => list.sort((x, y) => rank(x.code) - rank(y.code));", replace: "const byCode = (list) => list;", target: "cp72" },
+  { name: "chat-listener-throw-propagates", file: "events.mjs", find: "        } catch {\n          // A listener that throws changes nothing: the change stays and the others still run.\n        }", replace: "        } finally {\n        }", target: "cp65" },
+  { name: "chat-csv-text-types-plain", file: "csv.mjs", find: "const asText = (f) => (NUMBER.test(f) || f.startsWith(\"=\") ? `=\"${f.replaceAll('\"', '\"\"')}\"` : f);", replace: "const asText = (f) => f;", target: "cp69" },
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];
@@ -641,6 +659,9 @@ if (existsSync(work) && readdirSync(work).length) throw new Error(`--work ${work
 // load can only mislead where the target has a timing test (a test that fails under load would
 // hide a survivor). Those mutants run after the pool drains, one at a time, with nothing beside
 // them. Collateral timing failures under load are noise in the "also fails" list only.
+const ONLY_TARGET = process.argv.includes("--only-target");
+const FILTER = process.argv.includes("--filter") ? process.argv[process.argv.indexOf("--filter") + 1] : "";
+if (FILTER) MUTANTS.splice(0, MUTANTS.length, ...MUTANTS.filter((m) => m.name.startsWith(FILTER)));
 const JOBS = process.argv.includes("--jobs") ? Math.max(1, Number(process.argv[process.argv.indexOf("--jobs") + 1])) : 1;
 const timed = new Map();
 const isTimed = (cp) => {
@@ -672,7 +693,7 @@ function prepare(m) {
 
 function check(m, dir) {
   return new Promise((done) => {
-    const p = spawn(process.execPath, [CHECK, "--src", dir, "--out", join(work, `${m.name}-run`), "--kind", "hidden", "--json"]);
+    const p = spawn(process.execPath, [CHECK, ...(ONLY_TARGET ? ["--only", String(Number(m.target.slice(2)))] : []), "--src", dir, "--out", join(work, `${m.name}-run`), "--kind", "hidden", "--json"]);
     let stdout = "";
     p.stdout.on("data", (d) => { stdout += d; });
     p.on("close", () => done(stdout));

@@ -11,7 +11,8 @@ function grid() {
   return s;
 }
 
-test("cp49h toCSV leaves hidden rows and columns out, in both modes", () => {
+test("cp49c chat: toCSV leaves hidden rows and columns out, in both modes, after the rectangle counts hidden cells", () => {
+  {
   const s = grid();
   s.set("B2", "=A2+1");
   s.hideRows(2);
@@ -23,9 +24,8 @@ test("cp49h toCSV leaves hidden rows and columns out, in both modes", () => {
   s.showCols("b");
   assert.equal(s.toCSV(), "1,2,3\n4,5,6\n7,8,9");
   assert.equal(s.get("B2"), 5);
-});
-
-test("cp49h the CSV rectangle counts hidden cells, then drops hidden lines", () => {
+  }
+  {
   const s = createSheet();
   s.set("A1", "a");
   s.set("D5", "z");
@@ -44,6 +44,7 @@ test("cp49h the CSV rectangle counts hidden cells, then drops hidden lines", () 
   s.showCols("A", 702);
   assert.equal(s.toCSV(), "");
   assert.deepEqual(s.hiddenCols(), []);
+  }
 });
 
 test("cp49h hidden values still count everywhere else", () => {

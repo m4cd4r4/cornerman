@@ -4,7 +4,9 @@
 //   node score-selftest.mjs --smoke <smoke-gate --work dir> --work <empty dir>
 // Cases: known-good (N/N, no violations once commits exist); a broken run (cp16 mutant at its
 // snapshot, eval at cp30, a cp06 break in the final tree, the last checkpoint never reached); a snapshot holding
-// test/hidden is refused; a hand-made transcript gives the expected work-token timeline.
+// test/hidden is refused; a hand-made transcript gives the expected work-token timeline. Chat-only
+// layer: the 14 `cpNNc chat:` tests are counted overall and per regime (triggers cp35-58, cp59-80),
+// a forgotten fact fails its own chat test only, and a trigger never reached scores fail.
 import { cpSync, mkdirSync, readFileSync, writeFileSync, existsSync, readdirSync, rmSync, appendFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -53,6 +55,10 @@ function edit(file, find, replace) {
   expect(s && s.latePassed === N - 19 && s.lateTotal === N - 19, `good: late segment cp20-${LAST} is ${N - 19}/${N - 19}`);
   expect(s && s.regressions === 0, "good: no regressions");
   expect(s && s.ruleViolations === 0 && s.ruleViolationsDistinct === 0, `good: no rule violations (got ${s?.ruleViolations})`);
+  const c = s?.chat;
+  expect(c && c.total === 14 && c.passed === 14, `good: chat tests 14/14 (got ${c?.passed}/${c?.total})`);
+  expect(c && c.early.total === 6 && c.early.passed === 6 && c.late.total === 8 && c.late.passed === 8, `good: chat tests 6/6 in cp35-58 and 8/8 in cp59-80 (got ${c?.early.passed}/${c?.early.total}, ${c?.late.passed}/${c?.late.total})`);
+  expect(j.rows.filter((r) => r.chat.total > 0).map((r) => r.cp).join(" ") === "cp44 cp46 cp49 cp50 cp51 cp58 cp59 cp61 cp65 cp68 cp69 cp71 cp72 cp77", "good: the 14 chat triggers are cp44 ... cp77, one test each");
 }
 
 // 2. Broken run.
@@ -63,6 +69,8 @@ function edit(file, find, replace) {
   appendFileSync(join(snaps, "cp30-done", "src", "functions.mjs"), "\nexport const sneaky = eval(\"1\");\n");
   edit(join(snaps, `${PREV}-done`, "src", "evaluate.mjs"), "    const x = a.toLowerCase();\n    const y = b.toLowerCase();", "    const x = a;\n    const y = b;");
   rmSync(join(snaps, `${LAST}-done`), { recursive: true });
+  // A chat fact forgotten at its trigger: WEEKDAY's default type back to Excel's 1 at the cp58 snapshot.
+  edit(join(snaps, "cp58-done", "src", "calendar.mjs"), "numberArg(args[1], ctx, evaluate) : 2;", "numberArg(args[1], ctx, evaluate) : 1;");
   const { j } = score(root);
   const row = (cp) => j?.rows.find((r) => r.cp === cp);
   expect(j?.summary.reached === N - 1, `broken: ${N - 1} reached (got ${j?.summary.reached})`);
@@ -74,6 +82,20 @@ function edit(file, find, replace) {
   expect(j?.summary.ruleViolations === 1 && j?.summary.ruleViolationsDistinct === 1, `broken: one violation, one distinct (got ${j?.summary.ruleViolations}, ${j?.summary.ruleViolationsDistinct})`);
   expect(j?.regress.some((g) => g.cp === "cp06"), `broken: cp06 regression found in the final tree (got ${j?.regress.map((g) => g.cp).join(",")})`);
   expect(!j?.regress.some((g) => g.cp === "cp16"), "broken: cp16 is not a regression (it never passed)");
+  expect(row("cp58")?.chat.total === 1 && row("cp58")?.chat.passed === 0 && !row("cp58").pass, "broken: the cp58 chat test fails with the forgotten WEEKDAY default");
+  expect(row("cp59")?.chat.passed === 1 && row("cp44")?.chat.passed === 1, "broken: the other chat tests still pass");
+  const c = j?.summary.chat;
+  expect(c && c.total === 14 && c.passed === 13 && c.early.passed === 5 && c.early.total === 6 && c.late.passed === 8 && c.late.total === 8, `broken: chat 13/14, 5/6 in cp35-58, 8/8 in cp59-80 (got ${c?.passed}/${c?.total}, ${c?.early.passed}/${c?.early.total}, ${c?.late.passed}/${c?.late.total})`);
+}
+
+// 2b. A chat trigger never reached scores fail: drop cp77's snapshot.
+{
+  const root = makeRun("short");
+  rmSync(join(root, "run", "snapshots", "cp77-done"), { recursive: true });
+  const { j } = score(root);
+  const row = (cp) => j?.rows.find((r) => r.cp === cp);
+  expect(row("cp77") && !row("cp77").reached && row("cp77").chat.total === 1 && row("cp77").chat.passed === 0, "short: an unreached chat trigger scores 0/1");
+  expect(j?.summary.chat.late.passed === 7 && j?.summary.chat.late.total === 8 && j?.summary.chat.early.passed === 6, `short: chat late 7/8, early 6/6 (got ${j?.summary.chat.late.passed}/${j?.summary.chat.late.total}, ${j?.summary.chat.early.passed})`);
 }
 
 // 3. A snapshot with test/hidden is refused.

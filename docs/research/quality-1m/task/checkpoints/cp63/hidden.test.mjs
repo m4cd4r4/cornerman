@@ -102,8 +102,6 @@ test("cp63h toCSV keeps the comma separator and quotes the numbers", () => {
   s.set("B2", "x");
   assert.equal(s.toCSV(), '"0,5",2,"1,5"\n"1.234,50",x,');
   assert.equal(s.toCSV({ formulas: true }), "0.5,2,=A1*3\n1234.5,x,");
-  s.hideRows(1);
-  assert.equal(s.toCSV(), '"1.234,50",x,');
   const p = createSheet();
   p.set("A1", "0.5");
   p.set("B1", "1234.5");

@@ -8,9 +8,7 @@ and their number formats.
 `sheet.exportJSON(target, opts)` returns a string: the JSON text of an object written as
 `JSON.stringify` writes it (no spaces), with these keys in this order:
 
-- `range`: the range written top-left corner, `:`, bottom-right corner, upper case. It always has
-  two corners, also for one cell: `exportJSON("b2")` gives `"range":"B2:B2"`. This is NOT what you
-  might expect.
+- `range`: the range text follows what we agreed when CSV export was built.
 - `values`: one array per row of the range, top to bottom, each with one entry per cell, left to
   right.
 - `formats`: only when `opts.formats` is `true`. The same shape as `values`; each entry is the
@@ -45,7 +43,6 @@ the decimal comma (checkpoint 63) apply, an error is its code, an empty cell is 
 ## Which cells
 
 - Every cell of the range is written, including cells in hidden rows and columns (checkpoint 49).
-  This is NOT what `toCSV` does, and NOT what you might expect.
 - A covered cell of a merge (checkpoint 47) reads as empty: `null`, or `""` with `display`. Its
   format entry is still what `getFormat` gives.
 - Nothing is trimmed: empty rows and columns at the edges of the range are written like any other.

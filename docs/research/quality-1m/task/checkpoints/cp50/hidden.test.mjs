@@ -12,24 +12,24 @@ function col() {
   return s;
 }
 
-test("cp50h the five codes over numbers, text, booleans and empty cells", () => {
+test("cp50c chat: the codes 1, 2, 4, 5 and 9 are AVERAGE, COUNT, MAX, MIN and SUM, and no other code exists", () => {
   const s = col();
   assert.equal(at(s, "=SUBTOTAL(9, A1:A6)"), 11);
   assert.equal(at(s, "=SUBTOTAL(1, A1:A6)"), 11 / 3);
   assert.equal(at(s, "=SUBTOTAL(2, A1:A6)"), 3);
   assert.equal(at(s, "=SUBTOTAL(4, A1:A6)"), 6);
   assert.equal(at(s, "=SUBTOTAL(5, A1:A6)"), 1);
+  for (const code of ["3", "0", "6", "10", "11", "101", "102", "109", "111", "-9", "-1.5", "B9", "1000"]) {
+    assert.equal(at(s, `=SUBTOTAL(${code}, A1:A6)`), "#VALUE!@Z9", code);
+  }
+});
+
+test("cp50h the code is read as a number; several ranges", () => {
+  const s = col();
   assert.equal(at(s, "=SUBTOTAL(9.99, A1:A6)"), 11);
   assert.equal(at(s, "=SUBTOTAL(1.9, A1:A6)"), 11 / 3);
   assert.equal(at(s, "=SUBTOTAL(TRUE, A1:A6)"), 11 / 3);
   assert.equal(at(s, "=SUBTOTAL(9, A1:A6, A1, A1:A2)"), 20);
-});
-
-test("cp50h only codes 1, 2, 4, 5 and 9 exist", () => {
-  const s = col();
-  for (const code of ["3", "0", "6", "10", "11", "101", "102", "109", "111", "-9", "-1.5", "B9", "1000"]) {
-    assert.equal(at(s, `=SUBTOTAL(${code}, A1:A6)`), "#VALUE!@Z9", code);
-  }
   assert.equal(at(s, '=SUBTOTAL("9", A1:A6)'), "#VALUE!@Z9");
   s.set("Y1", "=1/0");
   assert.equal(at(s, "=SUBTOTAL(Y1, A1:A6)"), "#DIV/0!@Y1");

@@ -19,3 +19,9 @@ once, and reading any formula cell right after `recalc()` evaluates nothing.
   group. The group is free when every cell it depends on outside the group is done, and it takes
   its place among the free cells by its row-major-first member.
 - A formula that does not parse is free at once.
+
+## Coming later
+
+- When change listeners arrive (`sheet.onChange(listener)`), a listener that throws is ignored: the
+  change stays, the other listeners are still called, and the call that caused the event returns
+  normally.

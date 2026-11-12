@@ -33,6 +33,21 @@ export function pairedBootstrap(a, b, B = 10000, seed = 1) {
   return { diff: point, lo: d[Math.floor(0.025 * B)], hi: d[Math.floor(0.975 * B) - 1] };
 }
 
+// Chat-only layer: sums the `summary.chat` blocks of score.json files ({ total, passed, early, late }).
+// Runs scored before the layer existed have none and are left out. Reported beside the primary late
+// rate, never folded into it.
+export function chatTotals(summaries) {
+  const t = { runs: 0, total: 0, passed: 0, early: { total: 0, passed: 0 }, late: { total: 0, passed: 0 } };
+  for (const s of summaries) {
+    const c = s?.chat;
+    if (!c) continue;
+    t.runs++;
+    for (const k of ["total", "passed"]) { t[k] += c[k]; t.early[k] += c.early[k]; t.late[k] += c.late[k]; }
+  }
+  return t;
+}
+const chatCell = (t) => (t.runs ? `${t.passed}/${t.total} (cp35-58 ${t.early.passed}/${t.early.total}; cp59-80 ${t.late.passed}/${t.late.total})` : "-");
+
 if (process.argv.includes("--selftest")) {
   const ones = Array(20).fill(1), zeros = Array(20).fill(0);
   const same = pairedBootstrap([ones, zeros], [ones, zeros]);
@@ -42,8 +57,13 @@ if (process.argv.includes("--selftest")) {
   const worse = pairedBootstrap([zeros, zeros, zeros], [ones, ones, ones]);
   const ok = Math.abs(same.diff) < 1e-12 && better.diff === 1 && better.lo === 1 && Math.abs(mixed.diff - 0.2) < 1e-12 && mixed.lo <= 0.2 && mixed.hi >= 0.2
     && word(better) === "helps" && word(worse) === "hurts" && word(same) === "none" && word({ lo: 0, hi: 0.1 }) === "none";
-  console.log(ok ? "COMPARE SELFTEST OK" : `COMPARE SELFTEST FAIL ${JSON.stringify({ same, better, mixed })}`);
-  process.exit(ok ? 0 : 1);
+  const chatRun = (e, ep, l, lp) => ({ chat: { total: e + l, passed: ep + lp, early: { total: e, passed: ep }, late: { total: l, passed: lp } } });
+  const sum = chatTotals([chatRun(8, 8, 12, 5), chatRun(8, 6, 12, 1), { ruleViolations: 0 }, undefined]);
+  const chatOk = sum.runs === 2 && sum.total === 40 && sum.passed === 20 && sum.early.total === 16 && sum.early.passed === 14
+    && sum.late.total === 24 && sum.late.passed === 6 && chatTotals([{}]).runs === 0
+    && chatCell(sum) === "20/40 (cp35-58 14/16; cp59-80 6/24)" && chatCell(chatTotals([])) === "-";
+  console.log(ok && chatOk ? "COMPARE SELFTEST OK" : `COMPARE SELFTEST FAIL ${JSON.stringify({ same, better, mixed, sum })}`);
+  process.exit(ok && chatOk ? 0 : 1);
 }
 
 const K = Number(arg("--k"));
@@ -72,8 +92,8 @@ const base = byArm.get(BASE);
 const verdict = (b, n) => (b.lo > 0 ? "helps" : b.hi < 0 ? "hurts" : `no large effect at n = ${n}`);
 const lastCp = Math.max(0, ...[...byArm.values()].flat().map((r) => K - 1 + r.late.length));
 const lines = [`Late segment cp${String(K).padStart(2, "0")}-cp${String(lastCp).padStart(2, "0")}, ${MODEL}.`, "",
-  `| Arm | Runs | Late pass | vs ${BASE} (95% interval) | Verdict | Regressions | Rule violations (distinct) | Probes right | Peak context | Work tokens |`,
-  "|:--|--:|--:|:--|:--|--:|--:|--:|--:|--:|"];
+  `| Arm | Runs | Late pass | vs ${BASE} (95% interval) | Verdict | Chat pass (all runs) | Regressions | Rule violations (distinct) | Probes right | Peak context | Work tokens |`,
+  "|:--|--:|--:|:--|:--|:--|--:|--:|--:|--:|--:|"];
 for (const a of order) {
   const runs = byArm.get(a);
   const passN = runs.reduce((s, r) => s + r.late.reduce((x, y) => x + y, 0), 0), tot = runs.reduce((s, r) => s + r.late.length, 0);
@@ -84,7 +104,7 @@ for (const a of order) {
     word = `${verdict(b, Math.min(runs.length, base.length))}${a === "cm250" && BASE === "default" ? "" : " (exploratory)"}`;
   }
   const sum = (f) => runs.map(f).join(", ");
-  lines.push(`| ${a} | ${runs.length} | ${passN}/${tot} | ${vs} | ${word} | ${sum((r) => r.s.regressions)} | ${sum((r) => `${r.s.ruleViolations} (${r.s.ruleViolationsDistinct ?? "?"})`)} | ${sum((r) => `${r.s.probesRight}/${r.s.probesTotal}`)} | ${sum((r) => r.s.tokens?.peak ?? "?")} | ${sum((r) => r.s.tokens?.work ?? "?")} |`);
+  lines.push(`| ${a} | ${runs.length} | ${passN}/${tot} | ${vs} | ${word} | ${chatCell(chatTotals(runs.map((r) => r.s)))} | ${sum((r) => r.s.regressions)} | ${sum((r) => `${r.s.ruleViolations} (${r.s.ruleViolationsDistinct ?? "?"})`)} | ${sum((r) => `${r.s.probesRight}/${r.s.probesTotal}`)} | ${sum((r) => r.s.tokens?.peak ?? "?")} | ${sum((r) => r.s.tokens?.work ?? "?")} |`);
 }
 if (invalid.length) lines.push("", `INVALID, excluded: ${invalid.join(", ")}`);
 const text = lines.join("\n");

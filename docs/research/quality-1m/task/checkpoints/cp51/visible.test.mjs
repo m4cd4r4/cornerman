@@ -12,11 +12,11 @@ test("cp51 find lists the cells whose input holds the text", () => {
   assert.deepEqual(s.find("blue"), []);
 });
 
-test("cp51 replace changes inputs and returns the cells changed", () => {
+test("cp51 replace changes inputs", () => {
   const s = createSheet();
   s.set("A1", "red apple");
   s.set("A2", "=LEN(\"red\")");
-  assert.equal(s.replace("red", "blue"), 2);
+  s.replace("red", "blue");
   assert.equal(s.getInput("A1"), "blue apple");
   assert.equal(s.get("A2"), 4);
 });

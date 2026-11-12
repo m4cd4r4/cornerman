@@ -28,16 +28,6 @@ evaluations), and change nothing.
 - On a sheet using `errorOrder: "first"` (checkpoint 34), each value is the error that option
   gives, as `get` does.
 
-## The order
-
-- By `code` first, in the priority order of checkpoints 4, 9 and 21, highest first: `#CYCLE!`,
-  `#REF!`, `#NAME?`, `#N/A`, `#VALUE!`, `#DIV/0!`, and then `#PARSE!` last. Within one code,
-  row-major by `address`. So a `#DIV/0!` in `A1` comes after a `#NAME?` in `Z99`. This is NOT what
-  you might expect (a list in reading order).
-- The order is always by priority, also on a sheet or workbook using `errorOrder: "first"`. This is
-  NOT what you might expect.
-- `book.errorCells()` orders by `code` across all sheets first, then by sheet in the order
-  `sheetNames()` gives them, then row-major: every `#REF!` of every sheet comes before any
-  `#NAME?`. It is NOT one sheet after another. This is NOT what you might expect.
+The order of each list follows what we agreed when VLOOKUP was built.
 
 Add a line for this checkpoint to CHANGES.md, as in checkpoint 40.

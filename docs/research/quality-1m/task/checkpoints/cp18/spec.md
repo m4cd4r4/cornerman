@@ -30,3 +30,10 @@
 - `MID` takes `count` characters starting at position `start` (the first character is 1). A
   `start` below 1, or a negative `count`, is `#VALUE!` (`cell` = the formula cell). A `start` past
   the end gives `""`.
+
+## Coming later
+
+- When list validation arrives, a list rule compares an input with its items exactly: case and
+  spaces count, so with the items `Yes` and `No`, the inputs `yes` and `No ` are refused.
+- When `SEARCH` arrives, `~` is an ordinary character in its pattern: there is no escape character,
+  so a pattern can never match a literal `?` or `*`.

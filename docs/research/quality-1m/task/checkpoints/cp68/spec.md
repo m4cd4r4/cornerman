@@ -23,13 +23,11 @@ it was typed in (checkpoint 23). Then:
    For a range the name is written once, before the range. `=A1*2` copied from `Data!A1` to
    `Main!B1` becomes `=Data!B1*2`. This is NOT what Excel does (Excel's copied `=A1` reads the
    target sheet).
-2. Every reference whose sheet name is the **target** sheet's name (ignoring case) loses its sheet
-   name and `!`, since it now reads its own sheet: `=Main!C1+1` copied from `Data!A1` to `Main!A1`
-   becomes `=C1+1`. This is NOT what you might expect.
-3. Every other reference with a sheet name keeps it as typed. Defined names are copied as typed and
-   are looked up on the target sheet as any name there is (checkpoints 14 and 53), so they may give
-   another value, or `#NAME?`. Text, numbers, `#REF!` already in a formula, and formulas that do not
-   parse are copied exactly. A reference that became `#REF!` gets no sheet name.
+2. Every other reference with a sheet name keeps it as typed, apart from what was stated earlier
+   about copying between sheets. Defined names are copied as typed and are looked up on the target
+   sheet as any name there is (checkpoints 14 and 53), so they may give another value, or
+   `#NAME?`. Text, numbers, `#REF!` already in a formula, and formulas that do not parse are copied
+   exactly. A reference that became `#REF!` gets no sheet name.
 
 Everything else is as `copy`:
 

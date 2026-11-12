@@ -37,3 +37,12 @@ the given column of that row.
 - The value of the cell in the matched row and the given column, exactly as reading that cell
   would give it: an empty cell gives 0, and an error cell gives its own error.
 - Every cell of `table` is referred to by the formula (checkpoints 9 and 10).
+
+## Coming later
+
+- When `MATCH` arrives, a call without a `type` is an exact match, the same as `type` 0.
+- When `errorCells` arrives (one list for a sheet, one for a workbook), we agree: each list is
+  ordered by error code in the priority order, highest first, with `#PARSE!` last, and row-major by address
+  within one code. A workbook's list orders by code across all its sheets first, then by sheet
+  order, then row-major. Every list keeps this order whatever a sheet's setting for which error
+  wins.

@@ -36,3 +36,8 @@ A call that throws changes nothing and is not recorded. Reading calls (`get`, `d
   on them, need evaluation again. Undoing or redoing a row or column operation is treated like the
   operation itself (checkpoint 23): every formula needs evaluation again.
 - `stats()` is not undone. Evaluations made during or after an undo are counted as usual.
+
+## Coming later
+
+- We tried to send undo and redo through the same write path that checks protected cells, and it
+  left the history half-applied. When protected cells arrive, undo and redo never check protection.

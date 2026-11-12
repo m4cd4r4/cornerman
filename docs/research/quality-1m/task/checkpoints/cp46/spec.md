@@ -21,9 +21,7 @@ A rule is a plain object of one of two kinds. Other keys are ignored and not kep
   checkpoint 1 grammar whose value is a whole number from `min` to `max`, both included. `"5.0"`
   passes for 1 to 10; `"5.5"`, `" 5"`, `"1e1"` and `"TRUE"` do not.
 - `{ type: "list", items }`: `items` is an array of 1 to 50 non-empty strings. An input passes
-  when it is exactly one of the items, case and spaces included: with items `["Yes", "No"]`,
-  `"yes"` and `"No "` are refused. This is NOT what you might expect (a list check that ignores
-  case).
+  when it is one of the items.
 - For both kinds, the empty input `""` (clearing the cell) always passes, and so does any formula
   (an input starting with `=`), whatever its value. This is NOT what you might expect (the value a
   formula gives is never checked).

@@ -21,3 +21,8 @@ text is `#VALUE!`. Errors follow the checkpoint 4 rules.
   (`COUNT(nope)` is `#NAME?`). An undefined name inside a larger expression is a direct argument
   whose value is an error, so it is skipped: `COUNT(nope+1, 5)` is 1.
 - `COUNT()` is `0`.
+
+## Coming later
+
+- When `SUBTOTAL(code, range, ...)` arrives, we agree: `code` 1 is AVERAGE, 2 is COUNT, 4 is MAX, 5
+  is MIN and 9 is SUM, and every other code (3, 0 and 101 to 111 included) is `#VALUE!`.

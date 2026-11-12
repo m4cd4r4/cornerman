@@ -27,3 +27,8 @@ what is left as typed and what is written in upper case as in checkpoint 23.
   removed. This is NOT what Excel does (Excel keeps the name, pointing at `#REF!`).
 - After `deleteRows`, every formula in the sheet needs evaluation again (checkpoints 8 and 11), and
   precedents, dependents and cycles follow the new text.
+
+## Coming later
+
+- When `replace` arrives (find and replace over cell inputs), it returns the number of cells it
+  changed, not the number of occurrences it replaced.

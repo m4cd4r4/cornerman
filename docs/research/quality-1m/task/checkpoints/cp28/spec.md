@@ -28,3 +28,13 @@
 - In display mode, `toCSV` reads values exactly as `display` does, so formulas that need evaluation
   are evaluated and counted in `stats()` (checkpoint 8). In formulas mode nothing is evaluated.
 - `toCSV` changes nothing and is not recorded for undo (checkpoint 27).
+
+## Coming later
+
+- When hidden rows and columns arrive, `toCSV` (in both modes) leaves hidden rows and hidden
+  columns out entirely: no record for a hidden row, no field for a hidden column. The rectangle is
+  worked out first as now, hidden cells counted, and only then are its hidden rows and columns
+  removed, so when no row or no column is left the text is empty.
+- When a JSON range export arrives, we agree: its `range` text is the top-left corner, `:`, the
+  bottom-right corner, in upper case, and it always has two corners, so one cell `B2` is written
+  `B2:B2`.

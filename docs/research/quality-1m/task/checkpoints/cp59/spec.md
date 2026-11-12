@@ -20,9 +20,6 @@
 
 ## Counting
 
-- `end` may come before `start`. The count is then the same as with the two swapped, never
-  negative: `NETWORKDAYS(DATE(2024, 1, 5), DATE(2024, 1, 1))` is 5. This is NOT what Excel does
-  (Excel gives -5).
 - Each number in a holidays cell, truncated toward zero, is a holiday. A holiday removes its day
   from the count only when that day is a working day from `start` to `end`. A holiday on a Saturday
   or Sunday, or outside the two dates, changes nothing, and a day listed more than once is removed
@@ -40,7 +37,7 @@
 - Every holidays cell is referred to by the formula (checkpoints 9 and 10), and the formula gives a
   new value when one of them changes.
 - Hidden rows and columns (checkpoint 49) change nothing: a holiday in a hidden row still counts.
-  Only `SUBTOTAL` (checkpoint 50) leaves hidden rows out. A cell covered by a merge (checkpoint 47)
+  Among the functions, only `SUBTOTAL` (checkpoint 50) leaves hidden rows out. A cell covered by a merge (checkpoint 47)
   reads as empty, so it is skipped.
 - The holidays range is a reference like any other: insert, delete (checkpoints 23-25) and copy
   (checkpoint 26) move it, and a workbook name (checkpoint 53) for it is never moved.

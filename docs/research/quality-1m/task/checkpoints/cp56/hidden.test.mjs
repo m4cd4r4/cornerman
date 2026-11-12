@@ -96,7 +96,6 @@ test("cp56h a version 3 load brings every layer back, with empty undo lists", ()
   assert.deepEqual(d.hiddenRows(), [2, 10]);
   assert.deepEqual(d.hiddenCols(), ["C", "AA"]);
   assert.equal(m.get("C3"), 40);
-  assert.equal(d.toCSV(), "10\n30");
   assert.deepEqual(c.names(), { K: "=2" });
   assert.equal(m.undo(), false);
   assert.equal(d.undo(), false);

@@ -73,7 +73,7 @@ test("cp69h a header-only text records nothing and fires nothing", () => {
   assert.deepEqual(s.cells(), []);
 });
 
-test("cp69h types text writes numbers and formulas as text formulas", () => {
+test("cp69c chat: types text writes numbers and formulas as text formulas", () => {
   const s = createSheet();
   s.set("F1", "old");
   s.fromCSV('007,-2.5,=1+1,"=say ""hi""",TRUE, 5,1e5,5.,,x', "A1", { types: "text" });
@@ -93,17 +93,13 @@ test("cp69h validation and limits check the input as written", () => {
   const s = createSheet();
   s.setValidation("A1:A3", { type: "whole", min: 1, max: 9 });
   assert.throws(() => s.fromCSV("5\n99", "A1"), thrown("#INVALID", "A2"));
-  assert.throws(() => s.fromCSV("5\n99\nabc", "A1", { types: "text" }), thrown("#INVALID", "A3"));
-  s.fromCSV("5\n99", "A1", { types: "text" });
-  assert.equal(s.getInput("A1"), '="5"');
-  assert.equal(s.getInput("A2"), '="99"');
+  assert.throws(() => s.fromCSV("5\n7\nabc", "A1", { types: "auto" }), thrown("#INVALID", "A3"));
+  s.fromCSV("5\n7", "A1", { types: "auto" });
+  assert.equal(s.getInput("A2"), "7");
   assert.deepEqual(s.invalidCells(), []);
   const digits = "1".repeat(998);
   s.fromCSV(digits, "C1");
   assert.equal(s.getInput("C1").length, 998);
-  assert.throws(() => s.fromCSV(`x,${digits}`, "C2", { types: "text" }), thrown("#LIMIT", "D2"));
-  s.fromCSV("1".repeat(997), "C3", { types: "text" });
-  assert.equal(s.getInput("C3").length, 1000);
   s.merge("E1:F1");
   assert.throws(() => s.fromCSV("h\n1,2", "E1", { header: true }), thrown("#MERGE", "F1"));
 });
@@ -131,7 +127,7 @@ test("cp69h option errors come after at and before the text", () => {
     assert.throws(() => s.fromCSV(42, at, opts), thrown(code, cell), JSON.stringify([at, opts]));
   }
   assert.throws(() => s.fromCSV(42, "A1", { delimiter: undefined, header: undefined, types: undefined, other: 1 }), thrown("#ARG", "42"));
-  assert.throws(() => s.fromCSV('"', "A1", { delimiter: ";", header: true, types: "text" }), thrown("#CSV", "1"));
+  assert.throws(() => s.fromCSV('"', "A1", { delimiter: ";", header: true, types: "auto" }), thrown("#CSV", "1"));
   assert.deepEqual(s.cells(), []);
 });
 
@@ -140,14 +136,14 @@ test("cp69h options together: one undo step, one event, header fields as read", 
   s.set("C3", "old");
   const seen = [];
   s.onChange((e) => seen.push(e.cells));
-  const h = s.fromCSV('"a\tb"\t=x\n5\t=1+1\n', "C3", { delimiter: "\t", header: true, types: "text" });
+  const h = s.fromCSV('"a\tb"\t=x\n5\t=1+1\n', "C3", { delimiter: "\t", header: true, types: "auto" });
   assert.deepEqual(h, ["a\tb", "=x"]);
-  assert.deepEqual(inputs(s), { C3: '="5"', D3: '="=1+1"' });
+  assert.deepEqual(inputs(s), { C3: "5", D3: "=1+1" });
   assert.deepEqual(seen, [["C3", "D3"]]);
   assert.equal(s.undo(), true);
   assert.deepEqual(inputs(s), { C3: "old" });
   assert.equal(s.redo(), true);
-  assert.equal(s.get("D3"), "=1+1");
+  assert.equal(s.get("D3"), 2);
 });
 
 test("cp69h CHANGES.md has a cp69 line that is not the bare title", () => {

@@ -752,6 +752,43 @@ re-read each before editing.
 - **Pair 4** stays only if the reviewer passes it on rule 3.
 - cp80's API index must not gain any method a plant implies.
 
+**Settled 2026-11-12 (build session, within the rulings above):**
+- **Type coverage, all four types used.**
+  - As agreed (4): pair 7 (cp50 "codes as agreed"), R19 (cp76), R20 (cp69), R8 (cp77). Each
+    trigger says "as agreed when <feature> was built" with no checkpoint number and no hint of
+    the answer; the plant says "when <later feature> arrives, we agree: ...".
+  - Rejected approach (2): R6 and R13, re-typed, same fact and same hidden assertion.
+    - R6 plant (cp26): moving sorted rows with the copy rule (references shift) was tried and
+      broke formulas that point outside the sorted block; sorted formulas keep their typed text.
+      The natural route at cp48 is to reuse copy, and Excel's prior also shifts, so rule 3 holds.
+    - R13 plant (cp27): routing undo and redo through the protected write path was tried and left
+      history half-applied; undo and redo never check protection. The natural route at cp71 is
+      exactly that write path.
+    - 17 and 18 stay dropped (reasons above).
+  - Deferred or override (14): the rest.
+- **Crowding.** cp28 keeps R10 and R8; 14 and R17 move to cp30 (save and load), R9 to cp31
+  (workbooks). cp27 keeps R13 and R19; R16 moves to cp12 (recalculation log, the first event-like
+  feature). Most plants per checkpoint is now 2. Rule 5 is re-checked at each new host.
+
+**Review result (2026-11-12, separate Sonnet reviewer given specs, diff and tests only):** 6 of 20
+dropped, 14 kept with fixes.
+- Dropped:
+  - R18 (cp62): sequential LET gives the plant's answer anyway, so rule 3 fails.
+  - R6 (cp48): "the input of every cell goes to the row's new position" restates the fact, so
+    rule 4 fails. Both rejected-approach pairs are now gone except R13.
+  - R19 (cp76): per-call labels already give it; cp66:17 and cp76:20 state it.
+  - 14 (cp70) and R17 (cp75): the trigger spec still says it (cp70:6-8, cp75:17, cp41:52).
+  - R9 (cp54): `deleteSheet` is "exactly as with `removeSheet`", which has no guard. Rule 5 fails.
+- The reviewer's call to drop R11 (cp46) is overruled. cp06:21 makes text equality
+  case-insensitive, so an agent that reuses the engine's comparison for "one of the items" refuses
+  nothing on case. Only the plant settles it.
+- Kept: R13, after removing the method list at cp71 that hinted at the omission of undo.
+- Fixes on the kept pairs: non-chat hidden tests no longer depend on a plant (pairs 1, 4, R15, R5,
+  R10, R20), and hints in cp50, cp58, cp59 and cp77 are neutralised.
+- Types after the review: as agreed 4 (7, R20, R8, R15; cp72 took the pointer), rejected
+  approach 1 (R13), the rest deferred or override.
+- P5.2 (asks for the SUBTOTAL codes) is asked after cp65, after the cp50 trigger, so it stays.
+
 ### Scoring change (to freeze with the build)
 
 - Primary stays the late hidden-test pass rate cp32-80, so existing tests still count. Reported

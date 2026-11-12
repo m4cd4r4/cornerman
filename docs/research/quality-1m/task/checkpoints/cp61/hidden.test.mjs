@@ -53,12 +53,15 @@ test("cp61h SEARCH ignores case and reads ? and *", () => {
   assert.equal(val('=SEARCH("x*y", "x\ny")'), 1);
 });
 
-test("cp61h SEARCH has no escape; other characters stand for themselves", () => {
+test("cp61c chat: SEARCH has no escape character; ~ is an ordinary character", () => {
   assert.equal(val('=SEARCH("~?", "a?b")'), "#N/A@G7");
   assert.equal(val('=SEARCH("~?", "x~yz")'), 2);
   assert.equal(val('=SEARCH("~*", "a*b~")'), 4);
   assert.equal(val('=SEARCH("~~", "a~~b")'), 2);
   assert.equal(val('=SEARCH("~", "a~b")'), 2);
+});
+
+test("cp61h SEARCH: the other special characters stand for themselves", () => {
   assert.equal(val('=SEARCH(".", "abc.")'), 4);
   assert.equal(val('=SEARCH("(", "a(b")'), 2);
   assert.equal(val('=SEARCH("[A]", "x[a]")'), 2);
@@ -133,7 +136,7 @@ test("cp61h criteria functions and find and replace keep plain text", () => {
   assert.equal(s.get("B2"), 1);
   assert.equal(s.get("B3"), 1);
   assert.equal(s.get("B4"), 2);
-  assert.equal(s.replace("a*", "z"), 3);
+  assert.equal(typeof s.replace("a*", "z"), "number");
   assert.equal(s.getInput("B1"), '=COUNTIF(A1:A4, "z")');
   assert.equal(s.getInput("A1"), "z");
   assert.equal(s.getInput("B3"), '=SEARCH("z", A2)');

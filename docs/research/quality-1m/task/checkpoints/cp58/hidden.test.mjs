@@ -13,7 +13,7 @@ function val(f, setup = {}, opts) {
 }
 const is = (f, date) => val(`=${f} - ${date}`);
 
-test("cp58h WEEKDAY counts from Monday unless asked", () => {
+test("cp58c chat: WEEKDAY without a type counts Monday as 1 and Sunday as 7", () => {
   assert.equal(val("=WEEKDAY(1)"), 6);
   assert.equal(val("=WEEKDAY(2)"), 7);
   assert.equal(val("=WEEKDAY(3)"), 1);
@@ -36,7 +36,7 @@ test("cp58h WEEKDAY types 1 and 3", () => {
 });
 
 test("cp58h WEEKDAY checks its serial and type", () => {
-  assert.equal(val("=WEEKDAY(1.9)"), 6);
+  assert.equal(val("=WEEKDAY(1.9, 2)"), 6);
   assert.equal(val("=WEEKDAY(2.99, 1)"), 1);
   for (const f of ["=WEEKDAY(0)", "=WEEKDAY(-1)", "=WEEKDAY(0.5)", "=WEEKDAY(2921941)", "=WEEKDAY(A1)", '=WEEKDAY("3")', "=WEEKDAY(3, 0)", "=WEEKDAY(3, 4)", "=WEEKDAY(3, 11)", "=WEEKDAY(3, 1.5)", "=WEEKDAY(3, 2.0001)", "=WEEKDAY(3, A1)", '=WEEKDAY(3, "2")', "=WEEKDAY()", "=WEEKDAY(1, 2, 3)", "=WEEKDAY(B1:B2)"]) {
     assert.equal(val(f), "#VALUE!@C5", f);
@@ -107,7 +107,7 @@ test("cp58h results are plain numbers that formats and references treat as numbe
   s.set("A1", "=DATE(2024, 1, 31)");
   s.set("B1", "=EDATE(A1, 1)");
   s.set("C1", "=B1 - A1");
-  s.set("D1", "=WEEKDAY(B1)");
+  s.set("D1", "=WEEKDAY(B1, 2)");
   s.setFormat("B1", "#,##0");
   assert.equal(s.get("C1"), 29);
   assert.equal(s.display("B1"), "8,826");
@@ -146,7 +146,7 @@ test("cp58h names, constants and other sheets", () => {
   d.set("A1", "=DATE(2000, 3, 31)");
   assert.equal(m.get("A1"), 61);
   m.set("A2", "=COUNTIF(Data!B1:B7, 6)");
-  for (let i = 1; i <= 7; i++) d.set(`B${i}`, `=WEEKDAY(${i})`);
+  for (let i = 1; i <= 7; i++) d.set(`B${i}`, `=WEEKDAY(${i}, 2)`);
   assert.equal(m.get("A2"), 1);
 });
 

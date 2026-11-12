@@ -21,19 +21,16 @@ cell's own input to it again (`set("A1", "1")` when `A1` already holds `1`, or a
 writes the same text) is allowed and changes nothing. This is NOT what you might expect. A refused
 write throws `#LOCKED` with `cell` = the address in upper case, and the call writes nothing at all.
 
-- `set`, `setCell`, `setMany`, `fromCSV`, `fillDown`, `fillRight` and `replace` check every input
-  they would write before writing any, cell by cell in their order (as checkpoints 46, 64 and 67
-  say). For each cell: a merge (`#MERGE`) first, then protection (`#LOCKED`), then the formula
-  limits (`#LIMIT`), then its validation rule (`#INVALID`).
-- `copy` (checkpoint 26), `book.copy` (checkpoint 68) and `sort` (checkpoint 48), which check no
-  rules and no limits, check protection: every target cell in row-major order, before writing any.
-  Their other checks (address, size, sheet edge, `#MERGE` for `sort`) come first, as before.
+- A call that writes inputs you give it checks every input it would write before writing any,
+  cell by cell in its order (as checkpoints 46, 64 and 67 say). For each cell: a merge (`#MERGE`)
+  first, then protection (`#LOCKED`), then the formula limits (`#LIMIT`), then its validation rule
+  (`#INVALID`).
+- A call that copies or reorders inputs the sheet already holds, and which checks no rules and no
+  limits, checks protection: every target cell in row-major order, before writing any. Its other
+  checks (address, size, sheet edge, `#MERGE` for a sort) come first, as before.
 
 ## What is not refused
 
-- **Undo and redo** (checkpoints 27 and 55) never check protection. `protect` and `unprotect` are
-  not undo steps and do not clear any redo. So after `set("A1", "1")`, `protect("A1")`, `undo()`,
-  the cell is empty and still protected. This is NOT what you might expect.
 - **Insert and delete** of rows and columns are allowed on a sheet with protected cells. Protection
   moves with its cell as a number format does (checkpoint 41), protection in a deleted row or
   column is gone, inserted cells are not protected, and formulas in protected cells are rewritten as
@@ -50,7 +47,8 @@ write throws `#LOCKED` with `cell` = the address in upper case, and the call wri
 
 - Protection is not saved: `save()` and `book.save()` write no trace of it (a sheet whose only
   extra is protection still saves as version 2, checkpoint 56), and a loaded sheet has none.
-- Protecting and unprotecting fire no change event (checkpoint 65).
+- Protecting and unprotecting fire no change event (checkpoint 65). They are not undo steps and
+  do not clear any redo (checkpoints 27 and 55).
 
 ## Errors
 

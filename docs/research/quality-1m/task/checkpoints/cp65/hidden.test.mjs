@@ -137,7 +137,17 @@ test("cp65h a cell written and changed back within one call is not listed", () =
   assert.deepEqual(seen, [["A3"]]);
 });
 
-test("cp65h listeners run in order; one that throws is ignored", () => {
+test("cp65h listeners run in the order they were added", () => {
+  const s = createSheet();
+  const log = [];
+  s.onChange(() => log.push("first"));
+  s.onChange(() => log.push("second"));
+  s.onChange((e) => log.push(`third ${e.cells.join()} ${s.get("A1")}`));
+  assert.equal(s.set("A1", "7"), undefined);
+  assert.deepEqual(log, ["first", "second", "third A1 7"]);
+});
+
+test("cp65c chat: a listener that throws is ignored", () => {
   const s = createSheet();
   const log = [];
   s.onChange(() => log.push("first"));

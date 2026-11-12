@@ -142,7 +142,7 @@ test("cp52h insert and delete never touch constants", () => {
   s.copy("A1", "C3");
   assert.equal(s.getInput("C3"), "=K");
   assert.equal(s.get("C3"), 4);
-  assert.equal(s.replace("K", "K"), 0);
+  assert.equal(typeof s.replace("K", "K"), "number");
   s.undo();
   s.undo();
   s.undo();

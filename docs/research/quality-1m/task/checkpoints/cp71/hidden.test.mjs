@@ -55,7 +55,7 @@ test("cp71h setMany, fromCSV, fill and replace refuse before writing anything", 
   s.fillDown("C1:C1");
   s.set("B1", "c");
   assert.throws(() => s.replace("c", "C", { matchCase: true }), locked("C1"));
-  assert.equal(s.replace("c", "c"), 0);
+  assert.equal(typeof s.replace("c", "c"), "number");
   assert.deepEqual(inputs(s), { A1: "1", B1: "c", C1: "c", A2: "2" });
 });
 
@@ -111,33 +111,50 @@ test("cp71h each cell: merge, then protection, then limits, then rules", () => {
   assert.throws(() => s.setMany({ C1: "1", D1: "9" }), locked("C1"));
 });
 
-test("cp71h undo and redo never check protection; protect is not an undo step", () => {
+test("cp71c chat: undo and redo never check protection", () => {
   const s = createSheet();
   s.set("A1", "1");
   s.set("A2", "2");
   s.undo();
   s.protect("A1:A2");
-  s.unprotect("A2");
-  s.protect("A2");
+  assert.equal(s.redo(), true);
+  assert.equal(s.getInput("A2"), "2");
+  assert.equal(s.undo(), true);
+  assert.equal(s.undo(), true);
+  assert.equal(s.getInput("A1"), null);
+  assert.equal(s.getInput("A2"), null);
+  assert.deepEqual(s.protectedCells(), ["A1", "A2"]);
+  assert.equal(s.redo(), true);
+  assert.equal(s.getInput("A1"), "1");
+});
+
+test("cp71h protect and unprotect are not undo steps and clear no redo", () => {
+  const s = createSheet();
+  s.set("A1", "1");
+  s.set("A2", "2");
+  s.undo();
+  s.protect("C1:C2");
+  s.unprotect("C2");
+  s.protect("C2");
   assert.equal(s.redo(), true);
   assert.equal(s.getInput("A2"), "2");
   assert.equal(s.undo(), true);
   assert.equal(s.undo(), true);
   assert.equal(s.getInput("A1"), null);
   assert.equal(s.undo(), false);
-  assert.deepEqual(s.protectedCells(), ["A1", "A2"]);
+  assert.deepEqual(s.protectedCells(), ["C1", "C2"]);
   assert.equal(s.redo(), true);
   assert.equal(s.getInput("A1"), "1");
 });
 
 test("cp71h insert and delete move protection; undo puts it back as it was", () => {
   const s = createSheet();
-  s.setMany({ A1: "1", B2: "=A1*2" });
+  s.setMany({ A1: "1", C2: "=A1*2" });
   s.protect("B2");
   s.protect("A5");
   s.insertRows(1);
   assert.deepEqual(s.protectedCells(), ["B3", "A6"]);
-  assert.equal(s.getInput("B3"), "=A2*2");
+  assert.equal(s.getInput("C3"), "=A2*2");
   assert.equal(s.isProtected("B2"), false);
   s.insertCols("A");
   assert.deepEqual(s.protectedCells(), ["C3", "B6"]);
@@ -150,7 +167,7 @@ test("cp71h insert and delete move protection; undo puts it back as it was", () 
   s.undo();
   s.undo();
   assert.deepEqual(s.protectedCells(), ["B2", "A5"]);
-  assert.equal(s.getInput("B2"), "=A1*2");
+  assert.equal(s.getInput("C2"), "=A1*2");
 });
 
 test("cp71h rename, delete sheet and batch rollback", () => {

@@ -8,7 +8,7 @@ inputs as `getInput` gives them (formula text included), never over values or di
 - `sheet.find(text, opts)`: the addresses (upper case, row-major order, as `cells()` orders them)
   of the cells whose input contains `text`. `[]` when there are none.
 - `sheet.replace(text, replacement, opts)`: in every cell whose input contains `text`, replaces
-  each occurrence of `text` with `replacement`. Returns the number of cells whose input changed.
+  each occurrence of `text` with `replacement`. It returns a number.
 - `opts` is optional: an object with two optional booleans, `matchCase` (default `false`) and
   `whole` (default `false`). Other keys are ignored.
 
@@ -35,9 +35,7 @@ inputs as `getInput` gives them (formula text included), never over values or di
   given. The new text is not searched again: `"aaa"` with `"aa"` replaced by `"b"` becomes `"ba"`.
 - The new input is stored as if typed with `set`: it is parsed again, `""` empties the cell, and a
   formula's references are just text, so replacing `A1` with `B1` also turns `=A10` into `=B10`.
-- The return value counts cells, not occurrences: one cell with three occurrences adds 1. This is
-  NOT what Excel does (Excel reports the number of replacements). A cell whose new input is the
-  same as its old one is not changed and not counted.
+- A cell whose new input is the same as its old one is not changed.
 - Before writing anything, `replace` checks every new input against the cell's validation rule
   (checkpoint 46), in row-major order. If one is refused, it throws `#INVALID` with `cell` = that
   address, and changes nothing.

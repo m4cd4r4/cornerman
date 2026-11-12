@@ -49,14 +49,18 @@ test("cp44h INDEX: values as a reference gives them", () => {
   assert.equal(val("=IFERROR(INDEX(A1:A3, 9), -1)", s), -1);
 });
 
-test("cp44h MATCH defaults to exact", () => {
+test("cp44c chat: MATCH without a type is an exact match", () => {
   assert.equal(val("=MATCH(20, A5:A9)"), 3);
   assert.ok(isErr(val("=MATCH(25, A5:A9)"), "#N/A", "Z99"));
   assert.ok(isErr(val("=MATCH(25, A1:A3)"), "#N/A", "Z99"));
-  assert.equal(val("=MATCH(30, A5:A9)"), 1);
-  assert.equal(val('=MATCH("APPLE", A5:A9)'), 5);
-  assert.equal(val('=MATCH("b", B5:F5)'), 1);
-  assert.equal(val("=MATCH(TRUE, B5:F5)"), 5);
+});
+
+test("cp44h MATCH type 0: first equal cell, tolerance, case ignored, booleans", () => {
+  assert.equal(val("=MATCH(20, A5:A9, 0)"), 3);
+  assert.equal(val("=MATCH(30, A5:A9, 0)"), 1);
+  assert.equal(val('=MATCH("APPLE", A5:A9, 0)'), 5);
+  assert.equal(val('=MATCH("b", B5:F5, 0)'), 1);
+  assert.equal(val("=MATCH(TRUE, B5:F5, 0)"), 5);
   assert.equal(val("=MATCH(30.0000000001, A5:A9, 0)"), 1);
 });
 
@@ -77,19 +81,19 @@ test("cp44h MATCH types 1 and -1 search the whole range, first on ties", () => {
 });
 
 test("cp44h MATCH is type-strict and literal", () => {
-  assert.ok(isErr(val('=MATCH("20", A5:A9)'), "#N/A", "Z99"));
-  assert.ok(isErr(val('=MATCH("a*", A5:A9)'), "#N/A", "Z99"));
-  assert.ok(isErr(val('=MATCH("?", B5:F5)'), "#N/A", "Z99"));
-  assert.ok(isErr(val('=MATCH("TRUE", B5:F5)'), "#N/A", "Z99"));
+  assert.ok(isErr(val('=MATCH("20", A5:A9, 0)'), "#N/A", "Z99"));
+  assert.ok(isErr(val('=MATCH("a*", A5:A9, 0)'), "#N/A", "Z99"));
+  assert.ok(isErr(val('=MATCH("?", B5:F5, 0)'), "#N/A", "Z99"));
+  assert.ok(isErr(val('=MATCH("TRUE", B5:F5, 0)'), "#N/A", "Z99"));
   assert.ok(isErr(val("=MATCH(1, B5:F5, 1)"), "#N/A", "Z99"));
-  assert.ok(isErr(val("=MATCH(Q1, A5:A9)"), "#N/A", "Z99"));
-  assert.ok(isErr(val("=MATCH(Q1, Q1:Q5)"), "#N/A", "Z99"));
+  assert.ok(isErr(val("=MATCH(Q1, A5:A9, 0)"), "#N/A", "Z99"));
+  assert.ok(isErr(val("=MATCH(Q1, Q1:Q5, 0)"), "#N/A", "Z99"));
   const s = sheet();
   s.set("A6", "=1/0");
   s.set("A7", '=""');
   assert.equal(val("=MATCH(30, A5:A9, -1)", s), 1);
-  assert.equal(val('=MATCH("", A5:A9)', s), 3);
-  assert.ok(isErr(val("=MATCH(5, A5:A9)", s), "#N/A", "Z99"));
+  assert.equal(val('=MATCH("", A5:A9, 0)', s), 3);
+  assert.ok(isErr(val("=MATCH(5, A5:A9, 0)", s), "#N/A", "Z99"));
 });
 
 test("cp44h arguments and their errors", () => {
@@ -106,21 +110,21 @@ test("cp44h arguments and their errors", () => {
 
 test("cp44h precedents, recalculation, insert and other sheets", () => {
   const s = sheet();
-  s.set("E1", '=INDEX(A1:B2, MATCH("bee", B1:B2), 1)');
+  s.set("E1", '=INDEX(A1:B2, MATCH("bee", B1:B2, 0), 1)');
   assert.equal(s.get("E1"), 20);
   assert.deepEqual(s.precedents("E1"), ["A1", "B1", "A2", "B2"]);
   s.set("B1", "bee");
   assert.equal(s.get("E1"), 10);
   s.insertRows(2, 1);
-  assert.equal(s.getInput("E1"), '=INDEX(A1:B3, MATCH("bee", B1:B3), 1)');
+  assert.equal(s.getInput("E1"), '=INDEX(A1:B3, MATCH("bee", B1:B3, 0), 1)');
   assert.equal(s.get("E1"), 10);
-  s.set("E2", "=MATCH(E2, A1:A3)");
+  s.set("E2", "=MATCH(E2, A1:A3, 0)");
   assert.ok(isErr(s.get("E2"), "#CYCLE!", "E2"));
   const b = createWorkbook();
   const m = b.addSheet("Main");
   const d = b.addSheet("Data");
   d.fromCSV("k1,5\nk2,6", "A1");
-  m.set("A1", '=INDEX(Data!B1:B2, MATCH("K2", Data!A1:A2))');
+  m.set("A1", '=INDEX(Data!B1:B2, MATCH("K2", Data!A1:A2, 0))');
   assert.equal(m.get("A1"), 6);
   d.set("B2", "7");
   assert.equal(m.get("A1"), 7);

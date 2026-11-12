@@ -29,8 +29,7 @@ that matches `key`, by `type`.
 
 - Two or three arguments; any other number is `#VALUE!`. `range` follows the INDEX rule, and must
   be one row or one column, otherwise `#VALUE!` (`cell` = the formula cell).
-- `type` is read the same way (truncated toward zero) and must be -1, 0 or 1, otherwise `#VALUE!`. When it is
-  left out it is 0. This is NOT what Excel does (Excel's default is 1).
+- `type` is read the same way (truncated toward zero) and must be -1, 0 or 1, otherwise `#VALUE!`.
 - Only cells of the same type as `key` can match (numbers with numbers, text with text, booleans
   with booleans), as VLOOKUP does (checkpoint 21). Empty cells and error cells never match. An
   empty `key` matches nothing.

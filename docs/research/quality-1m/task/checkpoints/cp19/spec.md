@@ -30,3 +30,9 @@ Dates have no special display: `display` shows the serial like any number.
 - A range, or a name for a range, as an argument is `#VALUE!`.
 - Every argument is evaluated, and errors follow the checkpoint 4 rules.
 - Date arithmetic is plain arithmetic: `DATE(2024, 3, 1) - DATE(2024, 2, 1)` is 29.
+
+## Coming later
+
+- When `WEEKDAY` arrives, a call without a `type` numbers Monday as 1 and Sunday as 7.
+- When `NETWORKDAYS(start, end)` arrives, an `end` before `start` gives the same count as the two
+  swapped, never a negative number.
