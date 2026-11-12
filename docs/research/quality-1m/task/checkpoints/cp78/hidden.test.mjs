@@ -230,3 +230,13 @@ test("cp78h CHANGES.md has a cp78 line that is not the bare title", () => {
   assert.match(lines[77], /^- cp78: \S/);
   assert.notEqual(lines[77].slice(8).toLowerCase(), "renaming names");
 });
+
+test("cp78h recall: the event of a rename lists the rewritten cells in row-major order", () => {
+  const s = createSheet();
+  s.defineConstant("RATE", 2);
+  s.setMany({ B1: "=RATE", A2: "=RATE+1", C1: "=rate*2" });
+  const got = [];
+  s.onChange((e) => got.push(e.cells));
+  assert.equal(s.renameName("RATE", "TAX"), 3);
+  assert.deepEqual(got, [["B1", "C1", "A2"]]);
+});

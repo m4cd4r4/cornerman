@@ -187,3 +187,9 @@ test("cp62h CHANGES.md has a cp62 line that is not the bare title", () => {
   assert.match(lines[61], /^- cp62: \S/);
   assert.notEqual(lines[61].slice(8).toLowerCase(), "let");
 });
+
+test("cp62h recall: an invalid range as a value is #REF! before it is a range, a valid one is #VALUE!", () => {
+  assert.equal(val("=LET(r, A0:A3, r)"), "#REF!@H8");
+  assert.equal(val("=LET(r, A1:A3, r)"), "#VALUE!@H8");
+  assert.equal(val("=LET(r, A0:A3, 5)"), 5);
+});

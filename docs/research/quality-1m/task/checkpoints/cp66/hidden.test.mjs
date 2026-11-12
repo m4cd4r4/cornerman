@@ -227,3 +227,16 @@ test("cp66h CHANGES.md has a cp66 line that is not the bare title", () => {
   assert.match(lines[65], /^- cp66: \S/);
   assert.notEqual(lines[65].slice(8).toLowerCase(), "batches with rollback");
 });
+
+test("cp66h recall: the event of a batch lists its cells in row-major order", () => {
+  const b = createWorkbook();
+  const m = b.addSheet("Main");
+  const got = [];
+  m.onChange((e) => got.push(e.cells));
+  b.batch(() => {
+    m.set("B1", "1");
+    m.set("A2", "2");
+    m.set("C1", "3");
+  });
+  assert.deepEqual(got, [["B1", "C1", "A2"]]);
+});

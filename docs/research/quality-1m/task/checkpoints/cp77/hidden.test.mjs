@@ -124,3 +124,9 @@ test("cp77h CHANGES.md has a cp77 line that is not the bare title", () => {
   assert.match(lines[76], /^- cp77: \S/);
   assert.notEqual(lines[76].slice(8).toLowerCase(), "range export to json");
 });
+
+test("cp77h recall: display texts round half to even on the digits of the number, as checkpoint 5 shows numbers", () => {
+  const s = createSheet();
+  s.setMany({ A1: "=0.0000005", A2: "=0.0000015", A3: "=0.0000025", A4: "=0.0000005000001", A5: "=1/3" });
+  assert.deepEqual(JSON.parse(s.exportJSON("A1:A5", { display: true })).values, [["0"], ["0.000002"], ["0.000002"], ["0.000001"], ["0.333333"]]);
+});

@@ -134,3 +134,12 @@ test("cp44h CHANGES.md has a cp44 line that is not the bare title", () => {
   assert.match(lines[43], /^- cp44: \S/);
   assert.notEqual(lines[43].slice(8).toLowerCase(), "index and match");
 });
+
+test("cp44h recall: row and column read as in arithmetic, so text is #VALUE! even when it looks like a number", () => {
+  const s = sheet();
+  s.set("Y1", '="2"');
+  assert.ok(isErr(val('=INDEX(A1:C3, "2")', s), "#VALUE!", "Z99"));
+  assert.ok(isErr(val("=INDEX(A1:C3, Y1)", s), "#VALUE!", "Z99"));
+  assert.ok(isErr(val("=INDEX(A1:C3, 1, Y1)", s), "#VALUE!", "Z99"));
+  assert.equal(val("=INDEX(A1:C3, TRUE, TRUE)", s), 10);
+});

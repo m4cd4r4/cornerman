@@ -169,3 +169,10 @@ test("cp46h CHANGES.md has a cp46 line that is not the bare title", () => {
   assert.match(lines[45], /^- cp46: \S/);
   assert.notEqual(lines[45].slice(8).toLowerCase(), "data validation");
 });
+
+test("cp46h recall: invalidCells lists addresses in the order cells() gives, row by row with Z before AA", () => {
+  const s = createSheet();
+  s.setMany({ B2: "50", A10: "50", AA1: "50", A2: "50", Z1: "50" });
+  for (const k of ["B2", "A10", "AA1", "A2", "Z1"]) s.setValidation(k, WHOLE);
+  assert.deepEqual(s.invalidCells(), ["Z1", "AA1", "A2", "B2", "A10"]);
+});

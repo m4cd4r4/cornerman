@@ -41,7 +41,7 @@ inside a range are not counted twice.
   `=-SUBTOTAL(9, A1:A3)` and `=IF(TRUE, SUBTOTAL(9, A1:A3))` are counted like any other cell. This
   is NOT what Excel does (Excel leaves out every cell whose formula contains SUBTOTAL anywhere). A
   formula that does not parse is never left out.
-- For a range on another sheet (`Data!A1:A9`), the hidden rows and formulas of that sheet decide.
+- For a range on another sheet (`Data!A1:A9`, checkpoint 31), the hidden rows and formulas of that sheet decide.
 - A cell left out is not read at all, so its error value is not collected. The other cells count
   as the aggregate in checkpoint 15 counts range cells: numbers only; text, booleans and empty
   cells are skipped; error values are collected, except by COUNT, which ignores them. With no

@@ -129,3 +129,13 @@ test("cp45h CHANGES.md has a cp45 line that is not the bare title", () => {
   assert.match(lines[44], /^- cp45: \S/);
   assert.notEqual(lines[44].slice(8).toLowerCase(), "sumproduct");
 });
+
+test("cp45h recall: an error read from a range on another sheet keeps its own cell, with no sheet name", () => {
+  const b = createWorkbook();
+  const m = b.addSheet("Main");
+  const d = b.addSheet("Data");
+  d.set("A1", "2");
+  d.set("C5", "=1/0");
+  m.set("B2", "=SUMPRODUCT(Data!A1:C5)");
+  assert.ok(isErr(m.get("B2"), "#DIV/0!", "C5"));
+});

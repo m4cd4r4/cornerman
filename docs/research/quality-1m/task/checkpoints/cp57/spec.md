@@ -7,7 +7,7 @@
 - Exactly two arguments. Any other number is `#VALUE!` (`cell` = the formula cell).
 - Both arguments are evaluated, and errors among them follow the checkpoint 4 rules (and the
   checkpoint 34 order the sheet uses). A range, or a name for a range, in either argument is
-  `#VALUE!`, as for any value (checkpoint 13).
+  `#VALUE!`, as for any value (checkpoint 13, which also covers an invalid range).
 - `format` is turned into text the way `display` shows it (checkpoint 5), as the text functions
   of checkpoint 18 do: `TEXT(2.5, 0)` uses the format `"0"`.
 - The format text must be a format exactly as checkpoint 41 defines them, with its case and spaces

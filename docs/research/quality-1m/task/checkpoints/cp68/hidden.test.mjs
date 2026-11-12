@@ -200,3 +200,14 @@ test("cp68h CHANGES.md has a cp68 line that is not the bare title", () => {
   assert.match(lines[67], /^- cp68: \S/);
   assert.notEqual(lines[67].slice(8).toLowerCase(), "copying across sheets");
 });
+
+test("cp68h recall: the event of a copy lists the target cells in row-major order", () => {
+  const b = createWorkbook();
+  const d = b.addSheet("Data");
+  const m = b.addSheet("Main");
+  d.setMany({ A1: "1", B1: "2", A2: "3", B2: "4" });
+  const got = [];
+  m.onChange((e) => got.push(e.cells));
+  b.copy("Data!A1:B2", "Main!C1");
+  assert.deepEqual(got, [["C1", "D1", "C2", "D2"]]);
+});

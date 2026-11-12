@@ -185,3 +185,10 @@ test("cp42h CHANGES.md has a cp42 line that is not the bare title", () => {
   assert.match(lines[41], /^- cp42: \S/);
   assert.notEqual(lines[41].slice(8).toLowerCase(), "cell notes");
 });
+
+test("cp42h recall: save writes cells in the row-major order of checkpoint 30, notes or not", () => {
+  const s = createSheet();
+  s.setMany({ B2: "x", A10: "x", AA1: "x", A2: "x", Z1: "x" });
+  s.setNote("A2", "n");
+  assert.deepEqual(Object.keys(JSON.parse(s.save()).cells), ["Z1", "AA1", "A2", "B2", "A10"]);
+});

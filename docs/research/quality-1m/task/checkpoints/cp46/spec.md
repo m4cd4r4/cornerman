@@ -9,7 +9,7 @@ against the rule, and refused when they break it.
   address or a range, as for `setFormat` (checkpoint 41). `rule` `null` removes the rule from those
   cells. Inputs already in the cells are not checked. Returns `undefined`.
 - `sheet.getValidation(address)`: the cell's rule as a new plain object, or `null`.
-- `sheet.invalidCells()`: the addresses (upper case, row-major) of the cells whose current input
+- `sheet.invalidCells()`: the addresses (upper case, row-major as `cells()` orders them, checkpoint 1) of the cells whose current input
   breaks their rule. `[]` when there are none.
 
 ## Rules

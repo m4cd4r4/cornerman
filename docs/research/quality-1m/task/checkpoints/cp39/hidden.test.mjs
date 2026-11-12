@@ -124,3 +124,10 @@ test("cp39h a 9,999-cell chain explains without throwing", () => {
   assert.equal(depth, 9998);
   assert.deepEqual(node, n("A1", "1", 1, []));
 });
+
+test("cp39h recall: from lists the precedents in the row-major order of checkpoint 10, Z before AA", () => {
+  const s = createSheet();
+  s.set("D3", "=A10+A2+AA1+B1+Z1");
+  assert.deepEqual(s.explain("D3").from.map((n) => n.address), ["B1", "Z1", "AA1", "A2", "A10"]);
+  assert.deepEqual(s.explain("D3").from.map((n) => n.address), s.precedents("D3"));
+});

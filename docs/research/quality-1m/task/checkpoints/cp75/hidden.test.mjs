@@ -227,3 +227,15 @@ test("cp75h CHANGES.md has a cp75 line that is not the bare title", () => {
   assert.match(lines[74], /^- cp75: \S/);
   assert.notEqual(lines[74].slice(8).toLowerCase(), "api v3 and deprecations");
 });
+
+test("cp75h recall: cell() on a formula that reads an error from another sheet gives that error with its own cell", () => {
+  const b = createWorkbook();
+  const m = b.addSheet("Main");
+  const d = b.addSheet("Data");
+  d.set("C5", "=1/0");
+  m.set("B2", "=Data!C5");
+  const c = m.cell("b2");
+  assert.equal(c.address, "B2");
+  assert.equal(c.value.code, "#DIV/0!");
+  assert.equal(c.value.cell, "C5");
+});

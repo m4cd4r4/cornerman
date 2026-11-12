@@ -142,3 +142,12 @@ test("cp38h generated formulas round trip", () => {
   }
   assert.ok(changed > 900);
 });
+
+test("cp38h recall: postfix % binds tighter than ^ and repeats, so it needs no parentheses", () => {
+  table([
+    ["=2 % ^ 3", "=2%^3"],
+    ["=a1%^b1%", "=A1%^B1%"],
+    ["=2^3%%", "=2^3%%"],
+    ["=(2^3)%", "=(2^3)%"],
+  ]);
+});

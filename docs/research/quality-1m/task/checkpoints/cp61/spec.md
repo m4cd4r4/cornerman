@@ -48,6 +48,7 @@ Three more text functions: `SUBSTITUTE(text, old, new)`, `SUBSTITUTE(text, old, 
 
 - `SUMIF`, `COUNTIF` and `AVERAGEIF` (checkpoints 22 and 43) still have no wildcards, and find and
   replace (checkpoint 51) still matches plain text.
+- A reference to another sheet (checkpoint 31) works as in any formula.
 - References inside these functions are precedents, and move with insert, delete and copy as any
   reference does. The text inside a string argument never changes.
 

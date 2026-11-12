@@ -179,3 +179,9 @@ test("cp57h CHANGES.md has a cp57 line that is not the bare title", () => {
   assert.match(lines[56], /^- cp57: \S/);
   assert.notEqual(lines[56].slice(8).toLowerCase(), "text");
 });
+
+test("cp57h recall: an invalid range in either argument is #REF! before it is a range, a valid one is #VALUE!", () => {
+  assert.equal(val('=TEXT(A0:A3, "0")'), "#REF!@D4");
+  assert.equal(val('=TEXT(A1:A3, "0")'), "#VALUE!@D4");
+  assert.equal(val("=TEXT(1, A0:A3)"), "#REF!@D4");
+});

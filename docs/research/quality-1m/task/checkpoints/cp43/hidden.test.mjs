@@ -169,3 +169,8 @@ test("cp43h CHANGES.md has a cp43 line that is not the bare title", () => {
   assert.match(lines[42], /^- cp43: \S/);
   assert.notEqual(lines[42].slice(8).toLowerCase(), "countif and averageif");
 });
+
+test("cp43h recall: errors in the matching positions compete by the checkpoint 4 rules", () => {
+  const setup = { A1: "1", A2: "1", A3: "1", B1: "=1/0", B2: "=nope", B3: "=1/0" };
+  assert.ok(isErr(val("=AVERAGEIF(A1:A3, 1, B1:B3)", setup), "#NAME?", "B2"));
+});

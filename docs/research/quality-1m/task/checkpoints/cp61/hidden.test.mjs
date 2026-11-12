@@ -172,3 +172,12 @@ test("cp61h CHANGES.md has a cp61 line that is not the bare title", () => {
   assert.match(lines[60], /^- cp61: \S/);
   assert.notEqual(lines[60].slice(8).toLowerCase(), "substitute, find and search");
 });
+
+test("cp61h recall: an error read from another sheet keeps its own cell, with no sheet name", () => {
+  const b = createWorkbook();
+  const m = b.addSheet("Main");
+  const d = b.addSheet("Data");
+  d.set("C5", "=1/0");
+  m.set("B2", '=FIND("a", Data!C5)');
+  assert.equal(err(m.get("B2")), "#DIV/0!@C5");
+});

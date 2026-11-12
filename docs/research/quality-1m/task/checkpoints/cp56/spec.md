@@ -31,7 +31,7 @@ Exactly what `JSON.stringify` gives for this object, with no spaces or line ends
   when it is empty:
   - `name`, `cells`, `names`: as in version 2.
   - `notes`: as in checkpoint 42, but written as `{}` when the sheet has none.
-  - `formats`: address -> format text as `getFormat` gives it, in row-major order.
+  - `formats`: address -> format text as `getFormat` gives it, in row-major order as `cells()` orders them (checkpoint 1).
   - `rules`: address -> rule exactly as `getValidation` gives it (`{"type":"whole","min":1,"max":5}`,
     `{"type":"list","items":["a","b"]}`), in row-major order.
   - `merges`: the array `merges()` gives.

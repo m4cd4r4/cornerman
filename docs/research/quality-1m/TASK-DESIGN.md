@@ -1,6 +1,8 @@
 # Stage 0: task, hidden tests, scorer (design)
 
-Status: DESIGN, 2026-11-09. Nothing built, nothing run, US$0 spent.
+Status (2026-11-12): built, two pilots run, re-frozen after the fix and retune. The task is at the
+ceiling for Default, so the comparison as frozen is not run; see "Fix and retune" at the end and
+REFRAME-DRAFT.md. The text below is the design history from 2026-11-09 on.
 Parent: PROJECT-PLAN.md (arms, metric, rulings).
 
 ## Early checks (done 2026-11-09)
@@ -599,3 +601,20 @@ is NOT what Excel does" / "...what you might expect".
 The longer task does what pilot 1 could not: Default filled the window to 959k and compacted
 once. Late pass rates are equal at n = 1 and 44/49 is under the 95% ceiling rule, so the task
 stays as frozen. Both runs together used up one 5-hour usage window (Default waited 10 times).
+
+## Fix and retune (2026-11-12, no paid run)
+
+- Step 1 (51e66df): 30 unwritten rules stated in 24 specs, fair probe key, house rules printed
+  once by the gate, scorer and compare additions. Detail in the PREDICTIONS.md re-freeze note.
+- Step 2: 26 late checkpoints gained one `cpNNh recall` hidden test (a new feature must obey a
+  rule from cp01-31), 14 spec pointers, 26 `recall-*` mutants. A separate reviewer judged all 26
+  fair (I:/Scratch/_q1m-audit/harden-review.md). The other 23 late checkpoints got none: existing
+  tests already caught every candidate, or no fair early-rule assertion was found.
+- Verified: check-tree cp01-80 hidden 727/727, mutants 605/605 killed (`--jobs 8`), probe-selftest
+  5/5, SCORE SELFTEST OK, COMPARE SELFTEST OK, rule negatives 18/18, SMOKE OK.
+- Calibration on default-sonnet-r2 with the new tests: late 42/49 (was 44/49). The two new
+  failures (cp60, cp62) rest on a cp13 sentence added in step 1 that the pilot never saw. Fair
+  hits: 0 of 23. With cp44, cp45 and cp77 now stated in the specs, a fresh Default run is
+  estimated near 47/49 (96%), outside the 40-80% band.
+- Outcome: hardening stopped (Macdara, 2026-11-12). The task does not discriminate on Default's
+  late pass rate. Proposal for a "no worse and cheaper" primary: REFRAME-DRAFT.md (draft).

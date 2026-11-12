@@ -204,3 +204,9 @@ test("cp64h CHANGES.md has a cp64 line that is not the bare title", () => {
   assert.match(lines[63], /^- cp64: \S/);
   assert.notEqual(lines[63].slice(8).toLowerCase(), "fill down and fill right");
 });
+
+test("cp64h recall: only inputs of the checkpoint 1 number grammar make a series", () => {
+  const s = sheet({ A1: "+1", A2: "2", B1: "1e1", B2: "20", C1: "5.", C2: "6", D1: "0x1", D2: "2", E1: " 1", E2: "2" });
+  s.fillDown("A1:E3");
+  assert.deepEqual(inputs(s, ["A2", "A3", "B2", "B3", "C2", "C3", "D2", "D3", "E2", "E3"]), ["+1", "+1", "1e1", "1e1", "5.", "5.", "0x1", "0x1", " 1", " 1"]);
+});

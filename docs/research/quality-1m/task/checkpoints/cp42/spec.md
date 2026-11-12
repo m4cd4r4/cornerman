@@ -35,7 +35,7 @@ the cell's place on the sheet, not to its input.
 
 ## Saving
 
-- `save()` (checkpoint 30) writes a `notes` object after `names` when the sheet has at least one
+- `save()` (checkpoint 30, cells and names as it writes them) writes a `notes` object after `names` when the sheet has at least one
   note: address -> text, in row-major order. A sheet with no notes writes no `notes` key, so its
   save text is exactly what it was before this checkpoint.
 - `book.save()` (checkpoint 35) writes the same `notes` object, under the same rule, in each sheet

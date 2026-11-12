@@ -150,3 +150,13 @@ test("cp48h CHANGES.md has a cp48 line that is not the bare title", () => {
   assert.match(lines[47], /^- cp48: \S/);
   assert.notEqual(lines[47].slice(8).toLowerCase(), "sorting a range");
 });
+
+test("cp48h recall: a formula that reads an empty cell has the number 0 as its key, not an empty key", () => {
+  const s = createSheet();
+  s.fromCSV("5,1\n=Z9,2\nx,3\n,4\n=Y9,5", "A1");
+  s.sort("A1:B5", "A");
+  assert.deepEqual(["A1", "A2", "A3", "A4", "A5"].map((k) => s.getInput(k)), ["=Z9", "=Y9", "5", "x", null]);
+  assert.deepEqual(["B1", "B2", "B3", "B4", "B5"].map((k) => s.getInput(k)), ["2", "5", "1", "3", "4"]);
+  s.sort("A1:B5", "A", { descending: true });
+  assert.deepEqual(["A1", "A2", "A3", "A4", "A5"].map((k) => s.getInput(k)), ["x", "5", "=Z9", "=Y9", null]);
+});

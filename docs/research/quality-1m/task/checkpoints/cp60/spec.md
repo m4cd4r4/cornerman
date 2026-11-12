@@ -13,7 +13,7 @@ and 10), whichever argument is picked. So `CHOOSE(1, 5, A1)` in cell `A1` is `#C
   `CHOOSE(2.9, "a", "b", "c")` is `"b"`, `CHOOSE(TRUE, "a", "b")` is `"a"`. An error in it is the
   result. An index below 1 or past the last value is `#VALUE!` (`cell` = the formula cell).
 - Only the chosen value is evaluated: `CHOOSE(1, 5, 1/0)` is 5.
-- The chosen value is a value, never a range. A range there is `#VALUE!` (checkpoint 13), so
+- The chosen value is a value, never a range. A range there is `#VALUE!` (checkpoint 13, which also covers an invalid range), so
   `SUM(CHOOSE(1, A1:A3))` and `COUNTIF(CHOOSE(1, A1:A3), 1)` are `#VALUE!`. This is NOT what Excel
   does (Excel's CHOOSE can give a range to the function around it). A chosen reference behaves
   exactly like that reference, as an `IF` branch does.

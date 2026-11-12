@@ -201,3 +201,9 @@ test("cp63h CHANGES.md has a cp63 line that is not the bare title", () => {
   assert.match(lines[62], /^- cp63: \S/);
   assert.notEqual(lines[62].slice(8).toLowerCase(), "decimal comma");
 });
+
+test("cp63h recall: the text of a number rounds half to even on its digits, as checkpoint 5 shows numbers", () => {
+  const s = createSheet(C);
+  s.setMany({ A1: "=0.0000005", A2: "=0.0000015", A3: "=0.0000025", A4: "=0.0000005000001" });
+  assert.deepEqual(["A1", "A2", "A3", "A4"].map((k) => s.display(k)), ["0", "0,000002", "0,000002", "0,000001"]);
+});

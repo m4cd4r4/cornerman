@@ -39,7 +39,7 @@ Without `opts.display`, each entry is the cell's value as `value` gives it, writ
 - An error is an object `{"error":code,"cell":cell}` with the error value's own `code` and `cell`
   (checkpoint 2), so a text that looks like an error (`#N/A` typed as text) stays a string.
 
-With `opts.display` `true`, each entry is the string `text` gives for the cell: number formats and
+With `opts.display` `true`, each entry is the string `text` gives for the cell (a number with no format as checkpoint 5 shows it): number formats and
 the decimal comma (checkpoint 63) apply, an error is its code, an empty cell is `""`.
 
 ## Which cells

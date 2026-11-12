@@ -205,3 +205,15 @@ test("cp56h CHANGES.md has a cp56 line that is not the bare title", () => {
   assert.match(lines[55], /^- cp56: \S/);
   assert.notEqual(lines[55].slice(8).toLowerCase(), "save format version 3");
 });
+
+test("cp56h recall: formats and rules are written in the order cells() gives, row by row with Z before AA", () => {
+  const b = createWorkbook();
+  const s = b.addSheet("Main");
+  for (const k of ["B2", "A10", "AA1", "A2", "Z1"]) {
+    s.setFormat(k, "0.0");
+    s.setValidation(k, { type: "whole", min: 1, max: 9 });
+  }
+  const saved = JSON.parse(b.save()).sheets[0];
+  assert.deepEqual(Object.keys(saved.formats), ["Z1", "AA1", "A2", "B2", "A10"]);
+  assert.deepEqual(Object.keys(saved.rules), ["Z1", "AA1", "A2", "B2", "A10"]);
+});

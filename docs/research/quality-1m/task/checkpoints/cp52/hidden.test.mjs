@@ -212,3 +212,12 @@ test("cp52h CHANGES.md has a cp52 line that is not the bare title", () => {
   assert.match(lines[51], /^- cp52: \S/);
   assert.notEqual(lines[51].slice(8).toLowerCase(), "named constants");
 });
+
+test("cp52h recall: names() sorts keys by the plain string comparison of checkpoint 14", () => {
+  const s = createSheet();
+  s.defineConstant("A_B", 1);
+  s.defineConstant("AB", 2);
+  s.defineConstant("A1B", 3);
+  s.defineConstant("B", 4);
+  assert.deepEqual(Object.keys(s.names()), ["A1B", "AB", "A_B", "B"]);
+});

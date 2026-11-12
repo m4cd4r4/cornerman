@@ -4,3 +4,11 @@
 {"ts":"2026-11-11T23:31:24Z","agent":"orchestrator","phase":"plan","action":"dispatch_spec-auditor-4","task":"spec vs hidden tests, block 4 of 4","model":"sonnet"}
 {"ts":"2026-11-11T23:36:00Z","agent":"spec-auditor-1","phase":"review","action":"complete","result":"pass","issues":9,"files":["I:/Scratch/_q1m-audit/spec-audit-cp01-20.md"]}
 {"ts":"2026-11-11T23:41:00Z","agent":"spec-auditor-2","phase":"review","action":"complete","result":"pass","issues":7,"duration_s":523,"files":["I:/Scratch/_q1m-audit/spec-audit-cp21-40.md"]}
+{"ts":"2026-11-11T23:43:00Z","agent":"spec-auditor-3","phase":"review","action":"complete","result":"pass","issues":5,"duration_s":651,"files":["I:/Scratch/_q1m-audit/spec-audit-cp41-60.md"]}
+{"ts":"2026-11-11T23:50:00Z","agent":"spec-auditor-4","phase":"review","action":"complete","result":"pass","issues":8,"duration_s":844,"files":["I:/Scratch/_q1m-audit/spec-audit-cp61-80.md"]}
+{"ts":"2026-11-12T00:05:00Z","agent":"orchestrator","phase":"execute","action":"complete","result":"pass","task":"step 1: spec fixes, probe key, house rules once, compare --base","commit":"51e66df"}
+{"ts":"2026-11-12T00:06:00Z","agent":"orchestrator","phase":"plan","action":"dispatch_harden-writer-1","task":"step 2: late-checkpoint recall assertions with mutants","model":"sonnet"}
+{"ts":"2026-11-12T00:28:00Z","agent":"harden-writer-1","phase":"execute","action":"complete","result":"pass","issues":0,"duration_s":1706,"task":"26 of 49 late checkpoints got one recall block and one mutant","files":["I:/Scratch/_q1m-audit/harden-report.md"]}
+{"ts":"2026-11-12T00:30:00Z","agent":"orchestrator","phase":"plan","action":"dispatch_harden-reviewer-1","task":"audit the 26 recall blocks against the specs, diff and specs only","model":"sonnet"}
+{"ts":"2026-11-12T00:35:00Z","agent":"harden-reviewer-1","phase":"review","action":"complete","result":"pass","issues":0,"duration_s":245,"files":["I:/Scratch/_q1m-audit/harden-review.md"]}
+{"ts":"2026-11-12T05:58:00Z","agent":"orchestrator","phase":"execute","action":"complete","result":"pass","task":"step 2: verified (727/727, mutants 605/605, self-tests, smoke); calibration Default late 42/49, 0 of 23 fair hits, task at ceiling; hardening stopped, REFRAME-DRAFT.md written"}

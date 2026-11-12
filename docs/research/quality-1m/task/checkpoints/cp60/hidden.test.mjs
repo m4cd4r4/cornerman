@@ -155,3 +155,9 @@ test("cp60h CHANGES.md has a cp60 line that is not the bare title", () => {
   assert.match(lines[59], /^- cp60: \S/);
   assert.notEqual(lines[59].slice(8).toLowerCase(), "choose and switch");
 });
+
+test("cp60h recall: a range picked as a value is #REF! when it is invalid and #VALUE! when it is valid", () => {
+  assert.equal(val("=CHOOSE(1, A0:A3)"), "#REF!@F6");
+  assert.equal(val("=CHOOSE(1, A1:A3)"), "#VALUE!@F6");
+  assert.equal(val("=CHOOSE(2, A0:A3, 7)"), 7);
+});

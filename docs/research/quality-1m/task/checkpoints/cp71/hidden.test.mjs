@@ -209,3 +209,9 @@ test("cp71h CHANGES.md has a cp71 line that is not the bare title", () => {
   assert.match(lines[70], /^- cp71: \S/);
   assert.notEqual(lines[70].slice(8).toLowerCase(), "protected cells");
 });
+
+test("cp71h recall: protectedCells lists addresses in the order cells() gives, row by row with Z before AA", () => {
+  const s = createSheet();
+  for (const k of ["B2", "A10", "AA1", "A2", "Z1"]) s.protect(k);
+  assert.deepEqual(s.protectedCells(), ["Z1", "AA1", "A2", "B2", "A10"]);
+});

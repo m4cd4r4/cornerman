@@ -196,3 +196,10 @@ test("cp51h CHANGES.md has a cp51 line that is not the bare title", () => {
   assert.match(lines[50], /^- cp51: \S/);
   assert.notEqual(lines[50].slice(8).toLowerCase(), "find and replace");
 });
+
+test("cp51h recall: find lists addresses in the order cells() gives, row by row with Z before AA", () => {
+  const s = createSheet();
+  s.setMany({ B2: "x", A10: "x", AA1: "x", A2: "x", Z1: "x" });
+  assert.deepEqual(s.find("x"), ["Z1", "AA1", "A2", "B2", "A10"]);
+  assert.deepEqual(s.find("x"), s.cells());
+});

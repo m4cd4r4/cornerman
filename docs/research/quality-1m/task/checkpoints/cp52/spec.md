@@ -13,7 +13,7 @@ A defined name (checkpoint 14) can now stand for a value instead of cells.
 - Constants and the names of checkpoint 14 are one set of names. `defineConstant` replaces a name
   for cells with the same name (in any case), and `defineName` replaces a constant. `removeName`
   removes either kind.
-- `names()` lists constants with the others, in the same sorted order. A constant is written as
+- `names()` lists constants with the others, in the same sorted order (checkpoint 14). A constant is written as
   `=` followed by its value: a number as JavaScript's `String(n)` gives it (`"=0.25"`, `"=-3"`,
   `"=1e+21"`), a string in double quotes with each `"` inside written twice (`'="a ""b"""'`), a
   boolean as `"=TRUE"` or `"=FALSE"`.

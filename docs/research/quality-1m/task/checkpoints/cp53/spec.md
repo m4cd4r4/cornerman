@@ -12,7 +12,7 @@ sheet's own names (checkpoints 14 and 52) still come first.
   `sheet.defineConstant` does (checkpoint 52). Returns `undefined`.
 - `book.removeName(name)`: removes a workbook name. Returns `true`, or `false` when the book has
   no such name.
-- `book.names()`: a plain object, name (upper case) -> target, sorted by name. A cell target is
+- `book.names()`: a plain object, name (upper case) -> target, sorted by name as checkpoint 14 sorts them. A cell target is
   written with its sheet name as it was typed in `ref`, then `!`, then the cells as
   `sheet.names()` writes them: `book.defineName("total", "data!b3:a1")` gives
   `{ TOTAL: "data!A1:B3" }`. A constant is written as checkpoint 52 writes it.

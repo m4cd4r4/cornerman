@@ -116,3 +116,13 @@ test("cp35h load errors, in order", () => {
   for (const [text, cell] of cases) assert.throws(() => loadWorkbook(text), thrown("#LOAD", cell), String(text));
   assert.deepEqual(loadWorkbook(top({ extra: { sheets: 1 } })).sheetNames(), []);
 });
+
+test("cp35h recall: each sheet's names are written in the sorted order of checkpoint 30 and 14", () => {
+  const b = createWorkbook();
+  const s = b.addSheet("Main");
+  s.defineName("A_B", "C1");
+  s.defineName("AB", "C2");
+  s.defineName("A1B", "C3");
+  s.defineName("B", "C4");
+  assert.deepEqual(Object.keys(JSON.parse(b.save()).sheets[0].names), ["A1B", "AB", "A_B", "B"]);
+});

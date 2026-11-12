@@ -18,7 +18,7 @@ it changed in the workbook is put back.
   batch that made three `set` calls, `book.undo()` undoes only the last of them. This is NOT what
   you might expect.
 - Change events (checkpoint 65) are not delivered while `fn` runs. The whole batch is one call: when
-  it ends, each sheet whose inputs differ from before the batch gets one event listing those cells,
+  it ends, each sheet whose inputs differ from before the batch gets one event listing those cells (as checkpoint 65 lists them),
   sheets in the order the batch first wrote to them. A batch that is rolled back fires no event for
   the sheets of this workbook.
 - `book.addSheet`, `book.removeSheet`, `book.renameSheet`, `book.deleteSheet` and `book.batch` throw

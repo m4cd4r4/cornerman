@@ -9,7 +9,7 @@ A cell can now be protected. Writes that would change a protected cell's input a
 - `sheet.unprotect(target)`: removes the protection from every cell of `target`. Returns
   `undefined`.
 - `sheet.isProtected(address)`: `true` or `false`. Throws for an invalid address as `get` does.
-- `sheet.protectedCells()`: the protected addresses, upper case, row-major. `[]` when none.
+- `sheet.protectedCells()`: the protected addresses, upper case, row-major as `cells()` orders them (checkpoint 1). `[]` when none.
 
 Protection belongs to the cell, whether or not it holds an input; an empty protected cell refuses
 an input too.

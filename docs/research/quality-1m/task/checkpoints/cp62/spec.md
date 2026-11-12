@@ -32,7 +32,7 @@ gives the value of `calculation`, where the names can be used. `LET(x, 2, y, x +
 - A name holds the value its expression gave. A reference to an empty cell gives an empty value,
   which behaves as an empty cell does: with `A1` empty, `LET(v, A1, v + 1)` is 1 and
   `LET(v, A1, v & "a")` is `"a"`.
-- A name never holds a range. A range as a value is `#VALUE!` (checkpoint 13), and as a function
+- A name never holds a range. A range as a value is `#VALUE!` (checkpoint 13, which also covers an invalid range), and as a function
   argument a `LET` name is `#VALUE!` (`cell` = the formula cell) wherever a range argument is
   taken, exactly as a named constant is (checkpoint 52): `LET(r, A1:A3, SUM(r))` and
   `LET(x, 5, SUM(x))` are both `#VALUE!`, and so is `LET(x, A1, COUNT(x))`. This is NOT what Excel

@@ -8,7 +8,7 @@ workbook now keeps a log of the calls made to them.
 
 - `sheet.cell(address)`: a new object `{ address, input, value, text }` for one cell. `address`
   is upper case; `input` is what `formula` gives (`""` for an empty cell, checkpoint 33); `value`
-  is what `value` gives and `text` what `text` gives (number formats, decimal comma and all). It
+  is what `value` gives (an error read from another sheet as checkpoint 31 has it) and `text` what `text` gives (number formats, decimal comma and all). It
   evaluates exactly as `value` would, and an invalid address throws `#ADDR` as `value` does.
 - `sheet.clear(target)`: removes the input of every cell in `target` that holds one, as one undo
   step, and returns how many cells it cleared (`0` when none held an input, and then there is no

@@ -208,3 +208,13 @@ test("cp50h CHANGES.md has a cp50 line that is not the bare title", () => {
   assert.match(lines[49], /^- cp50: \S/);
   assert.notEqual(lines[49].slice(8).toLowerCase(), "subtotal");
 });
+
+test("cp50h recall: an error read from a range on another sheet keeps its own cell, with no sheet name", () => {
+  const b = createWorkbook();
+  const m = b.addSheet("Main");
+  const d = b.addSheet("Data");
+  d.set("A1", "5");
+  d.set("A2", "=nope");
+  m.set("C1", "=SUBTOTAL(9, Data!A1:A3)");
+  assert.equal(err(m.get("C1")), "#NAME?@A2");
+});
