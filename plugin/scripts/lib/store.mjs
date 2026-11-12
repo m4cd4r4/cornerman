@@ -126,6 +126,8 @@ function asHandover(record) {
       machine: record.machine || "",
       ...(record.sessionId ? { sessionId: record.sessionId } : {}),
       ...(record.openQuestion === true ? { openQuestion: true } : {}),
+      // A pinned handover is never archived for its age (hook.mjs).
+      ...(record.pinned === true ? { pinned: true } : {}),
       // When load.mjs --take made it its owner's (reopen). The owner checks read
       // this, not `created`: the taking window started after the save.
       ...(record.takenAt ? { takenAt: record.takenAt } : {}),
@@ -181,8 +183,8 @@ function listFor(root, repoOrKey, keep) {
     ? (r) => repoKey(r.repoPath) === want
     : (r) => here.has(normalisePath(r.repoPath)) || here.has(normalisePath(r.mainPath || r.repoPath));
 
-  return listAll(root)
-    .filter((r) => keep(r) && (!want || match(r)))
+  // Filtered through the record index, so only the matching files are read (#204).
+  return listAll(root, { where: (r) => keep(r) && (!want || match(r)) })
     .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)))
     .map(asHandover);
 }
@@ -198,7 +200,7 @@ function listFor(root, repoOrKey, keep) {
  * (2026-09-27).
  */
 export function archive(root, key, path, by) {
-  const record = listAll(root).find((r) => r.path === path || r.id === path);
+  const record = listAll(root, { where: (r) => r.path === path || r.id === path })[0];
   if (!record) return path;
   const archivedBy = by?.via ? { owner: String(by.owner ?? ""), pid: String(process.pid), via: by.via } : undefined;
   archiveRecord(record.id, { root, by: archivedBy });
@@ -247,7 +249,7 @@ export function reopen(root, path, { owner = "", now = new Date() } = {}) {
  * has just loaded - by then it is already archived.
  */
 export function findById(root = storeRoot(), id = "") {
-  const record = listAll(root).find((r) => `${r.createdAt ?? ""}|${r.title ?? ""}` === id);
+  const record = listAll(root, { where: (r) => `${r.createdAt ?? ""}|${r.title ?? ""}` === id })[0];
   return record ? asHandover(record) : null;
 }
 

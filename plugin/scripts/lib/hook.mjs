@@ -3,15 +3,14 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { archive, findById, listWaiting, repoInfo, repoKey, storeRoot } from "./store.mjs";
 import { isSynced, pull } from "../../packages/store/sync.mjs";
-import { listAll, prune } from "../../packages/store/store.mjs";
+import { prune } from "../../packages/store/store.mjs";
 import { migrateOnStart } from "../../packages/store/rename.mjs";
 import { oldPluginNotice } from "./upgrade.mjs";
-import { writeLoadedCopy } from "../../packages/store/loaded.mjs";
 import { openCount } from "./carry.mjs";
-import { captureDir, readCapture, summary } from "../../packages/store/artifacts.mjs";
-import { age, chooseHandover, inFuture, isFresh, isOpenQuestion, isRecent } from "./select.mjs";
-import { ownerId, ownerOpen, parseOwner, sameOwner } from "./owner.mjs";
+import { age, chooseHandover, claimedAt, inFuture, isFresh, isOpenQuestion, isRecent } from "./select.mjs";
+import { hookTimeLeft, isOwnHandover, ownerId, ownerOpen, parseOwner, pidAlive, sameOwner } from "./owner.mjs";
 import { shellPath, tildePath } from "./display.mjs";
+import { OPENER, clean, loadedParts } from "./load-context.mjs";
 import { consumedIds, handoverId, handoverRef, lastConsumed, markConsumed, removeUntrackedCopy, repoHandovers, webEnabled } from "./web.mjs";
 
 const LOAD_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "..", "load.mjs");
@@ -28,15 +27,8 @@ const LOAD_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "..", "load.mj
 // just to read such a handover for the user, and that took it from its own window.
 //
 // A handover carried in git says where it was found, and one dated in the future
-// says so instead of "just now". Its title and branch are whatever the repo says,
-// so control characters are flattened: a newline in a title could otherwise forge
-// a command line under it. Format characters go too (a U+202E override reverses
-// what the user reads), and so do U+0085, U+2028 and U+2029, which some readers
-// treat as line breaks (security review 2, 2026-09-27).
-const clean = (s, max = 120) => {
-  const chars = [...String(s ?? "").replace(/[\p{Cc}\p{Cf}\p{Zl}\p{Zp}]+/gu, " ").replace(/\s+/g, " ").trim()];
-  return chars.length > max ? `${chars.slice(0, max - 3).join("")}...` : chars.join("");
-};
+// says so instead of "just now". Titles and branches go through clean()
+// (load-context.mjs), which flattens control and format characters.
 
 // A handover carried in git may be anyone's, and its title and branch are the one
 // part of it that reaches Claude. Fifty hostile refs once put 17 KB of attacker text
@@ -108,8 +100,7 @@ function titleList(list) {
 
 const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
-/** The line Claude's first reply opens with after a load. One line, whatever the title holds. */
-export const OPENER = (title) => `Resuming handover "${clean(title)}".`;
+export { OPENER };
 
 // After auto-compaction the summary is lossy about exact state, so the new
 // context is told to re-check it before acting on anything it "remembers".
@@ -127,7 +118,11 @@ const SYNC_TIMEOUT_MS = 4000;
 function pullFirst(root, env) {
   if (String(env.CORNERMAN_SYNC || "").toLowerCase() === "off") return;
   if (!isSynced(root)) return;
-  const timeout = Number(env.CORNERMAN_SYNC_TIMEOUT_MS) || SYNC_TIMEOUT_MS;
+  // The owner lookup before it may have spent the hook's budget on a slow process
+  // table (13 s against the 10 s kill, hook-deadline test): the pull gets what is
+  // left, and is skipped when that is under a second.
+  const timeout = Math.min(Number(env.CORNERMAN_SYNC_TIMEOUT_MS) || SYNC_TIMEOUT_MS, hookTimeLeft() - 500);
+  if (timeout < 1000) return;
   try {
     pull(root, { timeout });
   } catch {
@@ -149,65 +144,6 @@ function pruneQuietly(root, now) {
     prune({ root, now });
   } catch {
     // A session must start whatever state the store is in.
-  }
-}
-
-/**
- * The note about what the loaded handover's session left on screen, as { context, shown }, or null.
- * Counts and a few titles only: the text stays on disk and is read when the user asks for it, so a
- * resumed session stays light. Best effort, like the copy.
- */
-function artifactsNote(root, load) {
-  try {
-    const cap = readCapture(root, load.meta.sessionId);
-    const what = cap && summary(cap.counts);
-    if (!what) return null;
-    const file = tildePath(join(captureDir(root, cap.sessionId), "artifacts.md"));
-    const titles = cap.items.filter((i) => i.kind === "table" || i.kind === "list").slice(0, 4).map((i) => `"${clean(i.title, 60)}"`);
-    return {
-      context:
-        `cornerman: the session that wrote this handover left ${what} on screen, kept verbatim in ${file}` +
-        (titles.length ? ` (${titles.join(", ")})` : "") +
-        `. Read that file only if the user asks about a list, table or link from before the clear.`,
-      shown: `Earlier session left ${what}: ${file}`,
-    };
-  } catch {
-    return null;
-  }
-}
-
-/**
- * Write the readable copy of a loaded handover and return the line that names it,
- * or "" when there is no copy.
- *
- * After /clear the loaded handover is in Claude's context and nowhere the user can
- * open, so the load message names a plain markdown copy to read, copy, or
- * @-mention in another session. Best effort: a copy that cannot be written is
- * skipped, and the load goes on without the line.
- *
- * The path is printed relative to "~", as every path this plugin prints is, so it
- * carries no user name. The twin invocation rewrites the same file, dated by the
- * first one's load.
- */
-function copyLine(root, load, top, loadedAt, sessionId) {
-  try {
-    const copy = writeLoadedCopy(
-      root,
-      {
-        id: load.id ?? handoverId(load.meta),
-        title: load.meta.title,
-        // A copy carried in git names a repo path from wherever it was written.
-        repoPath: load.source === "worktree" ? top : load.meta.repo || top,
-        branch: load.meta.branch,
-        createdAt: load.meta.created,
-        body: load.body,
-        loadedBy: sessionId,
-      },
-      { loadedAt },
-    );
-    return copy ? `A copy to read or share: ${tildePath(copy)}` : "";
-  } catch {
-    return "";
   }
 }
 
@@ -246,14 +182,14 @@ function recentlyLoaded(root, key, now, env, me) {
 }
 
 /** Move the store if it still needs moving, then do the session start. A move never stops one. */
-export function run(input, { env = process.env, now = new Date() } = {}) {
+export function run(input, { env = process.env, now = new Date(), me } = {}) {
   let notice = "";
   try {
     notice = [migrateOnStart({ env, now }), oldPluginNotice({ env, now })].filter(Boolean).join("\n");
   } catch {
     // A session must start whatever state the store is in.
   }
-  const out = start(input, { env, now });
+  const out = start(input, { env, now, me });
   if (!notice) return out;
   if (!out) return { systemMessage: notice };
   // Set, not spread: afterOutput is deliberately not enumerable.
@@ -261,15 +197,49 @@ export function run(input, { env = process.env, now = new Date() } = {}) {
   return out;
 }
 
-function start(input, { env, now }) {
+// `me` is this window's owner id when the caller already knows it (the tests);
+// otherwise it is looked up at most once, below.
+function start(input, { env, now, me: knownMe }) {
   const cwd = input.cwd || process.cwd();
   const { top, branch } = repoInfo(cwd);
   const root = storeRoot(env);
-  // Take the other machine's handovers before deciding what to offer.
-  pullFirst(root, env);
-  pruneQuietly(root, now);
   const key = repoKey(top);
-  const stored = listWaiting(root, key);
+  const maxAgeDays = Number(env.CORNERMAN_MAX_AGE_DAYS) || 7;
+
+  // This window's owner id, looked up at most once and only when choosing needs
+  // it: without CLAUDE_PID it means walking the process table, a couple of
+  // seconds against the hook's budget. Everything else settles for `cheapMe()`,
+  // which never walks.
+  let me = knownMe;
+  const whoAmI = () => (me ??= ownerId(env));
+  const cheapMe = () => me ?? String(env.CLAUDE_PID ?? "").trim();
+  // Whether this window's own fresh handover is already in the store: the common
+  // /clear, straight after a save here.
+  const ownHere = (list) => {
+    const pid = parseOwner(cheapMe()).pid;
+    const candidates = pid ? list.filter((h) => isFresh(h, now, maxAgeDays) && parseOwner(h.meta.owner).pid === pid) : [];
+    return candidates.some((h) => isOwnHandover(whoAmI(), h.meta.owner, claimedAt(h), { machine: h.meta.machine }));
+  };
+
+  // Take the other machine's handovers before deciding what to offer, unless this
+  // window's own is already here: that one loads whatever the pull brings, and the
+  // pull was about 3 s of a hook that was being cancelled (issue #204).
+  let stored = listWaiting(root, key);
+  if (!ownHere(stored)) {
+    pullFirst(root, env);
+    stored = listWaiting(root, key);
+  }
+  // Past maxAgeDays a handover is archived, not listed: three of other windows',
+  // 49-55 days old, were offered on a /clear in place of this window's own (#205).
+  // Pinned ones and ones dated in the future stay waiting.
+  const stale = (h) => !h.meta.pinned && !inFuture(h.meta.created, now) && !inFuture(claimedAt(h), now) && !isFresh(h, now, maxAgeDays);
+  for (const h of stored.filter(stale)) {
+    try {
+      archive(root, key, h.path, { via: "stale", owner: cheapMe() });
+    } catch {}
+  }
+  stored = stored.filter((h) => !stale(h));
+  pruneQuietly(root, now);
   // Copies carried in git (web mode only) are offered unless already loaded once.
   // Only an untracked working-tree copy can be loaded: one committed to the repo or
   // pushed to a remote ref may have been written by anyone who can push, so it is
@@ -285,7 +255,6 @@ function start(input, { env, now }) {
     String(a.meta.created).localeCompare(String(b.meta.created)),
   );
   const compact = input.source === "compact";
-  const maxAgeDays = Number(env.CORNERMAN_MAX_AGE_DAYS) || 7;
 
   // One /clear fires SessionStart twice in the VS Code extension - once as
   // `startup`, once as `clear`. The first invocation loads a handover and
@@ -298,14 +267,6 @@ function start(input, { env, now }) {
   // is not, chooseHandover would hand the twin a DIFFERENT handover - the
   // lone-handover rule fires as soon as the first one is taken - quietly burning
   // a second piece of work on a session that already has one.
-  //
-  // This window's owner id, looked up at most once and only when choosing needs
-  // it: without CLAUDE_PID it means walking the process table, a couple of
-  // seconds against a 10s hook budget. Everything else settles for `cheapMe()`,
-  // which never walks.
-  let me;
-  const whoAmI = () => (me ??= ownerId(env));
-  const cheapMe = () => me ?? String(env.CLAUDE_PID ?? "").trim();
   // Whether another open window owns a handover, judged against this run's env
   // (its CLAUDE_PID is "this window"), on the hook's time budget.
   const alive = (owner) => ownerOpen(owner, { env });
@@ -322,8 +283,25 @@ function start(input, { env, now }) {
   let load = echo;
   let list = waiting;
   if (!echo) ({ load, list } = chooseHandover(waiting, branch, { now, maxAgeDays, owner: waiting.some((h) => h.meta.owner) ? chooser() : "", alive, ownOnly: compact }));
-  const newest = input.source === "clear" && !waiting.length ? listAll(root).find((h) => h.status === "waiting") : null;
-  const elsewhere = newest && repoKey(newest.repoPath) !== key && isRecent(newest.createdAt, now) ? newest : null;
+  // On /clear, this window's own handover filed for another repo is named in one
+  // line, whatever this repo has waiting (#205): a save with --cwd elsewhere was
+  // otherwise hidden behind stale ones here. Never another window's; an unowned
+  // one only when it was saved in the last hour. When a start time is missing on
+  // either side, the same pid within the hour is taken as this window: too soon
+  // for the pid to have been reused.
+  const elsewhere = input.source === "clear" && !load ? ownElsewhere() : null;
+  function ownElsewhere() {
+    const pid = parseOwner(cheapMe()).pid;
+    const mine = (h) => {
+      if (!h.meta.owner) return isRecent(h.meta.created, now);
+      if (!pid || parseOwner(h.meta.owner).pid !== pid || !isFresh(h, now, maxAgeDays)) return false;
+      const me = whoAmI();
+      if (isOwnHandover(me, h.meta.owner, claimedAt(h), { machine: h.meta.machine })) return true;
+      const bare = parseOwner(me).start == null || parseOwner(h.meta.owner).start == null;
+      return bare && isRecent(claimedAt(h), now);
+    };
+    return listWaiting(root, "").filter((h) => repoKey(h.meta.repo) !== key && mine(h)).pop() ?? null;
+  }
   if (!load && !waiting.length && !inGit.length && !compact && !elsewhere) return null;
 
   const parts = compact ? [COMPACT_NOTE] : [];
@@ -332,32 +310,9 @@ function start(input, { env, now }) {
   let assets = "";
 
   if (load) {
-    copy = copyLine(root, load, top, echo ? load.archivedAt || now : now, input.session_id);
-    // A branch mismatch is the one thing about a loaded handover the user should
-    // notice, so it goes in both strings rather than only in Claude's copy.
-    const from = load.meta.branch && load.meta.branch !== branch ? `, written on branch ${load.meta.branch}` : "";
-    // The systemMessage below is the only line the user sees, and Claude Code draws
-    // it, not us. A fresh-user test (2026-09-28, Linux, tmux) found it missing from
-    // the screen after /clear in 3 of 3 tries, visible only under ctrl+o, although
-    // the model had the handover. So Claude is also asked to name the handover in its
-    // first reply. That is a request, not a guarantee: in testing Claude skipped it
-    // 3 times in 9, so nothing user-facing may promise the line.
-    parts.push(
-      `cornerman: this session continues earlier work. Handover "${load.meta.title}", saved ${age(load.meta.created, now)}${from}. ` +
-        `Its branch, file and status claims are a snapshot: check them before acting. ` +
-        // #194: the next action is one item, not the whole job. Files kept across
-        // sessions hold rulings and known mistakes the body only points at.
-        `Before your first action, open every file listed under its "Read first" heading (a pointer you do not open carries nothing), ` +
-        `and treat every item under "Decided, not yet applied", "Open questions" and "Carried forward" as open work, not background. ` +
-        `The user may not have seen the load notice, so open your first reply with this one line, then carry on: ` +
-        `${OPENER(load.meta.title)}\n\n${load.body.trim()}`,
-    );
-    shown = `cornerman: loaded handover "${load.meta.title}" (saved ${age(load.meta.created, now)}${from}).`;
-    const note = artifactsNote(root, load);
-    if (note) {
-      parts.push(note.context);
-      assets = note.shown;
-    }
+    const p = loadedParts({ root, load, top, branch, now, loadedAt: echo ? load.archivedAt || now : now, sessionId: input.session_id });
+    parts.push(...p.context);
+    ({ shown, assets, copy } = p);
   }
 
   if (list.length) {
@@ -368,9 +323,12 @@ function start(input, { env, now }) {
     // Never walks: on the echo path nothing has looked the owner up, and a walk
     // here would land on top of the pull. An unknown owner labels nothing, since
     // "another window's" would then be a guess that could be this window's own.
+    // A live pid is enough for the label, without the process table's start time
+    // (2.3 s of PowerShell on Windows, issue #204): a reused pid only makes the line
+    // suggest --peek, the read that takes nothing.
     const othersOpen = (h) => {
       const mine = cheapMe();
-      return Boolean(mine) && Boolean(h.meta.owner) && !sameOwner(h.meta.owner, mine) && alive(h.meta.owner);
+      return Boolean(mine) && Boolean(h.meta.owner) && !sameOwner(h.meta.owner, mine) && pidAlive(parseOwner(h.meta.owner).pid);
     };
     parts.push(`${lead}\n${list.map((h) => describe(h, now, { othersOpen })).join("\n")}`);
     // With a handover already loaded the user still needs telling that others
@@ -396,7 +354,9 @@ function start(input, { env, now }) {
   }
 
   if (elsewhere) {
-    const note = `cornerman: your newest handover is for another folder: open ${clean(tildePath(elsewhere.repoPath))}.`;
+    const note =
+      `cornerman: your handover "${clean(elsewhere.meta.title ?? elsewhere.file)}" was filed for another folder, ${clean(tildePath(elsewhere.meta.repo))}; ` +
+      `open that folder and run: node ${shellPath(LOAD_SCRIPT)} ${elsewhere.short}`;
     parts.push(`${note} Tell the user; do not load it here.`);
     shown = shown ? `${shown} ${note}` : note;
   }

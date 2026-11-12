@@ -18,6 +18,7 @@ import { pruneCaptures } from "./artifacts.mjs";
 import { fileName, isPurgeable, normalise, recordId } from "./schema.mjs";
 import { pruneLoaded } from "./loaded.mjs";
 import { adoptLegacyEnv, resolveStore } from "./rename.mjs";
+import { loadIndex, saveIndex, summaryOf } from "./record-index.mjs";
 
 // Before anything reads a variable: a settings file from before the rename keeps working.
 adoptLegacyEnv();
@@ -144,23 +145,74 @@ function unlink(id, root) {
  *
  * Tombstones are left out unless asked for. They exist for the sync and the prune,
  * not for anything a person looks at.
+ *
+ * `where` keeps only the records it accepts, and is first asked about each file's
+ * entry in the record index (record-index.mjs): a file whose entry it refuses, and
+ * whose mtime and size still match, is never read. It sees only the fields in
+ * summaryOf() there, so it must decide on those alone.
  */
-export function listAll(root = storeRoot(), { includeDeleted = false } = {}) {
+export function listAll(root = storeRoot(), { includeDeleted = false, where } = {}) {
+  return scan(root, { includeDeleted, where, index: Boolean(where) });
+}
+
+/**
+ * Every record's summaryOf() fields, plus its path, unsorted: what the prune needs,
+ * read from the record index, so only files changed since the last run are opened.
+ */
+export function listSummaries(root = storeRoot(), { includeDeleted = false } = {}) {
+  return scan(root, { includeDeleted, index: true, summaries: true });
+}
+
+function scan(root, { includeDeleted, where, index: useIndex, summaries = false }) {
   const dir = handoversDir(root);
   if (!existsSync(dir)) return [];
+  const index = useIndex ? loadIndex(root) : null;
+  let changed = false;
+  const seen = new Set();
   const out = [];
+  const keep = (r) => (includeDeleted || r.status !== "deleted") && (!where || where(r));
   for (const file of readdirSync(dir)) {
     if (!file.endsWith(".json")) continue;
     const path = join(dir, file);
     try {
-      const record = cachedRecord(path);
-      if (record.status === "deleted" && !includeDeleted) continue;
-      out.push({ ...record });
+      const st = statSync(path);
+      // Whole milliseconds: some tools that copy or restore a file keep no finer mtime.
+      const m = Math.floor(st.mtimeMs);
+      let fresh = false;
+      if (index) {
+        seen.add(file);
+        const hit = index.get(file);
+        fresh = Boolean(hit && hit.m === m && hit.s === st.size);
+        if (fresh) {
+          const summary = { ...hit.r, path };
+          if (!keep(summary)) continue;
+          if (summaries) {
+            out.push(summary);
+            continue;
+          }
+        }
+      }
+      const record = cachedRecord(path, st);
+      if (index && !fresh) {
+        index.set(file, { m, s: st.size, r: summaryOf(record) });
+        changed = true;
+      }
+      if (!keep(record)) continue;
+      out.push(summaries ? { ...summaryOf(record), path } : { ...record });
     } catch {
       // Unreadable or pre-schema file - leave it on disk, keep it out of the list.
     }
   }
-  return out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  if (index) {
+    for (const file of index.keys()) {
+      if (!seen.has(file)) {
+        index.delete(file);
+        changed = true;
+      }
+    }
+    if (changed) saveIndex(root, index);
+  }
+  return summaries ? out : out.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 }
 
 // Parsed records by path, kept while the file's mtime and size are unchanged. The
@@ -168,8 +220,8 @@ export function listAll(root = storeRoot(), { includeDeleted = false } = {}) {
 // re-parsing ~1,900 files each time (257 ms) froze the extension host (2026-10-29).
 const parsed = new Map();
 
-function cachedRecord(path) {
-  const { mtimeMs, size } = statSync(path);
+function cachedRecord(path, st = statSync(path)) {
+  const { mtimeMs, size } = st;
   const hit = parsed.get(path);
   if (hit && hit.mtimeMs === mtimeMs && hit.size === size) return hit.record;
   const record = { ...normalise(JSON.parse(readFileSync(path, "utf8"))), path };
@@ -206,9 +258,30 @@ function isAbandoned(record) {
  *
  * Returns the ids that left the visible tree, so a caller can log what it tidied.
  */
+// The first-prompt check's marks (plugin/scripts/lib/second-chance.mjs): one empty
+// file per session, needed only until that session's first prompt.
+const START_MARK_DAYS = 7;
+
+function pruneStartMarks(root, now) {
+  const dir = join(root, ".cache", "started");
+  const cutoff = new Date(now).getTime() - START_MARK_DAYS * 86_400_000;
+  try {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      try {
+        if (statSync(path).mtimeMs < cutoff) rmSync(path, { force: true });
+      } catch {}
+    }
+  } catch {
+    // no marks yet
+  }
+}
+
 export function prune({ root = storeRoot(), now = new Date() } = {}) {
   const affected = [];
-  const records = listAll(root, { includeDeleted: true });
+  // Summaries, not records: this runs at every session start, and every field it
+  // decides on is in the record index (issue #204).
+  const records = listSummaries(root, { includeDeleted: true });
   for (const record of records) {
     if (isPurgeable(record, now)) {
       if (unlink(record.id, root)) affected.push(record.id);
@@ -218,6 +291,7 @@ export function prune({ root = storeRoot(), now = new Date() } = {}) {
     }
   }
   pruneLoaded({ root, now });
+  pruneStartMarks(root, now);
   pruneCaptures({ root, now, keep: new Set(records.filter((r) => r.status !== "deleted" && r.sessionId).map((r) => String(r.sessionId))) });
   return affected;
 }

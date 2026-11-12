@@ -5,6 +5,7 @@ import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { listAll, read, remove, save, setPinned, update } from "../../plugin/packages/store/store.mjs";
 import { run } from "../../plugin/scripts/lib/hook.mjs";
+import { startHookClock } from "../../plugin/scripts/lib/owner.mjs";
 import { GIT_TEST_TIMEOUT, removeTemp } from "../helpers/git-temp.mjs";
 import { reopen, saveHandover } from "../../plugin/scripts/lib/store.mjs";
 import { initSync, isSynced, pull, pushIfSynced, pushInBackground, sync } from "../../plugin/packages/store/sync.mjs";
@@ -34,6 +35,13 @@ function base(overrides = {}) {
     createdAt: "2026-09-19T23:28:51.277Z",
     ...overrides,
   };
+}
+
+// Each run() is a new hook: its budget, which the pull shares, starts at the call,
+// not at the test's start (git setup alone can spend 20 s of it).
+function hook(...args) {
+  startHookClock();
+  return run(...args);
 }
 
 beforeEach(() => {
@@ -309,7 +317,7 @@ describe("wiring", () => {
     expect(onRemote()).toBe("waiting");
 
     // The other machine's SessionStart, three hours later: pull, then prune.
-    run({ cwd: tmp }, { env: { CORNERMAN_HOME: b }, now: new Date(Date.now() + 3 * 3_600_000) });
+    hook({ cwd: tmp }, { env: { CORNERMAN_HOME: b }, now: new Date(Date.now() + 3 * 3_600_000) });
     expect(read(id, b).status).toBe("waiting");
   });
 });
@@ -329,7 +337,7 @@ describe("session start", () => {
     vi.unstubAllEnvs();
     expect(sync(a).ok).toBe(true);
 
-    const out = run({ cwd: repo }, { env: { CORNERMAN_HOME: b } });
+    const out = hook({ cwd: repo }, { env: { CORNERMAN_HOME: b } });
     expect(out.hookSpecificOutput.additionalContext).toContain("written on a");
   });
 
@@ -337,10 +345,11 @@ describe("session start", () => {
     initSync(a, remote);
     const repo = join(tmp, "work");
     mkdirSync(repo, { recursive: true });
-    save(base({ title: "local only", repoPath: repo }), { root: a });
+    // Dated now: one past maxAgeDays is archived at session start, not listed (#205).
+    save(base({ title: "local only", repoPath: repo, createdAt: new Date().toISOString() }), { root: a });
     rmSync(remote, { recursive: true, force: true });
 
-    const out = run({ cwd: repo }, { env: { CORNERMAN_HOME: a } });
+    const out = hook({ cwd: repo }, { env: { CORNERMAN_HOME: a } });
     expect(out.hookSpecificOutput.additionalContext).toContain("local only");
   });
 });

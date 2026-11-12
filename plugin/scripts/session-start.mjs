@@ -10,6 +10,8 @@ import { readFileSync } from "node:fs";
 import { run } from "./lib/hook.mjs";
 import { withWelcome } from "./lib/welcome.mjs";
 import { startRetention } from "./lib/retention-start.mjs";
+import { markStarted } from "./lib/second-chance.mjs";
+import { storeRoot } from "./lib/store.mjs";
 
 // Once a day, old relay window files are ledgered and pruned by a detached job; this
 // only reads the marker and never waits (lib/retention-start.mjs).
@@ -17,8 +19,17 @@ startRetention();
 
 let out = null;
 let ran = false;
+let input = {};
+// Tells the first prompt that this session start got through, so it does not load
+// again (lib/second-chance.mjs, issue #204). Only a run that finished and whose
+// output, if any, was written counts.
+const delivered = () => {
+  try {
+    markStarted(storeRoot(), input.session_id);
+  } catch {}
+};
 try {
-  const input = JSON.parse(readFileSync(0, "utf8") || "{}");
+  input = JSON.parse(readFileSync(0, "utf8") || "{}");
   out = run(input);
   ran = true;
 } catch {
@@ -29,13 +40,17 @@ try {
 } catch {
   // a handover still loads without the notice
 }
-if (!out) process.exit(0);
+if (!out) {
+  if (ran) delivered();
+  process.exit(0);
+}
 // The failure is reported to the write callback below; without a listener the
 // same error, emitted as an event, would crash the hook first.
 process.stdout.on("error", () => {});
 try {
   process.stdout.write(JSON.stringify(out), (err) => {
     if (!err) {
+      delivered();
       try {
         out.afterOutput?.();
       } catch {

@@ -58,6 +58,9 @@ let hookStart = performance.timeOrigin;
  * longer-lived process (the tests). Each such run is a new hook, so the reads an
  * earlier one remembered, a failed one included, are forgotten too.
  */
+/** Whole milliseconds left of the hook's budget, for work that shares it (the pull). */
+export const hookTimeLeft = () => Math.floor(HOOK_BUDGET_MS - (Date.now() - hookStart));
+
 export function startHookClock(at = Date.now()) {
   hookStart = at;
   memo.clear();
@@ -87,7 +90,9 @@ function budget(env, timeout, { self = false } = {}) {
     return () => t;
   }
   const cap = timeoutFor(env, self ? Infinity : HOOK_TIMEOUT_MS);
-  return () => Math.min(cap, HOOK_BUDGET_MS - (Date.now() - hookStart));
+  // Whole milliseconds: performance.timeOrigin has a fraction, and execFileSync
+  // throws at once on a timeout that is not an integer (#204).
+  return () => Math.floor(Math.min(cap, HOOK_BUDGET_MS - (Date.now() - hookStart)));
 }
 
 // ---- reading the process table -------------------------------------------

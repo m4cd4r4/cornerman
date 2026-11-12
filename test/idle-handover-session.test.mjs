@@ -128,7 +128,8 @@ describe("idle question handover session safety", () => {
     const out = hook();
     expect(out.systemMessage).toContain("another folder");
     expect(out.systemMessage).toContain(tildePath(normalisePath(other)));
-    expect(JSON.stringify(out)).not.toContain("practice");
+    // Named by its title (#205), never loaded here.
+    expect(JSON.stringify(out)).not.toContain("Wait for the answer.");
   });
 
   it("does not report another folder's handover when it is an hour old", () => {
