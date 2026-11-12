@@ -809,3 +809,34 @@ dropped, 14 kept with fixes.
    the reframe was chosen).
 6. Default-only calibration pilot on Sonnet: about US$37 API-equivalent (pilot 2's Default run),
    needs Macdara's yes first.
+
+## Pilot 3 (chat layer, Default only; 2026-11-12, calibration, not scored)
+
+Run `default-sonnet-r3`, frozen tree 135920c, claude-code 2.1.316, Sonnet, window 1,000,000.
+Moved to I:/Scratch/_q1m-pilot/ after scoring.
+
+| | Default r3 | Default r2 (for reference) |
+|:--|:--|:--|
+| Checkpoints passed (hidden) | 75/80 | 73/80 |
+| Late segment cp32-80 | 45/49 (92%) | 44/49 |
+| Chat tests | 12/14 (cp35-58 5/6, cp59-80 7/8) | not built |
+| Regressions on the final tree | 0 | 1 |
+| Rule violations | 4 (1 distinct; cp27, 28, 64, 78) | 2 |
+| Probes right | 49/50 | 49/50 |
+| Work tokens / peak context | 866,711 / 866,711 | 1,752,815 / 959,403 |
+| Sessions / compactions | 1 / 0 | 1 / 1 |
+| API-equivalent cost | US$23.86 (run 23.74 + smoke 0.12) | US$37.38 |
+| Wall time | 1 h 19 min, 0 limit waits | 5 h 24 min |
+
+Late failures: cp52 (12/13), cp54 (8/9), cp58 (10/11, chat test), cp68 (12/13, chat test).
+The scorer printed `late -` because K is set by the first compaction and there was none; the
+45/49 above is cp32-80 counted from `score.json` rows.
+
+Result against the 40-80% rule: **outside, above** (92%). The chat layer did not move Default:
+12 of 14 chat facts were recalled with the whole run in one uncompacted context. Second finding,
+more basic: Default never filled the window (peak 867k of 1M, no compaction), so this run never
+reached the condition the test is meant to compare (clearing vs a full, compacted window).
+Pilot 2 compacted once only because it used twice the work tokens on the same task.
+
+Per the handover rule: reported and stopped. No further recall-hardening proposed; no paid run
+without a fresh yes.
