@@ -58,6 +58,9 @@ let hookStart = performance.timeOrigin;
  * longer-lived process (the tests). Each such run is a new hook, so the reads an
  * earlier one remembered, a failed one included, are forgotten too.
  */
+/** Whole milliseconds left of the hook's budget, for work that shares it (the pull). */
+export const hookTimeLeft = () => Math.floor(HOOK_BUDGET_MS - (Date.now() - hookStart));
+
 export function startHookClock(at = Date.now()) {
   hookStart = at;
   memo.clear();

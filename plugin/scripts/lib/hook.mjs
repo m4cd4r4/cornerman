@@ -8,7 +8,7 @@ import { migrateOnStart } from "../../packages/store/rename.mjs";
 import { oldPluginNotice } from "./upgrade.mjs";
 import { openCount } from "./carry.mjs";
 import { age, chooseHandover, claimedAt, inFuture, isFresh, isOpenQuestion, isRecent } from "./select.mjs";
-import { isOwnHandover, ownerId, ownerOpen, parseOwner, pidAlive, sameOwner } from "./owner.mjs";
+import { hookTimeLeft, isOwnHandover, ownerId, ownerOpen, parseOwner, pidAlive, sameOwner } from "./owner.mjs";
 import { shellPath, tildePath } from "./display.mjs";
 import { OPENER, clean, loadedParts } from "./load-context.mjs";
 import { consumedIds, handoverId, handoverRef, lastConsumed, markConsumed, removeUntrackedCopy, repoHandovers, webEnabled } from "./web.mjs";
@@ -118,7 +118,11 @@ const SYNC_TIMEOUT_MS = 4000;
 function pullFirst(root, env) {
   if (String(env.CORNERMAN_SYNC || "").toLowerCase() === "off") return;
   if (!isSynced(root)) return;
-  const timeout = Number(env.CORNERMAN_SYNC_TIMEOUT_MS) || SYNC_TIMEOUT_MS;
+  // The owner lookup before it may have spent the hook's budget on a slow process
+  // table (13 s against the 10 s kill, hook-deadline test): the pull gets what is
+  // left, and is skipped when that is under a second.
+  const timeout = Math.min(Number(env.CORNERMAN_SYNC_TIMEOUT_MS) || SYNC_TIMEOUT_MS, hookTimeLeft() - 500);
+  if (timeout < 1000) return;
   try {
     pull(root, { timeout });
   } catch {
@@ -282,14 +286,19 @@ function start(input, { env, now, me: knownMe }) {
   // On /clear, this window's own handover filed for another repo is named in one
   // line, whatever this repo has waiting (#205): a save with --cwd elsewhere was
   // otherwise hidden behind stale ones here. Never another window's; an unowned
-  // one only when it was saved in the last hour.
+  // one only when it was saved in the last hour. When a start time is missing on
+  // either side, the same pid within the hour is taken as this window: too soon
+  // for the pid to have been reused.
   const elsewhere = input.source === "clear" && !load ? ownElsewhere() : null;
   function ownElsewhere() {
     const pid = parseOwner(cheapMe()).pid;
     const mine = (h) => {
       if (!h.meta.owner) return isRecent(h.meta.created, now);
       if (!pid || parseOwner(h.meta.owner).pid !== pid || !isFresh(h, now, maxAgeDays)) return false;
-      return isOwnHandover(whoAmI(), h.meta.owner, claimedAt(h), { machine: h.meta.machine });
+      const me = whoAmI();
+      if (isOwnHandover(me, h.meta.owner, claimedAt(h), { machine: h.meta.machine })) return true;
+      const bare = parseOwner(me).start == null || parseOwner(h.meta.owner).start == null;
+      return bare && isRecent(claimedAt(h), now);
     };
     return listWaiting(root, "").filter((h) => repoKey(h.meta.repo) !== key && mine(h)).pop() ?? null;
   }
@@ -346,7 +355,7 @@ function start(input, { env, now, me: knownMe }) {
 
   if (elsewhere) {
     const note =
-      `cornerman: your handover "${clean(elsewhere.meta.title ?? elsewhere.file)}" was filed for ${clean(tildePath(elsewhere.meta.repo))}; ` +
+      `cornerman: your handover "${clean(elsewhere.meta.title ?? elsewhere.file)}" was filed for another folder, ${clean(tildePath(elsewhere.meta.repo))}; ` +
       `open that folder and run: node ${shellPath(LOAD_SCRIPT)} ${elsewhere.short}`;
     parts.push(`${note} Tell the user; do not load it here.`);
     shown = shown ? `${shown} ${note}` : note;
