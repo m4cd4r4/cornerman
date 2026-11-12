@@ -147,3 +147,19 @@ task back for a retune before Stage 3, never a published comparison. The earlier
   - No prediction, threshold, claim rule or K changed. K stays 32. The 40-80% rule now needs a
     fresh Default calibration pilot: pilot 2 never saw the plants, so it cannot calibrate this.
     That pilot is about US$37 API-equivalent and is not run without Macdara's yes.
+- 2026-11-12 night (forced fill, after pilot 3; no full-test run exists).
+  - Why: pilot 3 (Default, chat layer) finished at a peak of 867k with no compaction, so it never
+    reached a full, compacted window, the condition the test compares against clearing. Late
+    45/49, chat 12/14 (TASK-DESIGN.md, "Pilot 3").
+  - What changed: the gate prefixes every reveal with a seeded build-log block from
+    `harness/noise.mjs` (25,700 chars, 16,074 tokens measured), identical for every arm, with no
+    task information. Every arm's settings set `bashOutputMaxChars: 100000` so the block reaches
+    the model inline. The arm smoke now checks this (the model must quote the block's last line)
+    and reports the block's token size.
+  - Target: Default compacts between cp30 (after the last plant, cp29) and cp43 (before the first
+    trigger, cp44) on either pilot's token curve. This is calibration on Default only; plants,
+    triggers, tests and the scorer are unchanged.
+  - Ruling (Macdara, 2026-11-12 ~21:55 AWST, card): force the fill and run one Default-only Sonnet
+    pilot, about US$30-40 API-equivalent. If it comes back above the 40-80% band again, stop and
+    write up the null result; no further redesign.
+  - No prediction, threshold, claim rule or K changed. K stays 32.

@@ -840,3 +840,25 @@ Pilot 2 compacted once only because it used twice the work tokens on the same ta
 
 Per the handover rule: reported and stopped. No further recall-hardening proposed; no paid run
 without a fresh yes.
+
+## Pilot 4 design: forced fill (2026-11-12 night)
+
+Ruling (Macdara, card, ~21:55 AWST): make Default fill and compact before the first trigger, then
+one Default-only Sonnet pilot (about US$30-40). Above the band again = stop, write up the null.
+
+- Mechanism: `harness/noise.mjs` makes one seeded build-log block per checkpoint (package-mirror
+  sync lines: timestamps, unrelated npm package names, sizes, short hashes; no spreadsheet words,
+  no error codes, no rules). The gate puts it ahead of the spec on every reveal, never on refusals
+  or probe stops, and logs a `fill` event. Same block for every arm.
+- Inline delivery: Claude Code 2.1.316 shows at most `bashOutputMaxChars` characters of Bash
+  output inline (default 30,000) and saves the rest to a file. Every arm's settings now set
+  100,000. The arm smoke runs the cp12 block through the Bash tool and passes only if the model
+  quotes its last line.
+- Size: measured by the smoke, 56,000 chars = 34,799 tokens; set to 25,700 chars = 16,074 tokens.
+- Sizing (cumulative context at reveal, from the two Default curves): plants end at cp29; pilot 3
+  sat at about 375k by cp36 and pilot 2 at about 417k by cp33. Adding 16k a checkpoint puts both
+  at about 950k (pilot 2's compaction point) between cp32 and cp36, inside the cp30-43 target.
+  After the first compaction the context regrows at roughly 26-30k a checkpoint, so a second
+  compaction is expected in the cp60s.
+- Pass for this design: the pilot's first compaction lands in cp30-43. If it lands elsewhere, the
+  fill did not do its job and the late rate is not read against the band.

@@ -1,7 +1,7 @@
 {
-  "written": "2026-11-12T11:37:48.779Z",
+  "written": "2026-11-12T14:25:25.481Z",
   "files": {
-    "../PREDICTIONS.md": "9a986f6e6961f42d1d4908a726b34ff5d74b0127789c3a6692f4d5900fdd5682",
+    "../PREDICTIONS.md": "e9567fddf3688d52ddbe485d1fa6a29b565812ac29a9c04ad4578217b763e2bc",
     "checkpoints/cp01/hidden.test.mjs": "f506ec7d88bab105feb01ce9a10b2f26900247d930ac271de903f52009120bfd",
     "checkpoints/cp01/spec.md": "9da3c51c7e725a257b0217afd8daed12055c93d7d332b585f5281e9edd6dbde6",
     "checkpoints/cp01/visible.test.mjs": "621a742841da6521f8cfdb1045f1a6cb871c2441d3d4b27708d5f85f992568cb",
@@ -244,9 +244,10 @@
     "checkpoints/cp80/visible.test.mjs": "0e10fea46755cd1e932f209e366c729640c45ba289fd93fd7c66f6df52966129",
     "harness/HOUSE-RULES.md": "d5c34c3c97f608ede8bb14bfe9067d8bb0e41649d200ff898f658efce8615b8a",
     "harness/START-PROMPT.md": "d0541effa5399abf8c65d5f9ae474de6b8ad2e73f105dcd28a32aeed0815b8b1",
-    "harness/arm.mjs": "818ba74318fada541f38476fe8c04f23bad687933826084e8f4ac84cc7f956a4",
+    "harness/arm.mjs": "af690379303f66a01b7249e877d3ede2125c24f2a77bf846cc28aaa7c8ab3fd6",
     "harness/done-check.mjs": "a1a4327f9d5f0d126ba8067134c948cd5fc2b5b6bdc1b3ea6700e9872e3c55e5",
-    "harness/gate-server.mjs": "1aa8db2484a1bed2d22cefb52398686da9232d97d775a487e59c578c39d25347",
+    "harness/gate-server.mjs": "eca4e10de38d0fc27aea2310192766b25b4cbc60bc1826d409aab99ba2eb1811",
+    "harness/noise.mjs": "b37049b974233eec1424e1a0cea842717c2d0ded5412b68e38b21ca03435cea0",
     "harness/probes.json": "1dc637efa48b1fc8fb3f199e5ec7a6418ce557dcf6bdfc6606319404d8edd4ce",
     "harness/smoke-gate.mjs": "768ab75c745e199771bf95187269abd40e7f50e184a5ce7a4989753f600551e0",
     "reference/CHANGES.md": "9e8e6bb8e1774f05dd10e9d54ef21ee07252221609d88e29d308ba5eafc11fbb",

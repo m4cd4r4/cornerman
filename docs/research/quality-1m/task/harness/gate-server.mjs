@@ -17,6 +17,7 @@ import { join, dirname, resolve, relative } from "node:path";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+import { noise } from "./noise.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CPS = resolve(HERE, "..", "checkpoints");
@@ -139,7 +140,10 @@ function next() {
   // in START-PROMPT.md, which the cornerman relay sends again at the start of every segment
   // (plugin lib/run.mjs), so CM arms were reminded of them and the other arms were not.
   const rules = state.current === 1 ? `${readFileSync(join(HERE, "HOUSE-RULES.md"), "utf8")}\n` : "";
-  return { status: 200, body: `${rules}${spec}\nVisible tests written to test/visible/${cp}.test.mjs.\n${tail}` };
+  // Forced fill (pilot 4): a seeded build log ahead of the spec, same for every arm (noise.mjs).
+  const fill = noise(cp);
+  log({ event: "fill", cp: state.current, chars: fill.length });
+  return { status: 200, body: `${fill}\n${rules}${spec}\nVisible tests written to test/visible/${cp}.test.mjs.\n${tail}` };
 }
 
 const server = createServer((req, res) => {

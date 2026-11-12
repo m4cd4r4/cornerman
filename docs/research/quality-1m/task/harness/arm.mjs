@@ -114,7 +114,9 @@ function setup() {
   const gmail = execFileSync("git", ["config", "--global", "user.email"], { encoding: "utf8" }).trim();
   writeFileSync(join(HOME, ".gitconfig"), `[user]\n\tname = ${gname}\n\temail = ${gmail}\n[core]\n\tautocrlf = false\n`);
   writeFileSync(join(CONFIG, ".claude.json"), JSON.stringify({ hasCompletedOnboarding: true }) + "\n");
-  writeFileSync(join(CONFIG, "settings.json"), JSON.stringify({ model: MODEL_ID }, null, 2) + "\n");
+  // bashOutputMaxChars: the gate reply carries a ~56k-char fill block (noise.mjs); at the 30000
+  // default Claude Code would save it to a file and show a preview, so the fill would not land.
+  writeFileSync(join(CONFIG, "settings.json"), JSON.stringify({ model: MODEL_ID, bashOutputMaxChars: 100000 }, null, 2) + "\n");
   copyProfile();
   cpSync(join(TASK, "starter"), REPO, { recursive: true });
   sh("git", ["init", "-q"], { cwd: REPO });
@@ -176,6 +178,22 @@ function smoke() {
     line = `reply ${String(j.result).slice(0, 20)} :: floor ${u.input_tokens + u.cache_read_input_tokens + u.cache_creation_input_tokens} :: window ${win.join(",")} :: cost ${j.total_cost_usd}`;
   } catch {}
   events(`smoke ${name}: exit ${r.status} :: ${line} ${(r.stderr || "").trim().slice(0, 200)}`);
+  // Fill check: the gate's fill block must reach the model inline (bashOutputMaxChars), and its
+  // token size is what the forced-fill design was calibrated on. Pass = the model quotes the
+  // block's last line, which a saved-to-file preview would not show.
+  const f = spawnSync(CLAUDE, ["-p", "--model", MODEL_ID, "--max-turns", "3", "--max-budget-usd", "1", "--output-format", "stream-json", "--verbose",
+    "--no-session-persistence", "--allowedTools=Bash(node:*)",
+    `Run \`node "${join(HERE, "noise.mjs")}" cp12\` once with the Bash tool. Then reply with only the exact last line of its output.`],
+    { env: env(), cwd: REPO, encoding: "utf8", maxBuffer: 1 << 26 });
+  let fl = (f.stdout || "").trim().slice(-200);
+  try {
+    const msgs = (f.stdout || "").split(/\r?\n/).filter(Boolean).map((l) => JSON.parse(l));
+    const ctx = msgs.filter((m) => m.type === "assistant" && m.message?.usage).map(({ message: { usage: u } }) => u.input_tokens + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0));
+    const res = msgs.find((m) => m.type === "result") || {};
+    const inline = /end of build-farm log, job 1012/.test(String(res.result));
+    fl = `${inline ? "FILL OK" : "FILL NOT INLINE"} :: reply ${String(res.result).slice(0, 60)} :: context per call ${[...new Set(ctx)].join(" > ")} :: fill ${Math.max(...ctx) - Math.min(...ctx)} tokens :: cost ${res.total_cost_usd}`;
+  } catch (e) { fl += ` :: parse ${e.message}`; }
+  events(`smoke ${name}: fill check exit ${f.status} :: ${fl} ${(f.stderr || "").trim().slice(0, 300)}${f.error ? ` :: ${f.error.message}` : ""}`);
 }
 
 // --- run ---------------------------------------------------------------------------------
