@@ -11,6 +11,21 @@ allowed-tools:
 Write a handover a fresh session can act on without this conversation, then save it.
 After the user runs `/clear`, the plugin's SessionStart hook loads it for them.
 
+## 0. Pick the kind
+
+Decide where the work continues before writing anything:
+
+- **Here, after `/clear`** ("before I clear", "save my place", plain `/handover`): a saved
+  handover. Follow steps 1-4.
+- **In another repo or another session** ("for the other session", "hand this to the azure
+  window", "a prompt for a fresh session in X"): a paste-ready prompt. Write the same sections
+  (step 2) in one fenced block in chat, starting with the folder it is for, save nothing, and
+  carry on with this session's work. Never `--cwd` another repo: that files it where no window
+  loads it, and this window's next `/clear` misses it.
+
+Ask only when the wording could mean either: one `AskUserQuestion` with two options, "Save for
+after /clear" and "Prompt to paste elsewhere". Otherwise pick and say which in your reply.
+
 ## 1. Check the facts first
 
 Run these rather than recalling them. A handover with a wrong branch or a stale
