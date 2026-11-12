@@ -705,6 +705,53 @@ to build or test when they are stated.
 Twenty pairs: 9 triggers in cp35-58, 11 in cp59-80. Several late specs already state some of
 these facts (cp50 lists the SUBTOTAL codes); those sentences move to the plant.
 
+### Step 1 result (2026-11-12, read-only check against the specs; supersedes the table above)
+
+Of the 20 drafts, 4 survive with changes and 16 are dropped: 11 contradict the trigger spec as
+written (for example cp61 already rules FIND's not-found as `#N/A`, cp39 needs a 9,999-deep tree),
+and the rest are already stated, already carried by early code or tests, or have no feature to
+hang on. Three citations were spot-checked by hand (cp58:42-43, cp61:38-39, cp62:22-24); all match.
+
+**What works instead: move a sentence.** Every surviving pair takes one rule the trigger spec
+already states, which a hidden test already checks and the reference already obeys, deletes it
+from the trigger spec and states it once in an early plant. Build cost is mostly spec edits.
+
+| # | Plant | Trigger | Fact moved to the plant | Delete from trigger |
+|:--|:--|:--|:--|:--|
+| 1 | cp19 | cp58 WEEKDAY | Default type 2: Monday 1, Sunday 7 | cp58:42-43 |
+| 4 | cp21 | cp44 MATCH | Default match type 0 (weak on rule 3: VLOOKUP is exact-only, so 0 is guessable) | cp44:32-33 |
+| 7 | cp15 | cp50 SUBTOTAL | The whole code table; cp50 says "codes as agreed" | cp50:3 "five", 7-21 |
+| R5 | cp24 | cp51 replace | `replace` returns cells changed, not occurrences | cp51:38-39 |
+| R6 | cp26 | cp48 sort | Sorted formulas move as typed text, references not adjusted | cp48:29-32 |
+| R9 | cp28 | cp54 delete sheet | Deleting the only sheet is allowed (Excel refuses) | cp54:20-21 |
+| R10 | cp28 | cp49 hidden rows | `toCSV` omits hidden rows and columns | cp49:25-30, and the clause at cp77:48 |
+| R11 | cp18 | cp46 validation | List validation compares case-sensitively (repo helper is case-insensitive) | cp46:23-26 |
+| 14 | cp28 | cp70 compare saves | Only inputs are compared ("nothing else") | cp70:37-40 |
+| R2 | cp19 | cp59 NETWORKDAYS | Start after end gives a positive count | cp59:23-25 |
+| R3 | cp18 | cp61 SEARCH | No escape character; `~` is ordinary | cp61:43-46 |
+| R8 | cp28 | cp77 JSON export | `range` always has two corners (`B2:B2`) | cp77 `range` bullet |
+| R12 | cp26 | cp68 cross-sheet copy | A reference naming the target sheet loses its sheet name | cp68:26-29 |
+| R13 | cp27 | cp71 protected cells | Undo and redo never check protection | cp71:34-37 |
+| R15 | cp21 | cp72 error audit | `errorCells` ordered by error priority, then row-major | cp72:33-34 + 2 bullets |
+| R16 | cp27 | cp65 change events | A listener that throws is ignored; others still run | cp65:43-45 |
+| R17 | cp28 | cp75 API v3 | `clear` removes inputs only; formats, notes, rules stay | cp75:17-18 |
+| R18 | cp14 | cp62 LET | A name inside its own value means its outer meaning | cp62:22-24 |
+| R19 | cp27 | cp76 undo labels | A step inside a batch is labelled with its method, never "batch" | cp76:27-28 |
+| R20 | cp29 | cp69 import options | `types: "text"` stores number-like fields as `="007"` | cp69:40-45 detail |
+
+Regime split: 8 triggers in cp35-58, 12 in cp59-80. Every line number is from the step 1 check;
+re-read each before editing.
+
+**Open for the build session (not yet decided):**
+- **Type coverage.** All 20 are deferred requirements or overrides. "Rejected approach" lost both
+  drafts (17: early tests already catch a stale cache; 18: the AST parser makes text rewriting
+  unnatural). "As agreed" is only pair 7. Plan: phrase 3-4 trigger specs as "as agreed at cpNN"
+  pointers (fair: a real user says that), and look for 2 rejected approaches where the wrong
+  route is natural and no early test catches it. If none is fair, record that and go without.
+- **Crowding.** cp27 carries 3 plants and cp28 five. Spread where a plant fits elsewhere.
+- **Pair 4** stays only if the reviewer passes it on rule 3.
+- cp80's API index must not gain any method a plant implies.
+
 ### Scoring change (to freeze with the build)
 
 - Primary stays the late hidden-test pass rate cp32-80, so existing tests still count. Reported
