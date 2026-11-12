@@ -54,4 +54,13 @@ describe("a handover filed for another repo", () => {
     expect(listWaiting(root, repo)).toHaveLength(0);
     expect(listAll(root).filter((r) => r.title.startsWith("Old")).map((r) => r.archivedBy?.via)).toEqual(["stale", "stale", "stale"]);
   });
+
+  it("never names another window's handover filed elsewhere", () => {
+    saveHandover({ cwd: other, title: "Theirs elsewhere", body: "theirs", root, owner: `222@${START}` });
+
+    const out = run({ cwd: repo, source: "clear" }, { env, me: ME });
+
+    expect(out?.systemMessage ?? "").not.toContain("Theirs elsewhere");
+    expect(listWaiting(root, other)).toHaveLength(1);
+  });
 });

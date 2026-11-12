@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { archive, findById, listWaiting, repoInfo, repoKey, storeRoot } from "./store.mjs";
 import { isSynced, pull } from "../../packages/store/sync.mjs";
-import { listAll, prune } from "../../packages/store/store.mjs";
+import { prune } from "../../packages/store/store.mjs";
 import { migrateOnStart } from "../../packages/store/rename.mjs";
 import { oldPluginNotice } from "./upgrade.mjs";
 import { openCount } from "./carry.mjs";
@@ -225,6 +225,16 @@ function start(input, { env, now, me: knownMe }) {
     pullFirst(root, env);
     stored = listWaiting(root, key);
   }
+  // Past maxAgeDays a handover is archived, not listed: three of other windows',
+  // 49-55 days old, were offered on a /clear in place of this window's own (#205).
+  // Pinned ones and ones dated in the future stay waiting.
+  const stale = (h) => !h.meta.pinned && !inFuture(h.meta.created, now) && !inFuture(claimedAt(h), now) && !isFresh(h, now, maxAgeDays);
+  for (const h of stored.filter(stale)) {
+    try {
+      archive(root, key, h.path, { via: "stale", owner: cheapMe() });
+    } catch {}
+  }
+  stored = stored.filter((h) => !stale(h));
   pruneQuietly(root, now);
   // Copies carried in git (web mode only) are offered unless already loaded once.
   // Only an untracked working-tree copy can be loaded: one committed to the repo or
@@ -269,8 +279,20 @@ function start(input, { env, now, me: knownMe }) {
   let load = echo;
   let list = waiting;
   if (!echo) ({ load, list } = chooseHandover(waiting, branch, { now, maxAgeDays, owner: waiting.some((h) => h.meta.owner) ? chooser() : "", alive, ownOnly: compact }));
-  const newest = input.source === "clear" && !waiting.length ? listAll(root, { where: (h) => h.status === "waiting" })[0] : null;
-  const elsewhere = newest && repoKey(newest.repoPath) !== key && isRecent(newest.createdAt, now) ? newest : null;
+  // On /clear, this window's own handover filed for another repo is named in one
+  // line, whatever this repo has waiting (#205): a save with --cwd elsewhere was
+  // otherwise hidden behind stale ones here. Never another window's; an unowned
+  // one only when it was saved in the last hour.
+  const elsewhere = input.source === "clear" && !load ? ownElsewhere() : null;
+  function ownElsewhere() {
+    const pid = parseOwner(cheapMe()).pid;
+    const mine = (h) => {
+      if (!h.meta.owner) return isRecent(h.meta.created, now);
+      if (!pid || parseOwner(h.meta.owner).pid !== pid || !isFresh(h, now, maxAgeDays)) return false;
+      return isOwnHandover(whoAmI(), h.meta.owner, claimedAt(h), { machine: h.meta.machine });
+    };
+    return listWaiting(root, "").filter((h) => repoKey(h.meta.repo) !== key && mine(h)).pop() ?? null;
+  }
   if (!load && !waiting.length && !inGit.length && !compact && !elsewhere) return null;
 
   const parts = compact ? [COMPACT_NOTE] : [];
@@ -323,7 +345,9 @@ function start(input, { env, now, me: knownMe }) {
   }
 
   if (elsewhere) {
-    const note = `cornerman: your newest handover is for another folder: open ${clean(tildePath(elsewhere.repoPath))}.`;
+    const note =
+      `cornerman: your handover "${clean(elsewhere.meta.title ?? elsewhere.file)}" was filed for ${clean(tildePath(elsewhere.meta.repo))}; ` +
+      `open that folder and run: node ${shellPath(LOAD_SCRIPT)} ${elsewhere.short}`;
     parts.push(`${note} Tell the user; do not load it here.`);
     shown = shown ? `${shown} ${note}` : note;
   }

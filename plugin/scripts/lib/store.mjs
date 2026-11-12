@@ -126,6 +126,8 @@ function asHandover(record) {
       machine: record.machine || "",
       ...(record.sessionId ? { sessionId: record.sessionId } : {}),
       ...(record.openQuestion === true ? { openQuestion: true } : {}),
+      // A pinned handover is never archived for its age (hook.mjs).
+      ...(record.pinned === true ? { pinned: true } : {}),
       // When load.mjs --take made it its owner's (reopen). The owner checks read
       // this, not `created`: the taking window started after the save.
       ...(record.takenAt ? { takenAt: record.takenAt } : {}),
