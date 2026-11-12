@@ -570,12 +570,13 @@ had loaded. Press ctrl+o to see it.
 
 ## What's inside
 
-The plugin is the `plugin/` folder: one skill, six hooks, one Claude Code mod and a shared
+The plugin is the `plugin/` folder: two skills, six hooks, one Claude Code mod and a shared
 store. The VS Code extension and the headless runner sit on top of the same store.
 
 | Part | Where | What it does |
 |---|---|---|
 | Skill | [`plugin/skills/handover/SKILL.md`](../plugin/skills/handover/SKILL.md) | `/cornerman:handover`. Claude writes the handover and pipes it to `scripts/save.mjs`. `scripts/load.mjs` lists what is waiting, or loads one with `--peek` or `--take`. |
+| Skill | [`plugin/skills/stats/SKILL.md`](../plugin/skills/stats/SKILL.md) | `/cornerman:stats`. Runs `scripts/stats.mjs`: this month's relay windows, sessions and relays by repo, and last month's totals. Reads only. |
 | SessionStart hook | [`plugin/scripts/session-start.mjs`](../plugin/scripts/session-start.mjs) | Runs at startup, `/clear` and compaction. Loads the waiting handover, then archives it so it loads once. |
 | UserPromptSubmit hook | [`plugin/scripts/prompt-submit.mjs`](../plugin/scripts/prompt-submit.mjs) | On a session's first prompt, if SessionStart loaded nothing (cancelled, timed out or crashed), loads this window's own waiting handover. Never another window's. |
 | PostToolUse hook | [`plugin/scripts/post-tool.mjs`](../plugin/scripts/post-tool.mjs) | With the nudge on, warns once mid-turn past the Nudge at size. Compaction does not wait for a turn to end, so the Stop hook alone would miss it. |
