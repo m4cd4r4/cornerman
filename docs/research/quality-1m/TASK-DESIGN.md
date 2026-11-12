@@ -1,8 +1,10 @@
 # Stage 0: task, hidden tests, scorer (design)
 
-Status (2026-11-12): built, two pilots run, re-frozen after the fix and retune. The task is at the
-ceiling for Default, so the comparison as frozen is not run; see "Fix and retune" at the end and
-REFRAME-DRAFT.md. The text below is the design history from 2026-11-09 on.
+Status (2026-11-12, 16:50 AWST): built, two pilots run, re-frozen after the fix and retune. The
+task is at the ceiling for Default, so the comparison as frozen is not run. Macdara rejected the
+reframe (REFRAME-DRAFT.md is not approved) and asked for a test that is hard enough for the
+question. The redesign is "Chat-only layer" at the end (design, not built). The text below is the
+design history from 2026-11-09 on.
 Parent: PROJECT-PLAN.md (arms, metric, rulings).
 
 ## Early checks (done 2026-11-09)
@@ -618,3 +620,108 @@ stays as frozen. Both runs together used up one 5-hour usage window (Default wai
   estimated near 47/49 (96%), outside the 40-80% band.
 - Outcome: hardening stopped (Macdara, 2026-11-12). The task does not discriminate on Default's
   late pass rate. Proposal for a "no worse and cheaper" primary: REFRAME-DRAFT.md (draft).
+- 2026-11-12 16:40 AWST: Macdara rejected the reframe: "We should develop a test that is hard
+  enough, and matches our testing requirements more suitably". See "Chat-only layer" below.
+
+## Chat-only layer (design, 2026-11-12; not built, nothing frozen)
+
+Rulings (Macdara, 2026-11-12, via cards): keep the spreadsheet task and its harness, gate, scorer
+and mutants; add a layer of chat-only facts; use all four fact types below; an agent may keep its
+own notes file but nothing prompts either arm to.
+
+### Why the task sits at the ceiling (measured on the pilot 2 data)
+
+- **The repo carries every rule.** The gate writes each checkpoint's visible tests into
+  `test/visible/` and they stay there: by cp80 the agent's own suite re-checks cp01-80 on every
+  run. Late specs restate or point at the early rules (the 30 sentences from step 1 made this
+  more true). A late feature that breaks an early rule fails a test the agent can see.
+- **Clearing does lose chat memory, and the code does not need it.** Probe P5 (asked during cp65):
+  CM-250 3/10, Default 9/10. CM-250's wrong answers came from the model's Excel prior, not the
+  spec: `ROUND(2.5, 0)` "3" (spec: 2), SUBTOTAL codes listed as Excel's 20 (spec: 1, 2, 4, 5, 9).
+  Its code still passed, because the code and tests held the right answers.
+- **Default resets too.** Default compacted once during cp58 (967,427 to 18,637 tokens). Its P5
+  score after that came from reading the repo. Neither arm wrote a notes file in either pilot.
+
+So the late tests have to depend on facts the repo cannot hold: stated once in chat, with nothing
+to build or test when they are stated.
+
+### Mechanics
+
+- **Plant:** a fact stated once, in an early spec (cp02-cp28, all before K = 32), under a heading
+  `## Coming later`. It concerns a feature that does not exist yet, so there is nothing to
+  implement and no visible or hidden test at the plant checkpoint. It cannot reach the code.
+- **Trigger:** the late checkpoint that builds the feature. Its spec does not restate the fact.
+  One hidden test per trigger (`cpNNc chat: ...`) checks it, plus one `chat-*` mutant.
+- **Placement:** triggers split across the two regimes seen in pilot 2: about half in cp35-58
+  (Default still holds the whole chat, CM-250 has cleared) and half in cp59-80 (Default has
+  compacted, so it depends on its compaction summary, and CM-250 on its handovers). This lets the
+  result go either way. Placement is fixed before any run and does not move after one.
+- **Probes never ask about a plant.** A probe answer would put the fact back into context.
+
+### The four fact types
+
+| Type | Plant says | Trigger spec says | Hidden test checks |
+|:--|:--|:--|:--|
+| Deferred requirement | "When X arrives, it must do Y." | Builds X, silent on Y | Y |
+| Override of Excel | A stated choice that differs from Excel, for a feature with no code yet | Builds the feature, silent | The stated choice, not Excel's |
+| Rejected approach | "We tried Z for X; it broke W; never do Z." | Builds X where Z is the natural route | W still holds |
+| As agreed earlier | A format or wording agreed for later | "Use the format we agreed for X", no restatement | The agreed format |
+
+### Fairness rules (each pair must pass all six; a separate reviewer checks them)
+
+1. The plant is one unambiguous sentence and a hidden assertion can check it exactly.
+2. Nothing at the plant checkpoint can implement or test it (the feature does not exist yet).
+3. The plant's answer differs from the Excel default and from the most likely guess, so a model
+   working from its prior fails. An agent that remembers it, or wrote it down, passes.
+4. No later spec contradicts it or restates it (grep every spec after the plant).
+5. It shares no code path with anything built earlier, so the repo cannot carry it.
+6. The reference implementation obeys it, and its `chat-*` mutant is killed.
+
+### Candidate pairs (DRAFT: each still needs the rule 4 and 5 check against the actual specs)
+
+| # | Type | Plant | Trigger | Fact |
+|:--|:--|:--|:--|:--|
+| 1 | Override | cp19 dates | cp58 WEEKDAY | Default numbering is Monday = 1 (Excel: Sunday = 1) |
+| 2 | Override | cp19 dates | cp59 NETWORKDAYS | The working week is Sunday to Thursday |
+| 3 | Override | cp18 text | cp61 FIND/SEARCH | Not found returns 0, not `#VALUE!` |
+| 4 | Override | cp21 VLOOKUP | cp44 MATCH | Default match type is exact (Excel: 1) |
+| 5 | Override | cp22 SUMIF | cp43 AVERAGEIF | No matching cell gives 0, not `#DIV/0!` |
+| 6 | Override | cp06 comparison | cp48 sort | Type order: errors, booleans, numbers, text, empty last |
+| 7 | Deferred | cp15 aggregates | cp50 SUBTOTAL | Only codes 1, 2, 4, 5, 9 (removed from the cp50 spec) |
+| 8 | Deferred | cp28 CSV export | cp77 JSON export | Dates export as `yyyy-mm-dd` text, not serials |
+| 9 | Deferred | cp24 delete rows | cp54 delete sheet | Deleting the last sheet is refused with code `LAST_SHEET` |
+| 10 | Deferred | cp14 named ranges | cp52 named constants | Constant names are upper case only |
+| 11 | Deferred | cp10 precedents | cp39 explain | Never more than 3 levels deep; deeper shows `...` |
+| 12 | Deferred | cp26 copy | cp68 copy across sheets | References to the source sheet stay explicit (`Data!A1`) |
+| 13 | Deferred | cp23 insert rows | cp71 protected cells | Inserting rows inside a protected range is refused, not shifted |
+| 14 | Deferred | cp30 save | cp70 compare saves | Formatting-only changes are ignored |
+| 15 | Deferred | cp09 cycles | cp72 error audit | Each cycle listed once, named by its top-left cell |
+| 16 | Deferred | cp12 recalc log | cp65 change events | Old value of an empty cell is `null`, not `""` |
+| 17 | Rejected | cp11 incremental | cp74 fan-out budget | Never cache range results across recalcs (stale after insert) |
+| 18 | Rejected | cp13 SUM syntax | cp62 LET | Never bind names by rewriting formula text (breaks string literals) |
+| 19 | As agreed | cp27 undo | cp76 undo labels | Label = verb + target, lower case, e.g. `set A1` |
+| 20 | As agreed | cp29 CSV import | cp69 import options | Semicolon delimiter when line 1 has more `;` than `,` |
+
+Twenty pairs: 9 triggers in cp35-58, 11 in cp59-80. Several late specs already state some of
+these facts (cp50 lists the SUBTOTAL codes); those sentences move to the plant.
+
+### Scoring change (to freeze with the build)
+
+- Primary stays the late hidden-test pass rate cp32-80, so existing tests still count. Reported
+  beside it: the chat-test pass rate (20 tests), per regime (cp35-58, cp59-80).
+- The 40-80% rule applies as before, on a fresh Default pilot (the pilot 2 data never saw the
+  plants, so it cannot calibrate this). Expected: Default high on the cp35-58 triggers, lower on
+  cp59-80. That estimate is a guess until the pilot.
+
+### Build steps (all US$0 until the pilot)
+
+1. Check each candidate against the specs for fairness rules 4 and 5; drop or replace the failures.
+2. Write the plants, strip any restatement from the trigger specs, write the hidden tests and the
+   reference changes, add the `chat-*` mutants.
+3. Separate reviewer given plants, trigger specs and tests only (not this reasoning) judges each
+   pair against the six rules.
+4. Verify: reference passes all hidden tests, all mutants killed, self-tests and gate smoke OK.
+5. Re-freeze with a dated PREDICTIONS.md note (it must also correct the 08:40 AWST note that says
+   the reframe was chosen).
+6. Default-only calibration pilot on Sonnet: about US$37 API-equivalent (pilot 2's Default run),
+   needs Macdara's yes first.
