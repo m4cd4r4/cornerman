@@ -3,13 +3,13 @@
 // prompt says it was loaded. 15 of 289 /clears (29 Oct - 12 Nov 2026). The first
 // prompt of the session gets a second chance at this window's own handover.
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { markStarted, run as promptRun } from "../plugin/scripts/lib/second-chance.mjs";
 import { listWaiting, saveHandover } from "../plugin/scripts/lib/store.mjs";
-import { listAll } from "../plugin/packages/store/store.mjs";
+import { listAll, prune } from "../plugin/packages/store/store.mjs";
 
 // The script writes the output, then settles the load; a direct call stands in for both.
 const settle = (out) => {
@@ -92,6 +92,20 @@ describe("second-chance load on the first prompt", () => {
     // A fourth window with no handover of its own takes nothing, not even the lone one left.
     expect(prompt("sd", ownerOf(444))).toBeNull();
     expect(listWaiting(root, repo).map((h) => h.meta.title)).toEqual(["A work"]);
+  });
+});
+
+describe("start marks", () => {
+  it("the store prune removes marks older than a week and keeps newer ones", () => {
+    markStarted(root, "old");
+    markStarted(root, "new");
+    const weekAgo = (Date.now() - 8 * 86_400_000) / 1000;
+    utimesSync(markStarted.path(root, "old"), weekAgo, weekAgo);
+
+    prune({ root });
+
+    expect(existsSync(markStarted.path(root, "old"))).toBe(false);
+    expect(existsSync(markStarted.path(root, "new"))).toBe(true);
   });
 });
 

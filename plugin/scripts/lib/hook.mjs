@@ -7,8 +7,8 @@ import { listAll, prune } from "../../packages/store/store.mjs";
 import { migrateOnStart } from "../../packages/store/rename.mjs";
 import { oldPluginNotice } from "./upgrade.mjs";
 import { openCount } from "./carry.mjs";
-import { age, chooseHandover, inFuture, isFresh, isOpenQuestion, isRecent } from "./select.mjs";
-import { ownerId, ownerOpen, parseOwner, sameOwner } from "./owner.mjs";
+import { age, chooseHandover, claimedAt, inFuture, isFresh, isOpenQuestion, isRecent } from "./select.mjs";
+import { isOwnHandover, ownerId, ownerOpen, parseOwner, pidAlive, sameOwner } from "./owner.mjs";
 import { shellPath, tildePath } from "./display.mjs";
 import { OPENER, clean, loadedParts } from "./load-context.mjs";
 import { consumedIds, handoverId, handoverRef, lastConsumed, markConsumed, removeUntrackedCopy, repoHandovers, webEnabled } from "./web.mjs";
@@ -178,14 +178,14 @@ function recentlyLoaded(root, key, now, env, me) {
 }
 
 /** Move the store if it still needs moving, then do the session start. A move never stops one. */
-export function run(input, { env = process.env, now = new Date() } = {}) {
+export function run(input, { env = process.env, now = new Date(), me } = {}) {
   let notice = "";
   try {
     notice = [migrateOnStart({ env, now }), oldPluginNotice({ env, now })].filter(Boolean).join("\n");
   } catch {
     // A session must start whatever state the store is in.
   }
-  const out = start(input, { env, now });
+  const out = start(input, { env, now, me });
   if (!notice) return out;
   if (!out) return { systemMessage: notice };
   // Set, not spread: afterOutput is deliberately not enumerable.
@@ -193,15 +193,39 @@ export function run(input, { env = process.env, now = new Date() } = {}) {
   return out;
 }
 
-function start(input, { env, now }) {
+// `me` is this window's owner id when the caller already knows it (the tests);
+// otherwise it is looked up at most once, below.
+function start(input, { env, now, me: knownMe }) {
   const cwd = input.cwd || process.cwd();
   const { top, branch } = repoInfo(cwd);
   const root = storeRoot(env);
-  // Take the other machine's handovers before deciding what to offer.
-  pullFirst(root, env);
-  pruneQuietly(root, now);
   const key = repoKey(top);
-  const stored = listWaiting(root, key);
+  const maxAgeDays = Number(env.CORNERMAN_MAX_AGE_DAYS) || 7;
+
+  // This window's owner id, looked up at most once and only when choosing needs
+  // it: without CLAUDE_PID it means walking the process table, a couple of
+  // seconds against the hook's budget. Everything else settles for `cheapMe()`,
+  // which never walks.
+  let me = knownMe;
+  const whoAmI = () => (me ??= ownerId(env));
+  const cheapMe = () => me ?? String(env.CLAUDE_PID ?? "").trim();
+  // Whether this window's own fresh handover is already in the store: the common
+  // /clear, straight after a save here.
+  const ownHere = (list) => {
+    const pid = parseOwner(cheapMe()).pid;
+    const candidates = pid ? list.filter((h) => isFresh(h, now, maxAgeDays) && parseOwner(h.meta.owner).pid === pid) : [];
+    return candidates.some((h) => isOwnHandover(whoAmI(), h.meta.owner, claimedAt(h), { machine: h.meta.machine }));
+  };
+
+  // Take the other machine's handovers before deciding what to offer, unless this
+  // window's own is already here: that one loads whatever the pull brings, and the
+  // pull was about 3 s of a hook that was being cancelled (issue #204).
+  let stored = listWaiting(root, key);
+  if (!ownHere(stored)) {
+    pullFirst(root, env);
+    stored = listWaiting(root, key);
+  }
+  pruneQuietly(root, now);
   // Copies carried in git (web mode only) are offered unless already loaded once.
   // Only an untracked working-tree copy can be loaded: one committed to the repo or
   // pushed to a remote ref may have been written by anyone who can push, so it is
@@ -217,7 +241,6 @@ function start(input, { env, now }) {
     String(a.meta.created).localeCompare(String(b.meta.created)),
   );
   const compact = input.source === "compact";
-  const maxAgeDays = Number(env.CORNERMAN_MAX_AGE_DAYS) || 7;
 
   // One /clear fires SessionStart twice in the VS Code extension - once as
   // `startup`, once as `clear`. The first invocation loads a handover and
@@ -230,14 +253,6 @@ function start(input, { env, now }) {
   // is not, chooseHandover would hand the twin a DIFFERENT handover - the
   // lone-handover rule fires as soon as the first one is taken - quietly burning
   // a second piece of work on a session that already has one.
-  //
-  // This window's owner id, looked up at most once and only when choosing needs
-  // it: without CLAUDE_PID it means walking the process table, a couple of
-  // seconds against a 10s hook budget. Everything else settles for `cheapMe()`,
-  // which never walks.
-  let me;
-  const whoAmI = () => (me ??= ownerId(env));
-  const cheapMe = () => me ?? String(env.CLAUDE_PID ?? "").trim();
   // Whether another open window owns a handover, judged against this run's env
   // (its CLAUDE_PID is "this window"), on the hook's time budget.
   const alive = (owner) => ownerOpen(owner, { env });
@@ -254,7 +269,7 @@ function start(input, { env, now }) {
   let load = echo;
   let list = waiting;
   if (!echo) ({ load, list } = chooseHandover(waiting, branch, { now, maxAgeDays, owner: waiting.some((h) => h.meta.owner) ? chooser() : "", alive, ownOnly: compact }));
-  const newest = input.source === "clear" && !waiting.length ? listAll(root).find((h) => h.status === "waiting") : null;
+  const newest = input.source === "clear" && !waiting.length ? listAll(root, { where: (h) => h.status === "waiting" })[0] : null;
   const elsewhere = newest && repoKey(newest.repoPath) !== key && isRecent(newest.createdAt, now) ? newest : null;
   if (!load && !waiting.length && !inGit.length && !compact && !elsewhere) return null;
 
@@ -277,9 +292,12 @@ function start(input, { env, now }) {
     // Never walks: on the echo path nothing has looked the owner up, and a walk
     // here would land on top of the pull. An unknown owner labels nothing, since
     // "another window's" would then be a guess that could be this window's own.
+    // A live pid is enough for the label, without the process table's start time
+    // (2.3 s of PowerShell on Windows, issue #204): a reused pid only makes the line
+    // suggest --peek, the read that takes nothing.
     const othersOpen = (h) => {
       const mine = cheapMe();
-      return Boolean(mine) && Boolean(h.meta.owner) && !sameOwner(h.meta.owner, mine) && alive(h.meta.owner);
+      return Boolean(mine) && Boolean(h.meta.owner) && !sameOwner(h.meta.owner, mine) && pidAlive(parseOwner(h.meta.owner).pid);
     };
     parts.push(`${lead}\n${list.map((h) => describe(h, now, { othersOpen })).join("\n")}`);
     // With a handover already loaded the user still needs telling that others
