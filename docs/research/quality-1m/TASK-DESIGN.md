@@ -862,3 +862,19 @@ one Default-only Sonnet pilot (about US$30-40). Above the band again = stop, wri
   compaction is expected in the cp60s.
 - Pass for this design: the pilot's first compaction lands in cp30-43. If it lands elsewhere, the
   fill did not do its job and the late rate is not read against the band.
+
+## Pilot 4 result: the fill was filtered out (2026-11-13, stopped at cp34)
+
+Run `default-sonnet-r4`, frozen tree bca3500. It reached cp34, then hit the 5-hour usage limit
+and the harness process ended during a wait (2026-11-13 00:21 AWST). Not resumed.
+
+- The fill never landed. The first block reached the model whole (cp01 gate reply 28,140 chars).
+  From cp02 on, Default ran `node gate.mjs next | grep -v '^20[0-9][0-9]-'`, which strips every
+  log line; gate replies were 1-2k chars for the rest of the run. Peak context by cp34: 410,342,
+  in line with pilot 3's unfilled curve. No compaction.
+- So the design fails its own pass rule (first compaction in cp30-43) and the late rate cannot be
+  read against the band. Cost: US$7.38 API-equivalent.
+- What it shows: a competent agent removes predictable tool noise from its own context in one
+  step. A fill that survives this has to be content the agent needs to read, which changes the
+  task, not the window. The header line saying the log does not concern the task made the filter
+  easier, but the timestamp prefix alone was enough.
