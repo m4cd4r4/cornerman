@@ -17,7 +17,7 @@ for (const d of readdirSync(root)) {
     const start = (fa < 0 ? lines : lines.slice(0, fa)).join("\n");
     const ts = (start.match(/"timestamp":"([^"]+)"/) || [])[1] || "";
     if (Date.parse(ts) < since) continue;
-    if (start.includes("cornerman: loaded handover") || start.includes("none loaded")) continue;
+    if (/(cornerman|clear-resume): loaded handover/.test(start) || start.includes("none loaded")) continue;
     const firstUser = lines.map((l) => { try { return JSON.parse(l); } catch { return null; } })
       .find((e) => e?.type === "user" && typeof e.message?.content === "string" && !e.message.content.startsWith("<"));
     silent.push({ ts, d, first: (firstUser?.message?.content || "").slice(0, 70).replace(/\s+/g, " ") });

@@ -19,7 +19,7 @@ for (const d of readdirSync(root)) {
     const start = (fa < 0 ? lines : lines.slice(0, fa)).join("\n");
     const ts = (start.match(/"timestamp":"([^"]+)"/) || [])[1] || "";
     if (Date.parse(ts) < since) continue;
-    const cm = start.includes("cornerman: loaded handover") ? "loaded" : start.includes("none loaded") ? "none-loaded" : "silent";
+    const cm = /(cornerman|clear-resume): loaded handover/.test(start) ? "loaded" : start.includes("none loaded") ? "none-loaded" : "silent";
     const cancelled = (start.match(/"hook_cancelled"/g) || []).length;
     const durs = [...start.matchAll(/"durationMs":(\d+)/g)].map((m) => +m[1]);
     const max = durs.length ? Math.max(...durs) : 0;

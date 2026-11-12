@@ -19,7 +19,7 @@ for (const d of readdirSync(root)) {
     const start = (firstAsst < 0 ? lines : lines.slice(0, firstAsst)).join("\n");
     const ts = (start.match(/"timestamp":"([^"]+)"/) || [])[1] || "";
     if (Date.parse(ts) < since) continue;
-    if (start.includes("cornerman: loaded handover")) out.loaded++;
+    if (/(cornerman|clear-resume): loaded handover/.test(start)) out.loaded++;
     else if (start.includes("none loaded")) { out.noneLoaded++; noneRows.push(`${ts.slice(0, 16)} ${d}`); }
     else { out.silent++; silentRows.push(`${ts.slice(0, 16)} ${d}`); }
   }

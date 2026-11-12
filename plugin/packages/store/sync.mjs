@@ -36,7 +36,8 @@ const GITATTRIBUTES = "* text=auto eol=lf\n";
 //
 // relay/ is per-window state too, and a secret scanner in a pre-commit hook reads its
 // key as a credential: that stopped every commit on one store for 29 days (2026-10-04).
-const IGNORED = [".nudged/", "relay/"];
+// .cache/ holds the record index and the per-session start marks: derived and local.
+const IGNORED = [".nudged/", "relay/", ".cache/"];
 
 // Called from a detached, console-less node on Windows. windowsHide alone is not enough:
 // it sets CREATE_NO_WINDOW, and the Git\cmd\git.exe shim then launches mingw64\bin\git.exe
