@@ -878,3 +878,72 @@ and the harness process ended during a wait (2026-11-13 00:21 AWST). Not resumed
   step. A fill that survives this has to be content the agent needs to read, which changes the
   task, not the window. The header line saying the log does not concern the task made the filter
   easier, but the timestamp prefix alone was enough.
+
+## Fill dial (design, 2026-11-13; not built, nothing frozen, US$0 so far)
+
+Ruling (Macdara, card, 2026-11-13 ~07:50 AWST): design a fill dial first, US$0, then a costed plan.
+
+Why: four pilots show Default does not fill its window on this task (peaks 867k, 959k) and strips
+padding it can see as noise (pilot 4). Waiting for the agent to fill cannot answer "does a full
+window hurt?". The dial sets the fill directly, from one shared starting state, so every arm
+starts from the same real session and differs only in what happens to its context at cp44.
+
+### Fork point (checked)
+
+- Claude Code 2.1.316 has `--resume <id> --resume-session-at <message id> --fork-session`.
+- Pilot 3 session 9f17f65f, line 2694, `msg_011Cgy5CiyhMKuLH8UdtZW6i`: the agent commits cp43
+  ("cp43: COUNTIF and AVERAGEIF", 55ac83d) and calls `node gate.mjs next` in the same message.
+  Resuming at that message leaves the gate call unanswered, so the fork requests cp44 itself.
+- Context there: about 456k (pilot 3 `workAtRequest` at cp44 = 456,301). All 14 plants (cp12-29)
+  and all 5 probes before cp44 are inside it. Triggers left: all 14 (cp44-77). Late checkpoints
+  left: cp44-80 (37).
+- Paths: pilot 3's transcript holds absolute paths under I:/Scratch/_q1m/default-sonnet-r3/. Each
+  fork runs at exactly that path (runs are one at a time under the lock), then moves out.
+
+### Fork setup (to build)
+
+1. Clone pilot 3's repo, reset to 55ac83d (cp43 committed, cp44 not revealed).
+2. Gate state rebuilt from pilot 3's gate log up to cp43: `current` 43, visible hashes, probes
+   answered. The gate then reveals cp44 on the fork's first `next`.
+3. Copy the transcript into the fork's config `projects/` folder under the same session id.
+4. Run `claude -p --resume 9f17f65f --resume-session-at msg_011Cgy5CiyhMKuLH8UdtZW6i
+   --fork-session` with the arm's continue prompt, then score cp44-80 as now.
+
+### Arms (all from the same fork)
+
+| Arm | What happens at cp44 | Question it answers |
+|:--|:--|:--|
+| natural | nothing (about 456k) | baseline; also the validity check below |
+| fill-700 | top-up to about 700k, then continue | does a fuller window cost quality? |
+| fill-900 | top-up to about 900k; auto-compact follows within a few checkpoints | full window plus Default's own compaction |
+| compact | `/compact` once, then continue | Claude's compaction at a chosen time |
+| clear | cornerman handover, then a fresh session | cornerman's clearing |
+
+Scoring: cp44-80 hidden pass rate (37) and chat tests (14), per arm. compare.mjs gains a fork
+mode with K = 44.
+
+### Top-up content (open: needs Macdara's pick)
+
+The top-up goes in as one user turn before the agent's continue prompt, so it cannot be grepped
+away. It must be real content, not noise.
+
+- Own history: `git log -p` of the fork repo to cp43 is 374,443 chars, about 110k tokens. Task
+  relevant, honest, enough for fill-700 (+245k) only with a second source.
+- Second source, options: (a) an earlier unrelated task in the same session (a real public
+  codebase the agent was "shown earlier"), the usual way real sessions fill; (b) the cp01-43
+  specs and visible tests again, which duplicates what is already in context.
+  Recommendation: (a). It models how real 1M sessions fill (several jobs in one window).
+
+### Validity check (before any comparison)
+
+A fork is not the same as a session that grew there. Check: the natural arm's cp44-80 result
+against pilot 3's own cp44-80 (33/37 hidden, chat 12/14; all chat triggers sit in cp44-77; failures in pilot 3:
+cp52, 54, 58, 68). Within 3 checkpoints at n = 1 = the fork method holds. Worse = stop.
+
+### Cost estimate (API-equivalent, Sonnet)
+
+- Pilot 3 cost US$23.74 for 80 checkpoints; cp44-80 runs on the larger half of the context, so a
+  natural fork is estimated at about US$15. fill-900 about US$18, fill-700 about US$17, compact
+  about US$10, clear about US$8.
+- Dial pilot (validity + one filled arm): natural + fill-900, n = 1, about US$33.
+- Full dial: 5 arms x n = 5, about US$340.

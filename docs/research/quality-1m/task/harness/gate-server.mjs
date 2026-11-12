@@ -29,6 +29,9 @@ function arg(name, dflt) {
 const REPO = resolve(arg("--repo"));
 const RUN = resolve(arg("--run"));
 const PORT = Number(arg("--port", "0"));
+// --fill: pilot 4's forced-fill blocks (noise.mjs). Off by default: pilot 4 showed the agent
+// filters them out with grep (TASK-DESIGN.md, "Pilot 4 result").
+const FILL = process.argv.includes("--fill");
 if (!existsSync(REPO)) throw new Error(`repo ${REPO} missing`);
 if (!relative(REPO, RUN).startsWith("..")) throw new Error("--run must be outside --repo");
 mkdirSync(join(RUN, "snapshots"), { recursive: true });
@@ -141,9 +144,9 @@ function next() {
   // (plugin lib/run.mjs), so CM arms were reminded of them and the other arms were not.
   const rules = state.current === 1 ? `${readFileSync(join(HERE, "HOUSE-RULES.md"), "utf8")}\n` : "";
   // Forced fill (pilot 4): a seeded build log ahead of the spec, same for every arm (noise.mjs).
-  const fill = noise(cp);
-  log({ event: "fill", cp: state.current, chars: fill.length });
-  return { status: 200, body: `${fill}\n${rules}${spec}\nVisible tests written to test/visible/${cp}.test.mjs.\n${tail}` };
+  const fill = FILL ? noise(cp) : "";
+  if (FILL) log({ event: "fill", cp: state.current, chars: fill.length });
+  return { status: 200, body: `${fill ? fill + "\n" : ""}${rules}${spec}\nVisible tests written to test/visible/${cp}.test.mjs.\n${tail}` };
 }
 
 const server = createServer((req, res) => {
