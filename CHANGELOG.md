@@ -1,5 +1,60 @@
 # Changelog
 
+## 0.7.3 (not released yet)
+
+- **A cancelled session start no longer loses your handover.** A `/clear` fires many
+  SessionStart hooks at once, and when Claude Code cancelled cornerman's, nothing loaded and
+  nothing said so. Your first prompt in the new session now loads the handover this window saved
+  instead (#204).
+- **Cornerman recognises your own window's handover again.** On Windows and macOS the hooks
+  could not read the window's start time, so they never knew a handover was this window's own
+  and fell back to guessing by branch (#204).
+- **The session start is faster.** It reads only the handovers it needs and skips the sync pull
+  when this window's own handover is already on this machine (#204).
+- **A handover you filed for another folder is named, not lost.** On `/clear`, if this window's
+  newest handover was saved for a different repo, the session start says which folder and the
+  command to load it there. Handovers older than the age limit (7 days by default) are archived
+  instead of listed, so weeks-old ones from other windows no longer crowd out yours (#205).
+- **Asking for a handover "for the other session" gives you a prompt to paste.** The handover
+  skill now saves only when the work continues here after `/clear`. When it continues in another
+  repo or session, it prints a ready-to-paste prompt and the current session carries on; it asks
+  once when your wording could mean either (#206).
+
+## 0.7.2
+
+- **The relay no longer stops on work that never commits.** It stopped after two continued
+  sessions with no new commit, so a Squarespace edit or research ran out after two. A handover
+  that says something new now counts as progress too, and the commit check reads the folder the
+  window started in, not wherever a `cd` left the session (#195).
+- **Reading the save script no longer clears your session.** A session that printed the source
+  of `save.mjs` (with `cat`, `sed` or `grep`) looked to the relay like one that had saved a
+  handover, so it ran `/clear` mid-task with nothing saved. The relay now counts only a run of
+  `save.mjs` that prints its own "Saved handover" line (#199).
+- **Handovers keep what is decided but not done.** When a save leaves out a "Read first",
+  "Decided, not yet applied", "Open questions" or "Progress" line from the previous handover in
+  the same window, the save appends it word for word under "Carried forward from the previous
+  handover" and lists it. A loaded handover tells the next session to open its "Read first"
+  files before acting, and other waiting handovers show how many open items they hold (#194).
+- **The loaded copy says which session it belongs to**, so another tab in the same window does
+  not take it as its own (#198).
+- **The save output is shorter and steadier.** Each folder is named one way (`~/...` under your
+  home folder), the line saying what happens after `/clear` comes second instead of last, the
+  auto-mode nudges are about half as long, and the sidebar search box stays in place (#186).
+
+- **An old idle question no longer resumes on its own.** When an idle handover saved a question
+  that was waiting for you, and its session then closed, a later `/clear` could load it and carry
+  on with unrelated work. It is now retired when its session closes, and one that cannot be checked
+  is listed for you to pick instead of loaded. When your newest handover is for another folder, the
+  session start says which folder to open.
+- **A large store no longer freezes the Claude Code panel in VS Code.** The sidebar refresh, the
+  status bar check and the worktree lookup read files and ran git while holding VS Code's extension
+  host, which made the Claude Code panel report "stopped responding". They now run in the
+  background and reread only the files that changed.
+- **Old relay files are cleared away.** Once a day, a session start removes the relay's files for
+  windows idle 14 days or more, after writing one line per window to `~/.cornerman/ledger/`. A
+  window that is still open is never touched. The sidebar's Archived group is sent only while it
+  is open.
+
 ## 0.7.1
 
 - **The footer shows again for new Claude tabs.** Questlog 1.0.0 (formerly Session Compass) moved
@@ -54,7 +109,14 @@
 - **The notice after an idle clear says what happened.** It names the handover and says to type go,
   or says the handover did not load. A second `/clear` runs only if you have not come back.
 
-## Unreleased
+## 0.5.1
+
+- **No more extension-host freezes from a large handover store.** The handover tree, lanes view and
+  status re-read every handover file on each store change, in every window. With a large store that
+  blocked VS Code's extension host long enough for Claude Code's chat tab to report "stopped
+  responding". Unchanged files are now read once.
+
+## 0.5.0
 
 - **A list read just before `/clear` is no longer lost.** A new `SessionEnd` hook keeps the session's
   tables, lists, links, paths and last two replies from its transcript in `~/.clear-resume/artifacts/<session id>/`,

@@ -2,7 +2,9 @@
 
 <a href="https://marketplace.visualstudio.com/items?itemName=macdara.cornerman"><img alt="VS Code extension" src="https://img.shields.io/badge/VS%20Code-extension-262626?style=flat-square&labelColor=0a0a0a"></a> <a href="#install"><img alt="Claude Code plugin" src="https://img.shields.io/badge/Claude%20Code-plugin-262626?style=flat-square&labelColor=0a0a0a"></a> <a href="https://open-vsx.org/extension/macdara/cornerman"><img alt="Open VSX" src="https://img.shields.io/badge/Open%20VSX-Cursor%2C%20VSCodium-262626?style=flat-square&labelColor=0a0a0a"></a> <a href="https://github.com/m4cd4r4/cornerman/actions/workflows/test.yml"><img alt="Tests on Windows, macOS and Linux" src="https://img.shields.io/github/actions/workflow/status/m4cd4r4/cornerman/test.yml?branch=main&style=flat-square&label=tests&labelColor=0a0a0a"></a> <a href="LICENSE"><img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-262626?style=flat-square&labelColor=0a0a0a"></a>
 
-[Product page](https://macdaraomurchu.com/products/cornerman/) · [Install](#install) · [Features](#features) · [Full guide](docs/GUIDE.md) · [Changelog](CHANGELOG.md)
+[Product page](https://macdaraomurchu.com/products/cornerman/) · [Install](#install) · [Features](#features) · [Changelog](CHANGELOG.md)
+
+The longer a Claude Code chat gets, the more each message costs, because Claude reads the whole chat again every time. Clearing it starts you fresh, but the new chat has no idea what you were working on.
 
 When a Claude Code chat gets long, Cornerman saves a handover, clears the chat and carries on by itself, up to the number of clears you set. Tables, lists, links and paths from the cleared chat stay one click away.
 
@@ -26,6 +28,10 @@ code --install-extension macdara.cornerman
 ```
 
 It is also on [Open VSX](https://open-vsx.org/extension/macdara/cornerman) for VSCodium and Cursor.
+
+## What you'll see first
+
+A pie in the VS Code status bar shows how full the chat is. Nothing else happens until the chat reaches 250k tokens. To see a handover sooner, hover the pie and click Hand over now.
 
 ---
 
@@ -87,6 +93,10 @@ Lists the repo's git worktrees and opens each in its own window.
 
 <img src="docs/img/worktrees.webp" alt="The Worktrees view lists docs/readme-rebuild, feat/hide-research and main. The first row, outlined, shows its buttons on hover, with the tooltip Open worktree window." width="700">
 
+## Why not auto-compaction?
+
+When a chat gets full, Claude Code's auto-compaction squeezes it into a summary you never see, and carries on in the same chat. Cornerman writes a handover, a short note of the goal, what's done and what's next, that you can open and edit. It starts a fresh chat from that note and keeps the old chat's tables, lists, links and paths one click away.
+
 ---
 
 ## Features
@@ -116,6 +126,6 @@ Lists the repo's git worktrees and opens each in its own window.
 
 ---
 
-[Full guide](docs/GUIDE.md) · [How it works](docs/HOW-IT-WORKS.md) · [Research](docs/RESEARCH.md)
+[How it works](docs/HOW-IT-WORKS.md) · [Research](docs/RESEARCH.md)
 
-<sub>MIT, see [LICENSE](LICENSE)</sub>
+<sub>MIT, see [LICENSE](LICENSE). cornerman is an independent project. It is not made or endorsed by Anthropic.</sub>

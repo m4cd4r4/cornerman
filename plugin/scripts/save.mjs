@@ -7,13 +7,14 @@
 // cornerman/<branch>, for cloud sessions whose home folder does not survive.
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
+import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
+import { carryForward, missingSections, previousHandover } from "./lib/carry.mjs";
+import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
 import { buildTrail, emptyTrail, trailSection, withTrail } from "./lib/trail.mjs";
-import { normalisePath } from "../packages/store/schema.mjs";
 import { commitHandover, webEnabled } from "./lib/web.mjs";
-import { ownerId, PATIENT_TIMEOUT_MS } from "./lib/owner.mjs";
-import { shellPath, tildePath } from "./lib/display.mjs";
+import { isOwnHandover, ownerId, PATIENT_TIMEOUT_MS, sameOwner } from "./lib/owner.mjs";
+import { sameFolder, shellPath, shownPath } from "./lib/display.mjs";
 import { headless } from "./lib/auto-flag.mjs";
 
 function arg(name) {
@@ -33,7 +34,8 @@ try {
 // not exist yet (--unowned) has no trail to give, and CORNERMAN_TRAIL=0 turns it off. Any failure here
 // leaves the handover exactly as the model wrote it: a save must never depend on the trail.
 // An empty body stays empty so the save still fails on it: a trail alone is not a handover.
-if (body.trim() && !process.argv.includes("--unowned") && process.env.CORNERMAN_TRAIL !== "0") {
+function addTrail() {
+  if (!body.trim() || process.argv.includes("--unowned") || process.env.CORNERMAN_TRAIL === "0") return;
   try {
     const transcript = sessionTranscript();
     if (transcript) {
@@ -61,13 +63,27 @@ try {
   // Under the headless runner every save is an auto one: the store is the
   // runner's own, and the runner sets which segment this is and what is left.
   const auto = headless() ? { chain: process.env.CORNERMAN_CHAIN, budget: process.env.CORNERMAN_BUDGET } : undefined;
-  const { path, id, short, title, top, main, replaced } = saveHandover({ cwd: startedIn, title: arg("--title"), body, owner, auto, sessionId: process.argv.includes("--unowned") ? "" : process.env.CLAUDE_CODE_SESSION_ID });
-  // The title and a short id, never the record path: its file name carries the
-  // machine name and the path the home folder, and this line reaches the user.
-  console.log(`Saved handover "${title}" (id ${short}).`);
-  for (const r of replaced) console.log(`Archived the older handover it replaces: "${r.title}" (id ${r.short}).`);
-  if (normalisePath(startedIn) !== normalisePath(process.cwd()))
-    console.log(`Filed against the session root ${tildePath(normalisePath(startedIn))}, not the current directory.`);
+  // Carry forward every open item of the handover this one continues that it no
+  // longer mentions (lib/carry.mjs, #194). Before the trail, so the trail stays last.
+  // Off with CORNERMAN_CARRY=0. A failure here saves the body as written.
+  let carried = [];
+  let previous = null;
+  if (body.trim() && owner && process.env.CORNERMAN_CARRY !== "0") {
+    try {
+      const top = repoInfo(startedIn).top;
+      const own = listWaiting(storeRoot(), top).filter((h) => isOwnHandover(owner, h.meta.owner, claimedAt(h), { machine: h.meta.machine }));
+      previous = previousHandover({ own, loaded: listLoaded(storeRoot(), top), owner, sameOwner });
+      if (previous) ({ body, carried } = carryForward(body, { title: previous.meta.title, body: previous.body }));
+    } catch {
+      // save as written
+    }
+  }
+  addTrail();
+  const { path, id, short, title, top, main, replaced } = saveHandover({ cwd: startedIn, title: arg("--title"), body, owner, auto, sessionId: process.argv.includes("--unowned") ? "" : process.env.CLAUDE_CODE_SESSION_ID, openQuestion: process.argv.includes("--open-question") });
+  // Every folder is printed by shownPath, so one folder reads the same each time it
+  // appears: "~/..." or its long form, forward slashes, never an 8.3 short name
+  // beside the long one (docs/findings-polish-and-launch.md 1.3).
+  //
   // A handover nobody can find is worse than none: the session is told to /clear
   // and starts empty with nothing saying a handover exists. So prove the record
   // comes back through the lookup the SessionStart hook uses (by this checkout's
@@ -77,23 +93,43 @@ try {
   // handovers, so a save in a worktree promised a load there that never came
   // (docs check, 2026-09-27).
   const found = listWaiting(storeRoot(), repoKey(top)).some((h) => h.id === id);
-  if (top !== main) console.log(`Written in the worktree ${tildePath(top)}: it loads in a session started there, not in ${tildePath(main)}.`);
+  // The title and a short id, never the record path: its file name carries the
+  // machine name and the path the home folder, and this line reaches the user.
+  console.log(`Saved handover "${title}" (id ${short}).`);
+  // What happens next comes straight after the save, ahead of every detail line:
+  // it is the line that changes what the reader does.
+  if (found && auto) console.log("The runner resumes from it in a fresh session once this one ends. Commit anything left, then end your turn.");
+  else if (found && process.argv.includes("--open-question"))
+    console.log(`After /clear, the handover is offered in ${shownPath(top)}; confirm it if it is an hour old or more.`);
+  else if (found) console.log(`After /clear, the next session in ${shownPath(top)} loads it automatically.`);
+  if (top !== main) console.log(`It loads only in this worktree, not in ${shownPath(main)}.`);
+  for (const r of replaced) console.log(`Archived the older handover it replaces: "${r.title}" (id ${r.short}).`);
+  if (carried.length) {
+    // Printed so the saving session sees what it dropped and can correct it now.
+    console.log(
+      `Carried forward ${carried.length} open item${carried.length === 1 ? "" : "s"} from "${previous.meta.title}" that this handover did not mention:\n` +
+        carried.map((it) => `  - [${it.tag}] ${it.text}`).join("\n") +
+        `\nIf any is done or dropped, save again and say so in the handover; otherwise leave it, the next session sees it.`,
+    );
+  }
+  const gaps = missingSections(body);
+  if (gaps.length && !process.argv.includes("--open-question"))
+    console.log(`Note: this handover has no ${gaps.map((g) => `"${g}"`).join(" or ")} section. If there is anything there, save again with it (write "None" if empty).`);
+  // Only when the folders really differ: the same folder in another spelling is no surprise.
+  if (!sameFolder(startedIn, process.cwd()))
+    console.log(`Filed against the session root ${shownPath(startedIn)}, not the current directory.`);
   if (webEnabled() || process.argv.includes("--commit")) {
     const { top, branch } = repoInfo(startedIn);
     const r = commitHandover(top, path, branch);
     if (r.pushed) console.log(`Pushed to ${r.ref} (your branch is untouched), so a new cloud session can list it.`);
     else console.log(`Could not push the handover to ${r.ref} (${r.error}). A new cloud session will not see it.`);
   }
-  if (found && auto) {
-    console.log("The runner resumes from it in a fresh session once this one ends. Commit anything left, then end your turn.");
-  } else if (found) {
-    console.log(`After /clear, the next session in ${tildePath(top)} loads it automatically.`);
-  } else {
+  if (!found) {
     console.error(
-      `cornerman: WARNING - the handover saved but is NOT discoverable from ${tildePath(top)}, ` +
+      `cornerman: WARNING - the handover saved but is NOT discoverable from ${shownPath(top)}, ` +
         `so /clear would start an empty session. Do not tell the user to clear. ` +
         `Load it by hand instead: node ${shellPath(fileURLToPath(new URL("load.mjs", import.meta.url)))} ${short} ` +
-        `(the record is ${tildePath(path)}).`,
+        `(the record is ${shownPath(path)}).`,
     );
     process.exitCode = 1;
   }

@@ -11,6 +11,21 @@ allowed-tools:
 Write a handover a fresh session can act on without this conversation, then save it.
 After the user runs `/clear`, the plugin's SessionStart hook loads it for them.
 
+## 0. Pick the kind
+
+Decide where the work continues before writing anything:
+
+- **Here, after `/clear`** ("before I clear", "save my place", plain `/handover`): a saved
+  handover. Follow steps 1-4.
+- **In another repo or another session** ("for the other session", "hand this to the azure
+  window", "a prompt for a fresh session in X"): a paste-ready prompt. Write the same sections
+  (step 2) in one fenced block in chat, starting with the folder it is for, save nothing, and
+  carry on with this session's work. Never `--cwd` another repo: that files it where no window
+  loads it, and this window's next `/clear` misses it.
+
+Ask only when the wording could mean either: one `AskUserQuestion` with two options, "Save for
+after /clear" and "Prompt to paste elsewhere". Otherwise pick and say which in your reply.
+
 ## 1. Check the facts first
 
 Run these rather than recalling them. A handover with a wrong branch or a stale
@@ -23,9 +38,29 @@ git status --short
 git log --oneline -5
 ```
 
+## 1b. Carry forward what is still open
+
+A handover that narrows to the next step loses work that is settled but not yet done. Before
+writing, gather every key point that affects what to do next:
+
+- Rulings the user gave this session, any decision log or review page the session touched, and every
+  decision record or log named in the handover this session was started from, even one this session never
+  opened. Read each one: a ruling recorded there is exactly what gets lost.
+  List each one with no evidence it was applied. Do this even if the next action is a different item.
+- Work already built but not applied or fully tested (a trimmed file, a draft branch), and where it is.
+- Questions shown to the user for a choice with no answer recorded, and where the options live.
+- A progress measure, if the goal has one: start, now, target (`490 -> 483, target ~0`).
+- Other handovers on the same task (same task words or files): run
+  `node "${CLAUDE_PLUGIN_ROOT}/scripts/load.mjs"` (no name: lists waiting ones) to see waiting ones, and `--peek <file>` to read
+  one. Fold their unfinished items in, or name them under "Also read".
+- The handover you were started from, if any: compare its open items (decided, built, open questions,
+  progress) with yours. Anything that dropped out without being done is carried forward, or stated as
+  done or dropped. Never let an item disappear silently.
+
 ## 2. Write it
 
-Aim for under 40 lines.
+Aim for under 40 lines, not counting the always-present sections ("Read first", "Decided, not yet
+applied" and "Open questions").
 
 Write for someone who has never seen this project. The next session has none of
 this conversation and none of your reasoning, so every reference has to stand on
@@ -45,10 +80,33 @@ One or two sentences: what this work is for, and what "done" means.
 The single first thing to do, concrete enough to run: a command, or a file:line
 and the change to make there. Not a topic to look into.
 
+## Read first
+Files kept across sessions that the next session must open before acting: a decision log, a
+review page with rulings, a client or workspace map (a folder's CLAUDE.md), a do-not or mistakes
+list. One per line: path - what it holds and, for a record, how many open items. Carry every one
+forward from the handover you started from unless it no longer exists. Write "None" if there are none.
+The SessionStart hook tells the next session to open each of these before its first action.
+
+## Progress
+Only when the goal has a number: start, now, target. Carry the start and target forward from the
+previous handover.
+
 ## State
 - Branch, last commit, PR number if there is one.
 - Done and verified, with how it was verified (the command, and what it printed).
 - In progress, uncommitted, or unverified. Say which.
+
+## Decided, not yet applied
+Rulings the user has made that are ready to apply, one per line, with where they are recorded.
+If a decision record is named, say how many items it holds. Write "None" if the list is empty.
+This is work to do, not background: the next session applies these, not only the next action.
+
+## Open questions
+Anything shown to the user for a choice with no answer recorded, and where it lives. Write "None"
+if there are none.
+
+## Also read
+Other handovers or records on the same task, and what each still holds open.
 
 ## Decisions already made
 Choices the user settled that the next session must not reopen. One line each,
@@ -66,7 +124,13 @@ Do not write a "Recent trail" section. Saving adds one from this session's own t
 files written, edited and read, and the last commands that succeeded and failed), and replaces any
 you wrote, so it is exact. `CORNERMAN_TRAIL=0` turns it off.
 
-Leave out sections that would be empty; an empty heading costs the reader a stop.
+Leave out sections that would be empty, except "Read first", "Decided, not yet applied" and
+"Open questions", which always appear (say "None"); an empty heading costs the reader a stop.
+
+Saving checks your work: any "Read first", "Decided, not yet applied", "Open questions" or
+"Progress" line in the handover you started from that yours does not mention is appended under
+"Carried forward from the previous handover", and the save prints the list. If one is really done
+or dropped, save again saying so; otherwise leave it.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it
