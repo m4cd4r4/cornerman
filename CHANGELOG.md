@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.7.3 (not released yet)
+
+- **A cancelled session start no longer loses your handover.** A `/clear` fires many
+  SessionStart hooks at once, and when Claude Code cancelled cornerman's, nothing loaded and
+  nothing said so. Your first prompt in the new session now loads the handover this window saved
+  instead (#204).
+- **Cornerman recognises your own window's handover again.** On Windows and macOS the hooks
+  could not read the window's start time, so they never knew a handover was this window's own
+  and fell back to guessing by branch (#204).
+- **The session start is faster.** It reads only the handovers it needs and skips the sync pull
+  when this window's own handover is already on this machine (#204).
+- **A handover you filed for another folder is named, not lost.** On `/clear`, if this window's
+  newest handover was saved for a different repo, the session start says which folder and the
+  command to load it there. Handovers older than the age limit (7 days by default) are archived
+  instead of listed, so weeks-old ones from other windows no longer crowd out yours (#205).
+- **Asking for a handover "for the other session" gives you a prompt to paste.** The handover
+  skill now saves only when the work continues here after `/clear`. When it continues in another
+  repo or session, it prints a ready-to-paste prompt and the current session carries on; it asks
+  once when your wording could mean either (#206).
+
 ## 0.7.2
 
 - **The relay no longer stops on work that never commits.** It stopped after two continued
