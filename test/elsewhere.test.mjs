@@ -16,8 +16,9 @@ const run = (input, opts) => {
   out?.afterOutput?.();
   return out;
 };
-// In this platform's form: on Linux a start time counts from boot, not the epoch.
-const START = startFromEpochMs(Date.now() - 60 * 60_000);
+// In this platform's form: on Linux a start time counts from boot, not the epoch, and
+// a fresh CI machine has been up for minutes, so an hour back would be negative.
+const START = startFromEpochMs(Date.now() - 10_000);
 const ME = `111@${START}`;
 const daysAgo = (n) => new Date(Date.now() - n * 86_400_000);
 

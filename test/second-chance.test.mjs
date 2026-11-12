@@ -17,9 +17,10 @@ const settle = (out) => {
   out?.afterOutput?.();
   return out;
 };
-// Every window here started an hour ago, before any handover in a test was saved.
-// In this platform's form: on Linux a start time counts from boot, not the epoch.
-const START = startFromEpochMs(Date.now() - 60 * 60_000);
+// Every window here started 10 s ago, before any handover in a test was saved.
+// In this platform's form: on Linux a start time counts from boot, not the epoch, and
+// a fresh CI machine has been up for minutes, so an hour back would be negative.
+const START = startFromEpochMs(Date.now() - 10_000);
 const ownerOf = (pid) => `${pid}@${START}`;
 
 let root, repo, transcript, env;

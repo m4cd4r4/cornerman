@@ -18,8 +18,9 @@ const { pull } = await import("../plugin/packages/store/sync.mjs");
 const { run } = await import("../plugin/scripts/lib/hook.mjs");
 const { saveHandover } = await import("../plugin/scripts/lib/store.mjs");
 
-// In this platform's form: on Linux a start time counts from boot, not the epoch.
-const START = startFromEpochMs(Date.now() - 60 * 60_000);
+// In this platform's form: on Linux a start time counts from boot, not the epoch, and
+// a fresh CI machine has been up for minutes, so an hour back would be negative.
+const START = startFromEpochMs(Date.now() - 10_000);
 const ME = `111@${START}`;
 
 let root, repo, env;
