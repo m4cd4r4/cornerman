@@ -141,6 +141,28 @@ describe("statsText", () => {
     expect(first.endsWith("1234567")).toBe(true);
   });
 
+  it("lists ten repos by name and puts the rest, and any with no relays, in one row", () => {
+    const live = [
+      ...Array.from({ length: 12 }, (_, i) => win({ cwd: `/work/repo-${String(i).padStart(2, "0")}`, used: 20 - i })),
+      win({ cwd: "/work/idle", used: 0 }),
+    ];
+    const lines = statsText(relayStats({ live }), NOW).split("\n");
+    const names = lines.slice(3).map((l) => l.split(/\s{2,}/)[0]).filter(Boolean);
+    expect(names).toEqual([...Array.from({ length: 10 }, (_, i) => `repo-${String(i).padStart(2, "0")}`), "3 other repos", "total"]);
+    expect(lines.find((l) => l.startsWith("3 other repos"))).toMatch(/\s3\s+3\s+19$/);
+    // One leftover repo keeps its own name.
+    const one = statsText(relayStats({ live: [win({ used: 1 }), win({ cwd: "/work/idle", used: 0 })] }), NOW);
+    expect(one).toContain("\nidle ");
+  });
+
+  it("names repos with the namer it is given, from each window's folder", () => {
+    const live = [win({ cwd: "/work/repo-a/web" }), win({ cwd: "/work/repo-b/web" })];
+    expect([...relayStats({ live }).get("2026-11").keys()]).toEqual(["web"]);
+    const repoName = (cwd) => cwd.split("/")[2];
+    const byRepo = relayStats({ live, ledgers: [ledger(win({ cwd: "/work/repo-c/src" }))], repoName });
+    expect([...byRepo.get("2026-11").keys()].sort()).toEqual(["repo-a", "repo-b", "repo-c"]);
+  });
+
   it("says there is nothing yet when there is nothing at all", () => {
     expect(statsText(relayStats({}), NOW)).toBe("cornerman stats: no relay windows yet.\n");
   });

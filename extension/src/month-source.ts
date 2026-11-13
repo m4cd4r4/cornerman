@@ -9,6 +9,7 @@
 import { readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { ledgerMonth, ledgerWindows, liveWindows, relayStats, thisMonth, type StatWindow, type ThisMonth } from "../../plugin/packages/store/relay-stats.mjs";
+import { repoNamer } from "../../plugin/packages/store/repo-name.mjs";
 
 type Cached = { path: string; mtimeMs: number; size: number; rows: StatWindow[] };
 
@@ -19,6 +20,8 @@ export class MonthSource {
   // same object per file until that file changes, so an unchanged folder is the same
   // objects in the same order, and the answer is reused instead of counted again.
   private last: { month: string; rows: StatWindow[]; files: unknown[]; section: ThisMonth | undefined } | null = null;
+  // A folder's repo is looked up once per extension session: the namer keeps its answers.
+  private readonly repoName = repoNamer();
   /** How many times a ledger file was read: the test counts these. */
   reads = 0;
 
@@ -38,7 +41,7 @@ export class MonthSource {
     const month = ledgerMonth(now);
     const l = this.last;
     if (l && l.month === month && l.rows === rows && l.files.length === files.length && l.files.every((f, i) => f === files[i])) return l.section;
-    const section = thisMonth(relayStats({ parsed: [rows], live: liveWindows(files) }), now);
+    const section = thisMonth(relayStats({ parsed: [rows], live: liveWindows(files), repoName: this.repoName }), now);
     this.last = { month, rows, files: files.slice(), section };
     return section;
   }
