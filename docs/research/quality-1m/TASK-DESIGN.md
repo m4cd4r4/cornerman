@@ -947,3 +947,9 @@ cp52, 54, 58, 68). Within 3 checkpoints at n = 1 = the fork method holds. Worse 
   about US$10, clear about US$8.
 - Dial pilot (validity + one filled arm): natural + fill-900, n = 1, about US$33.
 - Full dial: 5 arms x n = 5, about US$340.
+
+Rulings (Macdara, cards, 2026-11-13 ~08:00 AWST): top-up = own git history plus an unrelated
+earlier task (a real public codebase presented as a previous job in the same session). Build the
+fork setup and run the dial pilot: natural + fill-900, n = 1 each, Sonnet, about US$33
+API-equivalent, approved. The full dial (about US$340) is not approved; it needs the validity
+check to pass and a fresh yes.
