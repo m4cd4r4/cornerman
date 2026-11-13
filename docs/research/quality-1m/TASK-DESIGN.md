@@ -997,3 +997,29 @@ snapshots cp01-42, transcript holds the fork message at line 2695). No model cal
     now taken off. `park` moves the folder before the transcript.
   - Cost per natural fork, measured: about US$21 (US$3.6 for cp44-48, US$17.3 for cp48-80), above
     the US$15 estimate.
+
+### Dial pilot result (2026-11-13, n = 1 per arm, exploratory)
+
+| | natural (r3) | fill900 (r1) | pilot 3 (reference) |
+|:--|--:|--:|--:|
+| cp44-80 hidden | 31/37 | 28/37 | 33/37 |
+| Chat tests | 12/14 | 9/14 | 12/14 |
+| Compactions | 0 | 1 (cp48) | 0 |
+| Peak context | 846,951 | 963,720 | 866,711 |
+| Regressions | 1 (cp40) | 1 (cp40) | 0 |
+| Real cost | US$14.96 | US$25.80 | - |
+
+- Validity: natural lands 2 checkpoints from pilot 3 (limit 3): the fork method holds.
+- fill900 vs natural: -8.1 points (95% interval -18.9 to +2.7), "no large effect at n = 1".
+  The frozen prediction (fill900 within 3 checkpoints of natural) holds at its edge (3).
+- Where they differ: fill900 also fails cp49, 59, 65 and 78; natural also fails cp50. Three of
+  fill900's four extra failures are chat tests (cp49, 59, 65): facts said once in chat before
+  cp30, lost after the cp48 compaction. Shared failures: cp52, 54, 58, 68, 80.
+- Top-up landed at 905,572 (target 900,000). Auto-compaction came at cp48, five checkpoints in.
+- Harness notes: three usage-limit waits at cp46 (same session resumed, as fixed); segments 5-7
+  ended on transient `403 Cloudflare` auth errors and were resumed in the same session (no
+  context lost). The run log's "cost 126.39" sums cumulative segment totals; the real cost is
+  the last segment's US$25.80. Work tokens 3,907,400 (natural 846,951) are not yet explained
+  and need a look before the full dial.
+- Pilot spend in all: about US$61.7 (r2 invalid 20.9, natural 14.96, fill900 25.80), inside the
+  US$67 approved.
