@@ -981,3 +981,19 @@ snapshots cp01-42, transcript holds the fork message at line 2695). No model cal
 - `compare.mjs --fork`: K fixed at 44, base = natural.
 - Validity baseline re-checked from pilot 3's score.json: cp44-80 33/37, failures cp52, 54, 58,
   68; chat 12/14.
+
+### Dial pilot attempts (2026-11-13)
+
+- `fork-natural-sonnet-r1`: INVALID, US$0. `--resume-session-at` was given the API message id;
+  it takes the transcript entry uuid (21df1607-cafb-4752-84ca-93fd876f2e2f). No model call.
+- `fork-natural-sonnet-r2`: INVALID, about US$20.9 real. The fork worked (first call 457,685
+  tokens, cp44 requested by the fork itself). The 5-hour usage limit hit at cp48 (02:05 UTC,
+  10:05 AWST). The limited result carried all-zero usage, `run()` read that as "fork did not take"
+  and forked pilot 3 again at cp43 while the repo and gate sat at cp48. Segment 6 then did
+  cp48-80 without the cp44-47 conversation. Not scored.
+  - Harness fixed after: context keeps the last non-zero value; re-fork only if the gate has not
+    moved; a limit after the fork means wait and resume the forked session. Each forked
+    segment's `total_cost_usd` included pilot 3's US$23.74 (the run log said US$163.36); that is
+    now taken off. `park` moves the folder before the transcript.
+  - Cost per natural fork, measured: about US$21 (US$3.6 for cp44-48, US$17.3 for cp48-80), above
+    the US$15 estimate.

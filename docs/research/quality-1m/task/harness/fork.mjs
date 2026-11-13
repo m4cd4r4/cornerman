@@ -42,6 +42,7 @@ const FORK_MSG = "msg_011Cgy5CiyhMKuLH8UdtZW6i";
 // that, US$0): the entry at line 2695, the Bash call that commits cp43 and runs the gate.
 const FORK_UUID = "21df1607-cafb-4752-84ca-93fd876f2e2f";
 const FORK_HEAD = "55ac83d0a688cb1739566a1516b10133ef444c58"; // "cp43: COUNTIF and AVERAGEIF"
+const PARENT_COST = 23.73828820000001; // pilot 3's own total_cost_usd, carried into every fork
 const FORK_CP = 43; // gate state: cp43 revealed, not yet done
 const BASE_CTX = 457180; // context at the fork message: 2 + 2,040 + 454,259 input, 879 output
 const PROJECT_KEY = "I--Scratch--q1m-default-sonnet-r3-repo";
@@ -220,6 +221,8 @@ function claudeOnce(n, args, input) {
   return new Promise((done) => {
     const out = join(OUT, `stream-${String(n).padStart(2, "0")}.jsonl`);
     const child = spawn(CLAUDE, args, { cwd: REPO, env: env(), stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    // ctx keeps the last NON-ZERO context: a usage-limit result carries an assistant message with
+    // all-zero usage, which in r2 read as "the fork never took" and caused a second fork at cp48.
     let tail = "", buf = "", session = null, ctx = null;
     child.stdout.on("data", (b) => {
       appendFileSync(out, b);
@@ -231,7 +234,8 @@ function claudeOnce(n, args, input) {
           const j = JSON.parse(l);
           if (j.session_id && !session) session = j.session_id;
           const u = j.type === "assistant" && j.message?.usage;
-          if (u) ctx = u.input_tokens + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+          const c = u ? u.input_tokens + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) : 0;
+          if (c > 0) ctx = c;
         } catch {}
       }
     });
@@ -240,7 +244,9 @@ function claudeOnce(n, args, input) {
     child.on("close", (code) => {
       const res = tail.split("\n").reverse().find((l) => l.includes("\"type\":\"result\""));
       let limited = false, cost = null;
-      try { const j = JSON.parse(res); cost = j.total_cost_usd ?? null; limited = !!j.is_error && LIMIT.test(String(j.result || "")); } catch { limited = LIMIT.test(tail.slice(-3000)); }
+      // A forked session's total_cost_usd includes the parent's (r2: every segment reported
+      // pilot 3's US$23.74 on top), so the parent's cost is taken off.
+      try { const j = JSON.parse(res); cost = j.total_cost_usd == null ? null : Math.max(0, j.total_cost_usd - PARENT_COST); limited = !!j.is_error && LIMIT.test(String(j.result || "")); } catch { limited = LIMIT.test(tail.slice(-3000)); }
       done({ code, limited, cost, session, ctx });
     });
   });
@@ -269,9 +275,11 @@ async function run() {
       const r = await claudeOnce(n, forkArgs, first);
       total += r.cost || 0;
       events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} session ${r.session} context ${r.ctx} cp ${gateStatus().current}`);
-      if (r.limited && !r.ctx) { waits++; events(`usage limit before the fork took: wait 20 min (wait ${waits})`); await sleep(20 * 60 * 1000); continue; }
+      // Re-fork only when no model call ran at all (no context, no checkpoint moved). Once the
+      // fork has taken, a limit means wait and resume THIS session, never fork again.
+      if (r.limited && !r.ctx && gateStatus().current === FORK_CP) { waits++; events(`usage limit before the fork took: wait 20 min (wait ${waits})`); await sleep(20 * 60 * 1000); continue; }
       // An error result still carries a session id, so the fork counts only once a model call ran.
-      if (!r.session || !r.ctx) {
+      if (!r.session || (!r.ctx && gateStatus().current === FORK_CP)) {
         writeFileSync(join(OUT, "INVALID"), `${new Date().toISOString()} fork did not take (exit ${r.code}, no model call): see stderr.log\n`);
         events(`STOP: fork did not take (exit ${r.code}, context ${r.ctx}); run marked INVALID`);
         return;
@@ -323,10 +331,14 @@ function park() {
   if (existsSync(LOCK)) throw new Error("a run holds the lock");
   // The parent transcript runs on past cp44 (pilot 3's own cp44-80); left in projects/ the
   // token timeline would count it as this run's work.
-  mkdirSync(join(OUT, "parent-transcript"), { recursive: true });
-  renameSync(join(TRANSCRIPTS, `${PARENT_SID}.jsonl`), join(OUT, "parent-transcript", `${PARENT_SID}.jsonl`));
+  // Folder first: a rename fails (EPERM) while any process holds a file inside it, and doing the
+  // transcript first left r2 half-parked.
   mkdirSync(FORK_PARK, { recursive: true });
-  renameSync(LIVE, join(FORK_PARK, name));
+  const to = join(FORK_PARK, name);
+  renameSync(LIVE, to);
+  const tr = join(to, "home", ".claude", "projects", PROJECT_KEY);
+  mkdirSync(join(to, "out", "parent-transcript"), { recursive: true });
+  renameSync(join(tr, `${PARENT_SID}.jsonl`), join(to, "out", "parent-transcript", `${PARENT_SID}.jsonl`));
   console.log(`parked at ${join(FORK_PARK, name)}`);
 }
 
