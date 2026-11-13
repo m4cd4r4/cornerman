@@ -19,6 +19,10 @@
   skill now saves only when the work continues here after `/clear`. When it continues in another
   repo or session, it prints a ready-to-paste prompt and the current session carries on; it asks
   once when your wording could mean either (#206).
+- **See how much the relay did this month.** `/cornerman:stats` prints this month's relay
+  windows, sessions and relays by repo, with a total and last month's figures on one line. The
+  Handovers sidebar shows the same month as one line of counts and the top three repos, and leaves
+  the section out when there is nothing yet (#184).
 
 ## 0.7.2
 
