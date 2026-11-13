@@ -38,6 +38,9 @@ const MODEL_ID = "claude-sonnet-5-5";
 const PARENT = "I:/Scratch/_q1m-pilot/default-sonnet-r3";
 const PARENT_SID = "9f17f65f-b298-4272-877c-a8eb2e286255";
 const FORK_MSG = "msg_011Cgy5CiyhMKuLH8UdtZW6i";
+// --resume-session-at takes the transcript entry's uuid, not the API message id (r1 failed on
+// that, US$0): the entry at line 2695, the Bash call that commits cp43 and runs the gate.
+const FORK_UUID = "21df1607-cafb-4752-84ca-93fd876f2e2f";
 const FORK_HEAD = "55ac83d0a688cb1739566a1516b10133ef444c58"; // "cp43: COUNTIF and AVERAGEIF"
 const FORK_CP = 43; // gate state: cp43 revealed, not yet done
 const BASE_CTX = 457180; // context at the fork message: 2 + 2,040 + 454,259 input, 879 output
@@ -191,7 +194,7 @@ function verify() {
   const pass = Number((/^# pass (\d+)/m.exec(vt.stdout || "") || [])[1] || 0), fail = Number((/^# fail (\d+)/m.exec(vt.stdout || "") || [])[1] || 0);
   ok("visible tests cp01-43 pass on the fork tree", vt.status === 0 && pass > 0 && fail === 0, `pass ${pass} fail ${fail}`);
   const tr = readFileSync(join(TRANSCRIPTS, `${PARENT_SID}.jsonl`), "utf8").split("\n");
-  const at = tr.findIndex((l) => l.includes(`"id":"${FORK_MSG}"`) && l.includes("node gate.mjs next"));
+  const at = tr.findIndex((l) => l.includes(`"id":"${FORK_MSG}"`) && l.includes(`"uuid":"${FORK_UUID}"`) && l.includes("node gate.mjs next"));
   ok("transcript has the fork message (Bash: commit cp43 && gate next)", at !== -1, `line ${at + 1}`);
   const sid = (l) => { try { return JSON.parse(l).sessionId; } catch { return null; } };
   ok("transcript session id", sid(tr[0]) === PARENT_SID || sid(tr[1]) === PARENT_SID);
@@ -258,7 +261,7 @@ async function run() {
   try {
     // Segment 1 forks. Until it has produced a session id the fork is retried after a limit wait.
     let sid = null, n = 0, waits = 0, limitedAfterFork = false;
-    const forkArgs = [...CLAUDE_ARGS, "--resume", PARENT_SID, "--resume-session-at", FORK_MSG, "--fork-session"];
+    const forkArgs = [...CLAUDE_ARGS, "--resume", PARENT_SID, "--resume-session-at", FORK_UUID, "--fork-session"];
     while (!sid) {
       n++;
       const first = fillTo ? readFileSync(join(ROOT, "topup.txt"), "utf8") : CONTINUE;
@@ -267,7 +270,12 @@ async function run() {
       total += r.cost || 0;
       events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} session ${r.session} context ${r.ctx} cp ${gateStatus().current}`);
       if (r.limited && !r.ctx) { waits++; events(`usage limit before the fork took: wait 20 min (wait ${waits})`); await sleep(20 * 60 * 1000); continue; }
-      if (!r.session) throw new Error("fork produced no session id");
+      // An error result still carries a session id, so the fork counts only once a model call ran.
+      if (!r.session || !r.ctx) {
+        writeFileSync(join(OUT, "INVALID"), `${new Date().toISOString()} fork did not take (exit ${r.code}, no model call): see stderr.log\n`);
+        events(`STOP: fork did not take (exit ${r.code}, context ${r.ctx}); run marked INVALID`);
+        return;
+      }
       sid = r.session;
       limitedAfterFork = r.limited;
       writeFileSync(join(OUT, "session.txt"), sid + "\n");

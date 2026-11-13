@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-13T01:56:21.842Z",
+  "written": "2026-11-13T01:59:33.254Z",
   "files": {
     "../PREDICTIONS.md": "dadd60d1ba6a1f1c788f8c863a78f76713b6ec1037e7b4a3ad9f6b6fadae9fa9",
     "checkpoints/cp01/hidden.test.mjs": "f506ec7d88bab105feb01ce9a10b2f26900247d930ac271de903f52009120bfd",
@@ -246,7 +246,7 @@
     "harness/START-PROMPT.md": "d0541effa5399abf8c65d5f9ae474de6b8ad2e73f105dcd28a32aeed0815b8b1",
     "harness/arm.mjs": "af690379303f66a01b7249e877d3ede2125c24f2a77bf846cc28aaa7c8ab3fd6",
     "harness/done-check.mjs": "a1a4327f9d5f0d126ba8067134c948cd5fc2b5b6bdc1b3ea6700e9872e3c55e5",
-    "harness/fork.mjs": "3598c74a820a738eb81dce26034c3b0e770f87ed85a8183a1c96998f8208b97e",
+    "harness/fork.mjs": "23a99d62e67b0e42d165c83f9f0fdd59c04db54d34d6857f92599eca33486f0d",
     "harness/gate-server.mjs": "2c9b5372c898181d0054e9e9a137840dc68426c6c98901e6b7e85fc7b3b95cec",
     "harness/noise.mjs": "b37049b974233eec1424e1a0cea842717c2d0ded5412b68e38b21ca03435cea0",
     "harness/probes.json": "1dc637efa48b1fc8fb3f199e5ec7a6418ce557dcf6bdfc6606319404d8edd4ce",
