@@ -163,3 +163,24 @@ task back for a retune before Stage 3, never a published comparison. The earlier
     pilot, about US$30-40 API-equivalent. If it comes back above the 40-80% band again, stop and
     write up the null result; no further redesign.
   - No prediction, threshold, claim rule or K changed. K stays 32.
+- 2026-11-13 (fill dial, after pilot 4; no full-test run exists).
+  - Why: pilot 4 showed the agent filters tool-output padding away with one grep (TASK-DESIGN.md,
+    "Pilot 4 result"), so the fill cannot be left to the agent. The gate's fill is now opt-in
+    (`--fill`) and off for every run below.
+  - What changed: `harness/fork.mjs` forks pilot 3's session at cp44 (message
+    msg_011Cgy5CiyhMKuLH8UdtZW6i, repo 55ac83d, gate at cp43 with P1-P3 answered). Arms built:
+    natural (no change) and fill900 (one top-up user turn to about 900k before the continue
+    prompt: undici 6.28.1 source as a side job, plus the repo's own `git log -p`). The run stops
+    and marks the fork INVALID if the top-up lands more than 40k tokens from its target.
+    `compare.mjs --fork` scores the dial with K = 44 and the natural fork as the base.
+  - Validity rule, fixed now: the natural fork must land within 3 checkpoints of pilot 3's own
+    cp44-80 (33/37). Outside that, the fork method does not reproduce the session and the dial
+    is not read.
+  - Prediction for the dial pilot (Claude's, not Macdara's), fixed now and not tuned: fill900 scores within 3 checkpoints
+    of natural on cp44-80 at n = 1. This is a pilot: n = 1 cannot show an effect either way; it
+    shows whether the dial runs and roughly where it lands.
+  - Ruling (Macdara, 2026-11-13 ~08:00 AWST, cards): build the fork and run the dial pilot,
+    natural + fill900, n = 1 each, Sonnet, about US$33 API-equivalent. The full dial (5 arms x
+    n = 5, about US$340) is not approved.
+  - The 32-cutoff primary analysis above is unchanged for the arm runs; the dial is a separate,
+    exploratory analysis.

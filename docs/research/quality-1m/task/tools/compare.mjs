@@ -66,13 +66,17 @@ if (process.argv.includes("--selftest")) {
   process.exit(ok && chatOk ? 0 : 1);
 }
 
-const K = Number(arg("--k"));
-const DIR = arg("--runs", "I:/Scratch/_q1m");
+// --fork: the fill dial (harness/fork.mjs). Runs are fork-<arm>-<model>-rN under _q1m-fork, every
+// arm starts from pilot 3 at cp44, so K is 44 and the base is the natural fork.
+const FORK = process.argv.includes("--fork");
+const K = FORK ? 44 : Number(arg("--k"));
+const DIR = arg("--runs", FORK ? "I:/Scratch/_q1m-fork" : "I:/Scratch/_q1m");
 const MODEL = arg("--model", "sonnet");
 if (!K) throw new Error("need --k");
+if (FORK && arg("--k") && Number(arg("--k")) !== 44) throw new Error("--fork fixes K at 44");
 const byArm = new Map(), invalid = [];
 for (const name of readdirSync(DIR)) {
-  const m = /^(default|compact250|cm\d+)-(\w+)-r(\d+)$/.exec(name);
+  const m = (FORK ? /^fork-(natural|fill\d+|compact|clear)-(\w+)-r(\d+)$/ : /^(default|compact250|cm\d+)-(\w+)-r(\d+)$/).exec(name);
   if (!m || m[2] !== MODEL) continue;
   if (existsSync(join(DIR, name, "out", "INVALID"))) { invalid.push(name); continue; }
   const f = join(DIR, name, "score.json");
@@ -82,10 +86,10 @@ for (const name of readdirSync(DIR)) {
   if (!byArm.has(m[1])) byArm.set(m[1], []);
   byArm.get(m[1]).push({ name, late, s: j.summary });
 }
-const order = ["default", "compact250", "cm180", "cm250", "cm350", "cm500"].filter((a) => byArm.has(a));
+const order = (FORK ? ["natural", "fill700", "fill900", "compact", "clear"] : ["default", "compact250", "cm180", "cm250", "cm350", "cm500"]).filter((a) => byArm.has(a));
 // --base picks the arm every other arm is compared with. Only cm250 vs default is confirmatory
 // (PREDICTIONS.md); every other pair, and any other base, is exploratory and labelled so.
-const BASE = arg("--base", "default");
+const BASE = arg("--base", FORK ? "natural" : "default");
 if (!order.includes(BASE) && byArm.size) throw new Error(`--base ${BASE} has no scored run`);
 const base = byArm.get(BASE);
 // The frozen claim rule. A bound of exactly 0 spans 0: the interval must exclude it.

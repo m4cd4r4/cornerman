@@ -953,3 +953,31 @@ earlier task (a real public codebase presented as a previous job in the same ses
 fork setup and run the dial pilot: natural + fill-900, n = 1 each, Sonnet, about US$33
 API-equivalent, approved. The full dial (about US$340) is not approved; it needs the validity
 check to pass and a fresh yes.
+
+### Fork build (2026-11-13, US$0)
+
+`harness/fork.mjs` (setup, verify, run, park, score). Built and verified on
+`fork-natural-sonnet-r1`: 13/13 static checks pass (repo HEAD 55ac83d, only `test/visible/`
+untracked, 43 visible hashes match pilot 3's, visible tests pass on the fork tree, gate at cp43,
+snapshots cp01-42, transcript holds the fork message at line 2695). No model call.
+
+- Correction to "Fork point": 3 probes come before cp44 (P1 after cp15, P2 cp25, P3 cp35), not 5.
+  P4 (cp50) and P5 (cp65) are still ahead of every fork.
+- Config floor is pilot 3's own files (settings.json has no `bashOutputMaxChars`), not today's
+  `arm.mjs setup`, so the fork continues under the config it grew in.
+- Gate log is pilot 3's up to the cp43 reveal (92 lines); the cp43 done snapshot is made by the
+  fork's own first `next`.
+- `park` moves the parent transcript out of `projects/` before scoring: it runs on past cp44
+  (pilot 3's own cp44-80) and would otherwise count as the fork's work.
+- Top-up sizing: 2.4 chars a token, measured on pilot 3's tool results over 4,000 chars (141,382
+  chars = 63,070 tokens). The "about 110k tokens" for the git history above used 3.4 and is
+  likely low (about 156k at 2.4). Base context at the fork message: 457,180. The run checks the
+  top-up turn's real context and stops (INVALID) if it is more than 40k from the target.
+- Top-up source (fixed for every fill arm): undici 6.28.1 from npm, tarball sha256
+  e18191aac9c0ff43dac7fe9b10b7041a22d07addb7b66a6e8ac14a52a5b69b74, `index.js` + `lib/**/*.js`
+  in path order, the two `*-wasm.js` blobs left out; no spreadsheet or formula words. Framed as a
+  side job (five lines on how `request()` reaches a socket), no tools, then the repo's
+  `git log -p`.
+- `compare.mjs --fork`: K fixed at 44, base = natural.
+- Validity baseline re-checked from pilot 3's score.json: cp44-80 33/37, failures cp52, 54, 58,
+  68; chat 12/14.
