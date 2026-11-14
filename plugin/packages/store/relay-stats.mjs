@@ -7,6 +7,7 @@ import { readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { ledgerMonth, repoOf, windowFrom, windowValue } from "./relay-retention.mjs";
+import { repoNamer } from "./repo-name.mjs";
 
 /** The month a window is counted under: the one its last change fell in, local time. */
 export { ledgerMonth };
@@ -34,14 +35,14 @@ export function ledgerWindows(text) {
       continue;
     }
     if (!v || v.v !== 1 || v.kind !== "relay" || typeof v.key !== "string" || typeof v.lastAt !== "number") continue;
-    out.push({ key: v.key, repo: typeof v.repo === "string" ? v.repo : repoOf(v.cwd), sessions: count(v.sessions), relays: count(v.used), at: v.lastAt });
+    out.push({ key: v.key, cwd: typeof v.cwd === "string" ? v.cwd : "", repo: typeof v.repo === "string" ? v.repo : repoOf(v.cwd), sessions: count(v.sessions), relays: count(v.used), at: v.lastAt });
   }
   return out;
 }
 
 /** A live relay file (<store>/relay/<key>.json, as windowFrom takes it) in the same shape. */
 export function liveWindow(w) {
-  return { key: w.key, repo: repoOf(w.cwd), sessions: w.sessions.length, relays: count(w.used), at: w.updatedAt };
+  return { key: w.key, cwd: String(w.cwd ?? ""), repo: repoOf(w.cwd), sessions: w.sessions.length, relays: count(w.used), at: w.updatedAt };
 }
 
 /**
@@ -49,9 +50,10 @@ export function liveWindow(w) {
  * `ledgers` is ledger text, one string per file; `live` the relay files that passed
  * windowFrom. A key in both counts once, from its live file; a key twice in the
  * ledger counts once, from its latest line. `parsed` is ledger text already run
- * through ledgerWindows, for a caller that keeps it between reads.
+ * through ledgerWindows, for a caller that keeps it between reads. `repoName` maps a
+ * window's folder to its repo (repo-name.mjs); without it, the folder's last name is used.
  */
-export function relayStats({ ledgers = [], parsed = [], live = [] }) {
+export function relayStats({ ledgers = [], parsed = [], live = [], repoName }) {
   const byKey = new Map();
   for (const rows of [...ledgers.map(ledgerWindows), ...parsed]) {
     for (const w of rows) {
@@ -65,7 +67,7 @@ export function relayStats({ ledgers = [], parsed = [], live = [] }) {
     const month = ledgerMonth(w.at);
     let repos = months.get(month);
     if (!repos) months.set(month, (repos = new Map()));
-    const repo = w.repo || "unknown";
+    const repo = (repoName && w.cwd ? repoName(w.cwd) : w.repo) || "unknown";
     const r = repos.get(repo) ?? { windows: 0, sessions: 0, relays: 0 };
     r.windows++;
     r.sessions += w.sessions;
@@ -98,6 +100,9 @@ export function monthName(month) {
 /** "1 relay", "52 relays". */
 export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
+/** Most repos /cornerman:stats lists by name; the rest share one row. */
+export const TABLE_REPOS = 10;
+
 /** Most repos the sidebar names under its counts. */
 export const TOP_REPOS = 3;
 
@@ -123,7 +128,11 @@ export function statsText(stats, now) {
   const before = monthRows(stats, prev).total;
   const any = [...stats.values()].some((repos) => repos.size > 0);
   if (!any) return "cornerman stats: no relay windows yet.\n";
-  const rows = [...repos, { repo: "total", ...total }];
+  // The repos past the first ten, and any with no relays, share one row.
+  const named = repos.filter((r) => r.relays > 0).slice(0, TABLE_REPOS);
+  const rest = repos.slice(named.length);
+  const others = rest.length > 1 ? [{ repo: plural(rest.length, "other repo"), ...rest.reduce((t, r) => ({ windows: t.windows + r.windows, sessions: t.sessions + r.sessions, relays: t.relays + r.relays }), { windows: 0, sessions: 0, relays: 0 }) }] : rest;
+  const rows = [...named, ...others, { repo: "total", ...total }];
   const cols = [["windows", "windows"], ["sessions", "sessions"], ["relays", "relays"]].map(([head, k]) => ({ head, k, width: Math.max(head.length, ...rows.map((r) => String(r[k]).length)) }));
   const nameWidth = Math.max("repo".length, ...rows.map((r) => r.repo.length)) + 3;
   const line = (name, cells) => (name.padEnd(nameWidth) + cells.map((c, i) => c.padStart(cols[i].width)).join("  ")).trimEnd();
@@ -174,7 +183,7 @@ export async function readRelayStats({ store, months }) {
   names = names.filter((n) => n.endsWith(".json") && n.indexOf(".") === n.length - ".json".length);
   const texts = await readAll(names.map((n) => join(relayDir, n)));
   const live = names.map((n, i) => windowFrom(n, texts[i])).filter(Boolean);
-  return relayStats({ ledgers, live });
+  return relayStats({ ledgers, live, repoName: repoNamer() });
 }
 
 /** The relay files the extension already holds, parsed, kept only where windowFrom would keep them. */

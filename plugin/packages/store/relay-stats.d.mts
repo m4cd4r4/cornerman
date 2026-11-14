@@ -1,6 +1,8 @@
 /** One window as the stats count it, from a ledger line or a live relay file. */
 export interface StatWindow {
   key: string;
+  /** The window's folder; "" when the ledger line has none. */
+  cwd: string;
   repo: string;
   sessions: number;
   relays: number;
@@ -27,11 +29,12 @@ export interface ThisMonth {
 export function ledgerMonth(ms: number): string;
 export function ledgerWindows(text: string): StatWindow[];
 export function liveWindow(w: { key: string; cwd?: string; sessions: string[]; used?: number; updatedAt: number }): StatWindow;
-export function relayStats(input: { ledgers?: string[]; parsed?: StatWindow[][]; live?: { key: string; cwd?: string; sessions: string[]; used?: number; updatedAt: number }[] }): RelayStats;
+export function relayStats(input: { ledgers?: string[]; parsed?: StatWindow[][]; live?: { key: string; cwd?: string; sessions: string[]; used?: number; updatedAt: number }[]; repoName?: (cwd: string) => string }): RelayStats;
 export function monthRows(stats: RelayStats, month: string): { repos: ({ repo: string } & RepoStats)[]; total: RepoStats };
 export function previousMonth(month: string): string;
 export function monthName(month: string): string;
 export function plural(n: number, word: string): string;
+export const TABLE_REPOS: number;
 export const TOP_REPOS: number;
 export function thisMonth(stats: RelayStats, now: number): ThisMonth | undefined;
 export function statsText(stats: RelayStats, now: number): string;
