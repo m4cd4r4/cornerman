@@ -184,3 +184,31 @@ task back for a retune before Stage 3, never a published comparison. The earlier
     n = 5, about US$340) is not approved.
   - The 32-cutoff primary analysis above is unchanged for the arm runs; the dial is a separate,
     exploratory analysis.
+- 2026-11-14 (full fill dial, after the dial pilot; before its first paid run).
+  - Ruling (Macdara, 2026-11-13 ~18:15 AWST, card): full dial approved, 5 arms x n = 5, Sonnet,
+    about US$340. Clear arm (card, 2026-11-14 ~08:55 AWST): cornerman as shipped, relay at nudge
+    250k from the fork, so it clears at once (context 457k) and again as context regrows.
+  - What changed: `harness/fork.mjs` builds fill700 (same top-up source and order as fill900, cut
+    at a 700k target), compact (`/compact` on the fork, checked by a manual compact_boundary of the
+    fork context, then continue) and clear (cornerman v0.7.2 a8c3653 installed in the fork's
+    config; the plugin's runChain loop reproduced in fork.mjs, because the shipped relay cannot
+    start from a fork: fresh session per handover, the plugin's own resume and unfinished prompts
+    and store calls). One change from the relay, for every arm alike: a usage limit or error
+    result resumes the same session; a fresh clear segment that hit a limit before its first call
+    is re-sent with its own prompt. Cost is now summed per session (the last cumulative figure of
+    each), fixing the over-count noted in TASK-DESIGN.md. `harness/dial-batch.mjs` runs the 23
+    remaining runs round-robin, one at a time, and stops before real spend would pass US$340.
+  - Disclosed: these predictions are written after the dial pilot (natural r3 31/37, chat 12/14;
+    fill900 r1 28/37, chat 9/14). They are Claude's, not Macdara's, and are not tuned later.
+  - Analysis: compare.mjs --fork, K = 44, base natural, B = 10,000, the claim rule above. Every
+    dial comparison is exploratory; no headline claim rests on one.
+
+  | # | Dial prediction (n = 5 per arm) | My confidence |
+  |:--|:--|:--|
+  | D1 | fill900 late pass rate below natural's (point estimate) | 60% |
+  | D2 | fill900 vs natural interval below 0 ("hurts") | 25% |
+  | D3 | fill700's late pass rate lies between fill900's and natural's (inclusive) | 40% |
+  | D4 | clear late pass rate >= fill900's | 55% |
+  | D5 | clear chat pass rate below natural's (the 14 facts must survive a handover) | 75% |
+  | D6 | compact chat pass rate below natural's | 70% |
+  | D7 | mean real cost per run: clear <= 0.7 x natural | 60% |

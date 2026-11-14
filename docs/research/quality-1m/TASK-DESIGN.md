@@ -1027,3 +1027,32 @@ snapshots cp01-42, transcript holds the fork message at line 2695). No model cal
   --work <empty dir>`; run bare it throws "need --smoke --work", which is not a failure.
 - Pilot spend in all: about US$61.7 (r2 invalid 20.9, natural 14.96, fill900 25.80), inside the
   US$67 approved.
+
+### Full dial build (2026-11-14, US$0 apart from two throwaway checks)
+
+- fill700: `fork.mjs setup` + `verify` 16/16. Top-up 581,806 chars (est. 242,419 tokens, 27
+  undici files). fill900's estimate ran 3% low (435,610 est., +448,392 real), so fill700 should
+  land near 706k, inside the 40k band.
+- compact: segment 1 sends `/compact` to the fork. Checked headless on a throwaway session
+  (US$0.11 + US$0.06): `claude -p --resume X` with stdin `/compact` emits a `compact_boundary`
+  (trigger manual) and no assistant message, and it works with `--resume-session-at
+  --fork-session` (the fork kept only the history before the fork point). The run marks the fork
+  INVALID unless that boundary appears with pre_tokens near the 457k base. verify 14/14.
+- clear: cornerman v0.7.2 (a8c3653, the clone arm.mjs pins) installed into the fork's config at
+  setup; verify 17/17. Dry check, no model call: the plugin's own PostToolUse hook, given the
+  fork transcript and the relay's env, emits the headless ask (commit, save via save.mjs, end
+  the turn). fork.mjs reproduces runChain (scripts/lib/run.mjs): segment 1 = the fork with the
+  continue prompt; after a saved handover, a fresh `--session-id` fed the plugin's resumePrompt
+  (START-PROMPT + handover); no handover and not done = the done-check path (unfinishedPrompt).
+  Differences from the shipped relay: a usage limit or error result resumes the same session
+  (arm.mjs had to mark these INVALID because the relay cannot), and the stall rule is fork.mjs's
+  (3 segments without a new checkpoint) instead of the relay's (2 without a new commit).
+- Cost: fork.mjs now keeps the last total_cost_usd per session and sums sessions (pilot 3's cost
+  taken off only for sessions that descend from the fork). ended.txt carries that real figure.
+- Batch: `harness/dial-batch.mjs` (`--plan` prints the state). 23 runs, round-robin with the arm
+  order rotating each round, setup -> verify -> run -> park -> score each; stops before real
+  spend would pass US$340, after more than 3 INVALID runs, or on any failed step. When all arms
+  have 5 valid runs it writes DIAL-RESULT.md, commits and pushes.
+- Spend estimate from measured costs (natural 15, fill900 26; fill700 21, compact 11, clear 12
+  scaled): about US$384 for the 23 runs, above the about US$340 approved. The batch stops at
+  US$340 unless Macdara raises it.

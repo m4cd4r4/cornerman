@@ -7,7 +7,17 @@
 //   node fork.mjs run <name>      run the arm to ALL DONE (takes the lock)
 //   node fork.mjs park <name>     move the parent transcript aside, move the fork to FORK_PARK
 //   node fork.mjs score <name>    score the parked fork, late segment from cp44
-// <name> = fork-<natural|fill900>-sonnet-r<n>. compact / clear / fill700 are designed, not built.
+// <name> = fork-<natural|compact|clear|fillNNN>-sonnet-r<n>.
+//   natural  segment 1 = the continue prompt.
+//   fillNNN  segment 1 = the top-up turn (checked against NNN k), then continue.
+//   compact  segment 1 = `/compact` on the fork (checked: a manual compact_boundary), then continue.
+//   clear    cornerman v0.7.2 as shipped: plugin installed in the fork config, headless auto mode,
+//            nudge at 250k. Segment 1 = the fork with the continue prompt; the hooks ask at once
+//            (context 457k) and the agent saves a handover. Every later segment is a fresh session
+//            fed resumePrompt(START-PROMPT, handover), the loop of the plugin's runChain
+//            (scripts/lib/run.mjs) reproduced here because the shipped relay cannot start from a fork.
+//            One change from the relay: a usage limit or an error result resumes the SAME session
+//            (as the other arms do), where the relay would start a fresh one with no handover.
 //
 // Why the live path is fixed: the transcript holds absolute paths under
 // I:/Scratch/_q1m/default-sonnet-r3/ (repo, home, tool results), so each fork runs there, one at
@@ -23,15 +33,20 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync, append
 import { homedir } from "node:os";
 import { join, dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
-import { createHash } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
+import { pathToFileURL } from "node:url";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TASK = resolve(HERE, "..");
 const CPS = join(TASK, "checkpoints");
 const [cmd, name] = process.argv.slice(2);
-const m = /^fork-(natural|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
-if (!m) throw new Error("name must be fork-<natural|fill900>-sonnet-r<n>");
+const m = /^fork-(natural|compact|clear|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
+if (!m) throw new Error("name must be fork-<natural|compact|clear|fillNNN>-sonnet-r<n>");
 const arm = m[1], fillTo = m[2] ? Number(m[2]) * 1000 : null;
+// clear arm: cornerman pinned exactly as arm.mjs pins it.
+const CM_TAG = "v0.7.2", CM_SHA = "a8c36539063ae3871745a41d46be376d873e84fd";
+const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}`;
+const CM_NUDGE = 250000;
 const MODEL_ID = "claude-sonnet-5-5";
 
 // The parent: pilot 3, scored and parked.
@@ -144,9 +159,31 @@ function setup() {
   const info = { name, arm, fillTo, parent: PARENT, parentSession: PARENT_SID, forkMessage: FORK_MSG, forkHead: FORK_HEAD, cli,
     transcriptSha: sha(readFileSync(tr)), probesAnswered: Object.keys(probes), gateLogLines: kept.length };
   if (fillTo) Object.assign(info, buildTopup());
+  if (arm === "clear") {
+    // The plugin goes into the fork's own config, as arm.mjs installs it for the CM arms.
+    for (const a of [["plugin", "marketplace", "add", pinnedCornerman()], ["plugin", "install", "cornerman@cornerman"]]) {
+      const r = spawnSync(CLAUDE, a, { cwd: HOME, env: env(), encoding: "utf8" });
+      if (r.status !== 0) throw new Error(`claude ${a.join(" ")} -> exit ${r.status}: ${r.stderr}`);
+    }
+    Object.assign(info, { cornerman: pluginVersion(), cornermanTag: CM_TAG, cornermanSha: CM_SHA, nudgeAt: CM_NUDGE });
+  }
   writeFileSync(join(OUT, "fork.json"), JSON.stringify(info, null, 2));
-  events(`setup ${name}: fork of ${PARENT_SID} at ${FORK_MSG}, repo at ${FORK_HEAD.slice(0, 7)}, gate cp${FORK_CP}, claude-code ${cli}${fillTo ? `, top-up ${info.topupChars} chars (~${info.topupTokensEst} tokens) for ${fillTo}` : ""}`);
+  events(`setup ${name}: fork of ${PARENT_SID} at ${FORK_MSG}, repo at ${FORK_HEAD.slice(0, 7)}, gate cp${FORK_CP}, claude-code ${cli}${fillTo ? `, top-up ${info.topupChars} chars (~${info.topupTokensEst} tokens) for ${fillTo}` : ""}${info.cornerman ? `, cornerman ${info.cornerman} (${CM_TAG} ${CM_SHA.slice(0, 7)}) nudge ${CM_NUDGE}` : ""}`);
 }
+
+function pinnedCornerman() {
+  const g = (...a) => execFileSync("git", a, { encoding: "utf8" }).trim();
+  if (!existsSync(CM_DIR)) {
+    g("clone", "--quiet", "https://github.com/m4cd4r4/cornerman", CM_DIR);
+    g("-C", CM_DIR, "-c", "advice.detachedHead=false", "checkout", "--quiet", CM_SHA);
+  }
+  const head = g("-C", CM_DIR, "rev-parse", "HEAD"), dirty = g("-C", CM_DIR, "status", "--porcelain");
+  if (head !== CM_SHA || dirty) throw new Error(`${CM_DIR} is at ${head}${dirty ? " with local changes" : ""}, expected clean ${CM_SHA}`);
+  return CM_DIR;
+}
+const pluginBase = () => join(CONFIG, "plugins", "cache", "cornerman", "cornerman");
+const pluginVersion = () => readdirSync(pluginBase()).sort().pop();
+const pluginDir = () => join(pluginBase(), pluginVersion());
 
 // The top-up turn. Undici files go in in path order until the char budget is met; the
 // budget is what is left of the target after the git history and the framing.
@@ -205,6 +242,14 @@ function verify() {
     ok("top-up file matches its recorded hash", sha(readFileSync(join(ROOT, "topup.txt"), "utf8")) === f.topupSha, `${f.topupChars} chars, ~${f.topupTokensEst} tokens, ${f.undiciFiles} undici files`);
     ok("top-up has no spreadsheet words in the undici part", !/spreadsheet|formula|COUNTIF|#REF!|#DIV\/0|workbook/i.test(readFileSync(join(ROOT, "topup.txt"), "utf8").split("=== end of undici ===")[0].slice(600)));
   }
+  if (arm === "clear") {
+    ok("cornerman 0.7.2 installed in the fork config", existsSync(pluginBase()) && pluginVersion() === "0.7.2" && existsSync(join(pluginDir(), "scripts", "save.mjs")), existsSync(pluginBase()) ? pluginVersion() : "missing");
+    ok("cornerman enabled in settings.json", JSON.stringify(JSON.parse(readFileSync(join(CONFIG, "settings.json"), "utf8")).enabledPlugins || {}).includes("cornerman@cornerman"));
+    ok("cornerman source pinned", (() => { try { return !!pinnedCornerman(); } catch { return false; } })());
+    ok("no cornerman store yet", !existsSync(join(ROOT, "cm-store")));
+  } else {
+    ok("no cornerman plugin in the config", !existsSync(join(CONFIG, "plugins")));
+  }
   const bad = checks.filter((c) => !c.pass).length;
   events(`verify ${name}: ${checks.length - bad}/${checks.length} checks pass`);
   if (bad) process.exit(1);
@@ -215,15 +260,17 @@ const gateStatus = () => { try { return JSON.parse(readFileSync(join(RUN, "gate-
 const LIMIT = /usage limit|rate limit|limit reached|resets? (at|in)|overloaded|529|5-hour limit|weekly limit/i;
 const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
 
-// One claude process. Resolves { code, limited, cost, session, ctx } where ctx is the context
-// size of the last assistant message (the top-up check reads it).
-function claudeOnce(n, args, input) {
+// One claude process. Resolves { code, limited, isError, cost, session, ctx, compact } where ctx is
+// the context size of the last assistant message (the top-up check reads it) and compact the
+// last compact_boundary's metadata. `forked`: the session descends from pilot 3, so its
+// total_cost_usd carries pilot 3's cost; a fresh clear-arm session's does not.
+function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
   return new Promise((done) => {
     const out = join(OUT, `stream-${String(n).padStart(2, "0")}.jsonl`);
-    const child = spawn(CLAUDE, args, { cwd: REPO, env: env(), stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
+    const child = spawn(CLAUDE, args, { cwd: REPO, env: { ...env(), ...extraEnv }, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     // ctx keeps the last NON-ZERO context: a usage-limit result carries an assistant message with
     // all-zero usage, which in r2 read as "the fork never took" and caused a second fork at cp48.
-    let tail = "", buf = "", session = null, ctx = null;
+    let tail = "", buf = "", session = null, ctx = null, compact = null;
     child.stdout.on("data", (b) => {
       appendFileSync(out, b);
       tail = (tail + b.toString()).slice(-20000);
@@ -233,6 +280,7 @@ function claudeOnce(n, args, input) {
         try {
           const j = JSON.parse(l);
           if (j.session_id && !session) session = j.session_id;
+          if (j.subtype === "compact_boundary") compact = j.compact_metadata || {};
           const u = j.type === "assistant" && j.message?.usage;
           const c = u ? u.input_tokens + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) : 0;
           if (c > 0) ctx = c;
@@ -243,11 +291,12 @@ function claudeOnce(n, args, input) {
     child.stdin.end(input);
     child.on("close", (code) => {
       const res = tail.split("\n").reverse().find((l) => l.includes("\"type\":\"result\""));
-      let limited = false, cost = null;
+      let limited = false, cost = null, isError = code !== 0;
       // A forked session's total_cost_usd includes the parent's (r2: every segment reported
-      // pilot 3's US$23.74 on top), so the parent's cost is taken off.
-      try { const j = JSON.parse(res); cost = j.total_cost_usd == null ? null : Math.max(0, j.total_cost_usd - PARENT_COST); limited = !!j.is_error && LIMIT.test(String(j.result || "")); } catch { limited = LIMIT.test(tail.slice(-3000)); }
-      done({ code, limited, cost, session, ctx });
+      // pilot 3's US$23.74 on top), so the parent's cost is taken off. It is cumulative over the
+      // session, so run() keeps the last figure per session and sums sessions.
+      try { const j = JSON.parse(res); cost = j.total_cost_usd == null ? null : Math.max(0, j.total_cost_usd - (forked ? PARENT_COST : 0)); isError = !!j.is_error; limited = isError && LIMIT.test(String(j.result || "")); } catch { isError = true; limited = LIMIT.test(tail.slice(-3000)); }
+      done({ code, limited, isError, cost, session, ctx, compact });
     });
   });
 }
@@ -261,31 +310,38 @@ async function run() {
   writeFileSync(join(LOCK, "owner.txt"), `${name} since ${new Date().toISOString()} pid ${process.pid}\n`);
   const gate = spawn(process.execPath, [join(HERE, "gate-server.mjs"), "--repo", REPO, "--run", RUN], { stdio: ["ignore", "pipe", "inherit"] });
   await new Promise((ok) => gate.stdout.once("data", ok));
-  events(`run ${name}: gate up at cp ${gateStatus().current}, model ${MODEL_ID}, arm ${arm}, claude-code ${cli}`);
+  events(`run ${name}: gate up at cp ${gateStatus().current}, model ${MODEL_ID}, arm ${arm}, claude-code ${cli}${arm === "clear" ? `, cornerman ${pluginVersion()} nudge ${CM_NUDGE}` : ""}`);
   writeFileSync(join(OUT, "started.txt"), new Date().toISOString() + "\n");
-  let total = 0;
+  // total_cost_usd is cumulative per session: keep the last figure per session, sum the sessions.
+  const costs = new Map();
+  const total = () => [...costs.values()].reduce((a, b) => a + b, 0);
+  const WAIT = 20 * 60 * 1000;
+  let waits = 0;
+  const wait = async (why) => { waits++; events(`usage limit${why}: wait 20 min (wait ${waits})`); await sleep(WAIT); };
   try {
-    // Segment 1 forks. Until it has produced a session id the fork is retried after a limit wait.
-    let sid = null, n = 0, waits = 0, limitedAfterFork = false;
+    const cm = arm === "clear" ? await clearKit() : null;
+    let chain = 1, chainStarted = Date.now();
+    // Segment 1 forks. Until a model call has run the fork is retried after a limit wait.
+    let sid = null, n = 0, r = null;
     const forkArgs = [...CLAUDE_ARGS, "--resume", PARENT_SID, "--resume-session-at", FORK_UUID, "--fork-session"];
+    const first = arm === "compact" ? "/compact" : fillTo ? readFileSync(join(ROOT, "topup.txt"), "utf8") : CONTINUE;
     while (!sid) {
       n++;
-      const first = fillTo ? readFileSync(join(ROOT, "topup.txt"), "utf8") : CONTINUE;
-      events(`segment ${n} start (fork of ${PARENT_SID} at ${FORK_MSG}, ${fillTo ? "top-up turn" : "continue"}) at cp ${gateStatus().current}`);
-      const r = await claudeOnce(n, forkArgs, first);
-      total += r.cost || 0;
-      events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} session ${r.session} context ${r.ctx} cp ${gateStatus().current}`);
-      // Re-fork only when no model call ran at all (no context, no checkpoint moved). Once the
-      // fork has taken, a limit means wait and resume THIS session, never fork again.
-      if (r.limited && !r.ctx && gateStatus().current === FORK_CP) { waits++; events(`usage limit before the fork took: wait 20 min (wait ${waits})`); await sleep(20 * 60 * 1000); continue; }
+      events(`segment ${n} start (fork of ${PARENT_SID} at ${FORK_MSG}, ${arm === "compact" ? "/compact" : fillTo ? "top-up turn" : "continue"}) at cp ${gateStatus().current}`);
+      r = await claudeOnce(n, forkArgs, first, { extraEnv: cm ? cm.env(chain) : {} });
+      if (r.session && r.cost != null) costs.set(r.session, r.cost);
+      events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} session ${r.session} context ${r.ctx}${r.compact ? ` compact ${r.compact.trigger} ${r.compact.pre_tokens}->${r.compact.post_tokens}` : ""} cp ${gateStatus().current}`);
+      // The fork took once a model call ran (a context, a compaction, or the gate moved). Before
+      // that a limit means fork again after the wait; after it, wait and resume THIS session.
+      const took = !!r.ctx || !!r.compact || gateStatus().current !== FORK_CP;
+      if (r.limited && !took) { await wait(" before the fork took"); continue; }
       // An error result still carries a session id, so the fork counts only once a model call ran.
-      if (!r.session || (!r.ctx && gateStatus().current === FORK_CP)) {
+      if (!r.session || !took) {
         writeFileSync(join(OUT, "INVALID"), `${new Date().toISOString()} fork did not take (exit ${r.code}, no model call): see stderr.log\n`);
         events(`STOP: fork did not take (exit ${r.code}, context ${r.ctx}); run marked INVALID`);
         return;
       }
       sid = r.session;
-      limitedAfterFork = r.limited;
       writeFileSync(join(OUT, "session.txt"), sid + "\n");
       if (fillTo) {
         // The top-up check: the turn must land near its target, and must not have moved the gate.
@@ -297,32 +353,103 @@ async function run() {
         }
         events(`top-up OK: context ${r.ctx} (target ${fillTo})`);
       }
+      if (arm === "compact") {
+        // The check: one manual compaction of the full fork context, gate not moved.
+        if (!r.compact || r.compact.trigger !== "manual" || !(r.compact.pre_tokens > BASE_CTX - 20000) || gateStatus().current !== FORK_CP) {
+          writeFileSync(join(OUT, "INVALID"), `${new Date().toISOString()} /compact did not compact the fork: ${JSON.stringify(r.compact)} cp ${gateStatus().current}\n`);
+          events(`STOP: /compact did not compact the fork (${JSON.stringify(r.compact)}); run marked INVALID`);
+          return;
+        }
+        events(`compact OK: ${r.compact.pre_tokens} -> ${r.compact.post_tokens} tokens`);
+      }
     }
-    // Then the same loop as arm.mjs runSession, on the forked session.
-    let stale = 0, last = gateStatus().current;
-    // natural: segment 1 already carried CONTINUE, so this only runs if it ended early.
-    // fill: segment 1 was the top-up turn, so the first resume carries CONTINUE.
-    if (limitedAfterFork) { waits++; events(`usage limit: wait 20 min (wait ${waits})`); await sleep(20 * 60 * 1000); }
+    // Then the same loop as arm.mjs runSession: resume the session with CONTINUE. The clear arm
+    // instead starts a fresh session whenever the last segment saved a handover (runChain).
+    // cur.first: a fresh clear segment's opening prompt, kept until a model call has run on it, so
+    // a limit before that call re-sends it (in a new session id) instead of a bare CONTINUE.
+    let cur = { sid, forked: true, first: null }, stale = 0, last = gateStatus().current;
+    const fresh = (prompt) => { cur = { sid: randomUUID(), forked: false, first: prompt }; return [[...CLAUDE_ARGS, "--session-id", cur.sid], prompt]; };
     while (!gateStatus().finished) {
+      if (r.limited) await wait("");
+      let args = [...CLAUDE_ARGS, "--resume", cur.sid], input = CONTINUE, how = `resume ${cur.sid}`;
+      const saved = cm ? cm.savedSince(chainStarted) : [];
+      if (r.limited && !r.ctx && cur.first) {
+        [args, input] = fresh(cur.first);
+        how = `clear: chain segment ${chain} again, its first call hit the limit, fresh ${cur.sid}`;
+      } else if (saved.length) {
+        const h = cm.take(saved);
+        chain++; chainStarted = Date.now();
+        [args, input] = fresh(cm.resumePrompt(chain, h.body));
+        how = `clear: handover ${h.short} (${h.body.length} chars), chain segment ${chain}, fresh ${cur.sid}`;
+      } else if (cm && !r.limited && !r.isError) {
+        // Ended its turn with no handover and the gate not done: the relay's done-check path.
+        const dc = cm.doneCheck();
+        chain++; chainStarted = Date.now();
+        [args, input] = fresh(cm.unfinishedPrompt(chain, dc));
+        how = `clear: no handover, done check exit ${dc.code}, chain segment ${chain}, fresh ${cur.sid}`;
+      }
       n++;
-      events(`segment ${n} start (resume ${sid}) at cp ${gateStatus().current}`);
-      const r = await claudeOnce(n, [...CLAUDE_ARGS, "--resume", sid], CONTINUE);
-      total += r.cost || 0;
+      events(`segment ${n} start (${how}) at cp ${gateStatus().current}`);
+      r = await claudeOnce(n, args, input, { extraEnv: cm ? cm.env(chain) : {}, forked: cur.forked });
+      if (r.cost != null) costs.set(cur.sid, r.cost);
+      if (r.ctx) cur.first = null;
       const now = gateStatus().current;
-      events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} context ${r.ctx} cp ${now}`);
+      events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} error ${r.isError} context ${r.ctx}${r.compact ? ` compacted ${r.compact.trigger} ${r.compact.pre_tokens}->${r.compact.post_tokens}` : ""} cp ${now}`);
       if (gateStatus().finished) break;
-      if (r.limited) { waits++; events(`usage limit: wait 20 min (wait ${waits})`); await sleep(20 * 60 * 1000); continue; }
+      if (r.limited) continue;
       stale = now > last ? 0 : stale + 1;
       last = now;
-      if (stale >= 3) { events("stopped: 3 resumes in a row with no checkpoint progress"); break; }
+      if (stale >= 3) { events("stopped: 3 segments in a row with no checkpoint progress"); break; }
     }
   } finally {
     rmSync(LOCK, { recursive: true, force: true });
     gate.kill();
     const s = gateStatus();
-    writeFileSync(join(OUT, "ended.txt"), `${new Date().toISOString()} cp ${s.current} finished ${!!s.finished} cost ${total.toFixed(2)}\n`);
-    events(`run ${name}: ended at cp ${s.current}, finished ${!!s.finished}, cost ${total.toFixed(2)}`);
+    writeFileSync(join(OUT, "ended.txt"), `${new Date().toISOString()} cp ${s.current} finished ${!!s.finished} cost ${total().toFixed(2)}\n`);
+    events(`run ${name}: ended at cp ${s.current}, finished ${!!s.finished}, cost ${total().toFixed(2)} (${costs.size} sessions)`);
   }
+}
+
+// The clear arm's relay pieces, from the installed plugin (store) and copied verbatim from
+// scripts/lib/run.mjs at v0.7.2 (prompts, savedSince, the archive calls), max segments unlimited.
+async function clearKit() {
+  const D = pluginDir();
+  if (pluginVersion() !== "0.7.2") throw new Error(`cornerman ${pluginVersion()} installed, expected 0.7.2`);
+  const S = await import(pathToFileURL(join(D, "scripts", "lib", "store.mjs")).href);
+  const P = await import(pathToFileURL(join(D, "packages", "store", "store.mjs")).href);
+  const STORE = join(ROOT, "cm-store"), RUNNER = "cornerman-run";
+  const { top } = S.repoInfo(REPO), key = S.repoKey(top);
+  const START = readFileSync(join(HERE, "START-PROMPT.md"), "utf8");
+  const DONE_CHECK = `node "${join(HERE, "done-check.mjs").replaceAll("\\", "/")}" "${RUN}"`;
+  return {
+    env: (chain) => ({ CORNERMAN_AUTO: "1", CORNERMAN_HEADLESS: "1", CORNERMAN_HOME: STORE, CORNERMAN_SYNC: "off",
+      CORNERMAN_CHAIN: String(chain), CORNERMAN_BUDGET: "-1", CORNERMAN_NUDGE_AT: String(CM_NUDGE) }),
+    savedSince(since) {
+      if (!existsSync(STORE)) return [];
+      const auto = new Set(P.listAll(STORE).filter((r) => r.auto === true).map((r) => r.id));
+      return S.listWaiting(STORE, top).filter((h) => auto.has(h.id) && Date.parse(h.meta.created) >= since - 1000);
+    },
+    take(saved) {
+      for (const h of saved.slice(0, -1)) S.archive(STORE, key, h.path, { via: "supersede", owner: RUNNER });
+      const h = saved.at(-1);
+      S.archive(STORE, key, h.path, { via: "load", owner: RUNNER });
+      return h;
+    },
+    resumePrompt: (n, body) => `${START.trimEnd()}\n\n---\n\n` +
+      `cornerman: this is segment ${n}. The previous segment ran out of context and saved the handover below. ` +
+      `Resume from it in this fresh context. Its branch, file and status claims are a snapshot: check them against git before acting.\n\n` +
+      body.trim(),
+    doneCheck() {
+      const d = spawnSync(DONE_CHECK, { shell: true, cwd: REPO, env: env(), encoding: "utf8", windowsHide: true });
+      const t = `${d.stdout ?? ""}${d.stderr ?? ""}${d.error ? d.error.message : ""}`.trim();
+      return { cmd: DONE_CHECK, code: d.status ?? 1, output: t.length > 2000 ? `[earlier output cut]\n${t.slice(-2000)}` : t };
+    },
+    unfinishedPrompt: (n, check) => `${START.trimEnd()}\n\n---\n\n` +
+      `cornerman: this is segment ${n}. The previous segment ended its turn without finishing the task and without saving a handover. ` +
+      `The done check (\`${check.cmd}\`) failed with exit ${check.code}. Its output is below. ` +
+      `Check git for what is already done, then carry on with the rest of the task.\n\n` +
+      (check.output ? check.output : "(the check printed nothing)"),
+  };
 }
 
 // --- park and score ----------------------------------------------------------------------
@@ -355,6 +482,10 @@ function score() {
     limitWaits: (log.match(/usage limit/g) || []).length,
     resumeTurns: (log.match(/segment \d+ start \(resume /g) || []).length,
     topup: (/top-up OK: context (\d+)/.exec(log) || [])[1] ?? null,
+    compact: (/compact OK: (\d+) -> (\d+)/.exec(log) || []).slice(1).map(Number),
+    clears: (log.match(/start \(clear: handover /g) || []).length,
+    clearsWithoutHandover: (log.match(/start \(clear: no handover/g) || []).length,
+    cost: Number((/cost ([\d.]+) \(\d+ sessions\)/.exec(log) || [])[1] ?? NaN),
     claudeCode: CLI_VERSION,
   };
   writeFileSync(join(ROOT, "score.json"), JSON.stringify(j, null, 2));
