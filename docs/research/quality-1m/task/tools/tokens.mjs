@@ -35,6 +35,10 @@ export function points(transcripts) {
       seen.add(id);
       const u = j.message.usage;
       const ctx = (u.input_tokens || 0) + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0);
+      // Error entries (usage limit, API 403) are written as assistant messages with all-zero
+      // usage. Counted, each read as a drop to 0 and the next call's whole context as new work:
+      // fill900 r1 showed 3.9M work tokens instead of about 1.45M (TASK-DESIGN.md, dial pilot).
+      if (ctx === 0) continue;
       out.push({ ts: Date.parse(j.timestamp), session: j.sessionId, ctx, out: u.output_tokens || 0, compacted });
       compacted = false;
     }

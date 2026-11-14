@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-13T09:22:34.650Z",
+  "written": "2026-11-14T00:36:27.027Z",
   "files": {
     "../PREDICTIONS.md": "dadd60d1ba6a1f1c788f8c863a78f76713b6ec1037e7b4a3ad9f6b6fadae9fa9",
     "checkpoints/cp01/hidden.test.mjs": "f506ec7d88bab105feb01ce9a10b2f26900247d930ac271de903f52009120bfd",
@@ -333,6 +333,6 @@
     "tools/rule-negatives.mjs": "4d4fb44cf328d6b2e1386c2393a272925ca05971047619136effc5ba3e6e9b63",
     "tools/score-run.mjs": "20307d58f69753ac2f2aa134d3fe530b6d27d8bca6754b7d15ea2c803bdc5b53",
     "tools/score-selftest.mjs": "86eca54ab9a627b3d292eec7bf656374572f3cc6ca2f049c4ec76b162e56e84e",
-    "tools/tokens.mjs": "a823ca536fc8266d8e1065afb519d97f49455a1eaa68d8c7f0b0427f7257c328"
+    "tools/tokens.mjs": "a6bfef546117e11212e4f89b19c74a307d9ea49f6412a01910b045d1f4d8b4dc"
   }
 }
