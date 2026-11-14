@@ -1,5 +1,5 @@
 {
-  "written": "2026-11-14T02:46:35.749Z",
+  "written": "2026-11-14T02:50:06.198Z",
   "files": {
     "../PREDICTIONS.md": "a2d43f5b3d90b32c23df810b56770bf04e9a5bc504f3f3f6e9391a24e233e4ce",
     "checkpoints/cp01/hidden.test.mjs": "f506ec7d88bab105feb01ce9a10b2f26900247d930ac271de903f52009120bfd",
@@ -245,7 +245,7 @@
     "harness/HOUSE-RULES.md": "d5c34c3c97f608ede8bb14bfe9067d8bb0e41649d200ff898f658efce8615b8a",
     "harness/START-PROMPT.md": "d0541effa5399abf8c65d5f9ae474de6b8ad2e73f105dcd28a32aeed0815b8b1",
     "harness/arm.mjs": "af690379303f66a01b7249e877d3ede2125c24f2a77bf846cc28aaa7c8ab3fd6",
-    "harness/dial-batch.mjs": "5bde9e5f01295b1b85514996b16d3a54b1db2b475d8a3de0431d817aebbe9775",
+    "harness/dial-batch.mjs": "64ef6bf95d0c66db92fc4fb30fe0145979a20287d0e882590933f7bbda8e0238",
     "harness/dial-finish.mjs": "fd61678c514086c7453c847404e6252725e6dc97b4872fcdcac22a6fe041e8c2",
     "harness/done-check.mjs": "a1a4327f9d5f0d126ba8067134c948cd5fc2b5b6bdc1b3ea6700e9872e3c55e5",
     "harness/fork.mjs": "88834ae34be20f3232ecd9a457d400ddd5a5fa2c3098adcda704aa198f8366c0",

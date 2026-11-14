@@ -1056,3 +1056,10 @@ snapshots cp01-42, transcript holds the fork message at line 2695). No model cal
 - Spend estimate from measured costs (natural 15, fill900 26; fill700 21, compact 11, clear 12
   scaled): about US$384 for the 23 runs, above the about US$340 approved. The batch stops at
   US$340 unless Macdara raises it.
+- Ruling (Macdara, card, 2026-11-14 ~10:50 AWST): cap raised to US$1000, "ensure that we reach
+  our targets for context window consumption". Applied as a validity rule in dial-batch.mjs: a
+  run that misses its arm's context state is INVALID and rerun (fill: top-up within 40k of target,
+  already in fork.mjs; compact: a manual compaction of the fork, already in fork.mjs; clear: at
+  least one handover clear, new). INVALID allowance 8 per batch; one arm INVALID 3 times in a row
+  stops the batch as systematic. How often clear fails to fire is itself reported.
+- fill700 r1 top-up landed at 717,986 (target 700,000).

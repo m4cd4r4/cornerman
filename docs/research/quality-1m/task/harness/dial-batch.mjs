@@ -33,7 +33,11 @@ const budget = () => { const t = Number(read(join(PARK, "budget.txt")).trim()); 
 // Per-run estimates (US$, real): natural and fill900 measured in the dial pilot; the rest from the
 // design estimate scaled by natural's measured/estimated ratio (14.96 / 15), rounded up.
 const EST = { natural: 15, fill700: 21, fill900: 26, compact: 11, clear: 12 };
-const MAX_INVALID = 3;
+// INVALID allowance raised with the budget (Macdara, 2026-11-14 ~10:50 AWST: cap US$1000, "ensure
+// that we reach our targets for context window consumption"). A run that misses its arm's context
+// target is excluded and rerun; the same arm missing 3 times in a row is systematic and stops the
+// batch for a fix instead of more reruns.
+const MAX_INVALID = 8, MAX_MISS_IN_A_ROW = 3;
 const LOG = join(PARK, "batch.log");
 const PLAN = process.argv.includes("--plan");
 
@@ -86,10 +90,47 @@ async function parkWithRetry(name) {
 
 function stop(why) { say(`STOP: ${why}`); process.exit(2); }
 
+// The arm's context target, read from the run's own events.log. fill and compact are already
+// enforced inside fork.mjs (INVALID on a miss); clear is checked here: at least one handover must
+// have cleared the context, or the run measured natural under another name.
+function targetMiss(arm, log) {
+  if (/^fill/.test(arm) && !/top-up OK: context \d+/.test(log)) return "top-up target not reached";
+  if (arm === "compact" && !/compact OK: \d+ -> \d+/.test(log)) return "no manual compaction of the fork";
+  if (arm === "clear" && !/start \(clear: handover /.test(log)) return "no handover clear fired";
+  return null;
+}
+
+let invalidThisBatch = 0;
+const missRow = {};
+// Park, check the target, score. Returns false when the run is excluded.
+async function finish(name, arm, runStatus) {
+  const ended = read(join(LIVE, "out", "ended.txt")).trim();
+  say(`${name}: run exit ${runStatus}, ${ended || "no ended.txt"}`);
+  if (!(await parkWithRetry(name))) stop(`could not park ${name}`);
+  const P = join(PARK, name);
+  const miss = /finished true/.test(ended) && !existsSync(join(P, "out", "INVALID")) ? targetMiss(arm, read(join(P, "out", "events.log"))) : null;
+  if (miss) appendFileSync(join(P, "out", "INVALID"), `${new Date().toISOString()} context target missed: ${miss}\n`);
+  if (existsSync(join(P, "out", "INVALID")) || !/finished true/.test(ended)) {
+    invalidThisBatch++;
+    missRow[arm] = (missRow[arm] || 0) + 1;
+    if (!existsSync(join(P, "out", "INVALID"))) appendFileSync(join(P, "out", "INVALID"), `${new Date().toISOString()} unfinished: ${ended}\n`);
+    say(`${name}: INVALID, not scored (${read(join(P, "out", "INVALID")).trim().split("\n").at(-1)}); ${invalidThisBatch} this batch, ${missRow[arm]} in a row for ${arm}`);
+    if (invalidThisBatch > MAX_INVALID) stop(`${invalidThisBatch} INVALID runs this batch`);
+    if (missRow[arm] >= MAX_MISS_IN_A_ROW) stop(`${arm} INVALID ${missRow[arm]} times in a row: systematic, needs a fix`);
+    if (runStatus !== 0) stop(`fork.mjs run exit ${runStatus}`);
+    return false;
+  }
+  missRow[arm] = 0;
+  const s = fork("score", name);
+  if (s.status !== 0) stop(`${name} score exit ${s.status}: ${s.stderr.trim().split("\n").slice(-4).join(" | ")}`);
+  const j = JSON.parse(readFileSync(join(P, "score.json"), "utf8"));
+  say(`${name}: scored late ${j.summary.latePassed}/${j.summary.lateTotal}, chat ${j.summary.chat?.passed}/${j.summary.chat?.total}, compactions ${j.summary.tokens?.compactions}, peak ${j.summary.tokens?.peak}, clears ${j.harness?.clears}, cost ${j.harness?.cost}`);
+  return true;
+}
+
 // --- main ---
 const startRuns = state();
 const spentBefore = startRuns.filter((x) => !x.pilot).reduce((s, x) => s + x.cost, 0);
-let invalidThisBatch = 0;
 if (PLAN) {
   const n = nextRun(startRuns);
   for (const a of ARMS) console.log(`${a}: ${startRuns.filter((x) => x.arm === a && x.valid).length}/${N} valid (${startRuns.filter((x) => x.arm === a).map((x) => `r${x.r}${x.valid ? "" : x.invalid ? " INVALID" : " unfinished"}`).join(", ")})`);
@@ -97,6 +138,16 @@ if (PLAN) {
   process.exit(0);
 }
 say(`batch start: dial spend so far US$${spentBefore.toFixed(2)} of ${budget()}`);
+// Adopt a run left live by an earlier batch process (restarted without killing its fork.mjs run):
+// wait for it to end, then finish it as if this process had started it.
+if (existsSync(LIVE)) {
+  const name = read(join(LIVE, "fork-name.txt")).trim();
+  const am = /^fork-(natural|fill\d+|compact|clear)-sonnet-r\d+$/.exec(name);
+  if (!am) stop(`${LIVE} exists with no fork name`);
+  say(`${name}: adopting the live run, waiting for it to end`);
+  while (existsSync(LOCK) || !existsSync(join(LIVE, "out", "ended.txt"))) await sleep(60000);
+  await finish(name, am[1], existsSync(join(LIVE, "out", "ended.txt")) ? 0 : 1);
+}
 for (;;) {
   const runs = state();
   const spent = runs.filter((x) => !x.pilot).reduce((s, x) => s + x.cost, 0);
@@ -113,22 +164,7 @@ for (;;) {
   }
   say(`${n.name}: run`);
   const r = spawnSync(process.execPath, [join(HERE, "fork.mjs"), "run", n.name], { stdio: ["ignore", "inherit", "inherit"] });
-  const ended = read(join(LIVE, "out", "ended.txt")).trim();
-  say(`${n.name}: run exit ${r.status}, ${ended || "no ended.txt"}`);
-  if (!(await parkWithRetry(n.name))) stop(`could not park ${n.name}`);
-  const P = join(PARK, n.name);
-  if (existsSync(join(P, "out", "INVALID")) || !/finished true/.test(ended)) {
-    invalidThisBatch++;
-    say(`${n.name}: INVALID or unfinished, not scored (${read(join(P, "out", "INVALID")).trim() || ended}); ${invalidThisBatch} this batch`);
-    if (!existsSync(join(P, "out", "INVALID"))) appendFileSync(join(P, "out", "INVALID"), `${new Date().toISOString()} unfinished: ${ended}\n`);
-    if (invalidThisBatch > MAX_INVALID) stop(`${invalidThisBatch} INVALID runs this batch`);
-    if (r.status !== 0) stop(`fork.mjs run exit ${r.status}`);
-    continue;
-  }
-  const s = fork("score", n.name);
-  if (s.status !== 0) stop(`${n.name} score exit ${s.status}: ${s.stderr.trim().split("\n").slice(-4).join(" | ")}`);
-  const j = JSON.parse(readFileSync(join(P, "score.json"), "utf8"));
-  say(`${n.name}: scored late ${j.summary.latePassed}/${j.summary.lateTotal}, chat ${j.summary.chat?.passed}/${j.summary.chat?.total}, compactions ${j.summary.tokens?.compactions}, peak ${j.summary.tokens?.peak}, cost ${j.harness?.cost}`);
+  await finish(n.name, n.arm, r.status);
 }
 
 // All arms complete: compare, write up, commit, push.
