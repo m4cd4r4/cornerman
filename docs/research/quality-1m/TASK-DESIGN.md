@@ -917,7 +917,7 @@ starts from the same real session and differs only in what happens to its contex
 | fill-700 | top-up to about 700k, then continue | does a fuller window cost quality? |
 | fill-900 | top-up to about 900k; auto-compact follows within a few checkpoints | full window plus Default's own compaction |
 | compact | `/compact` once, then continue | Claude's compaction at a chosen time |
-| clear | cornerman handover, then a fresh session | cornerman's clearing |
+| clear | cornerman handover, then a fresh session (as shipped: relay at nudge 250k, so it clears again as context regrows; Macdara, card, 2026-11-14) | cornerman's clearing |
 
 Scoring: cp44-80 hidden pass rate (37) and chat tests (14), per arm. compare.mjs gains a fork
 mode with K = 44.
