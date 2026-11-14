@@ -1019,7 +1019,11 @@ snapshots cp01-42, transcript holds the fork message at line 2695). No model cal
 - Harness notes: three usage-limit waits at cp46 (same session resumed, as fixed); segments 5-7
   ended on transient `403 Cloudflare` auth errors and were resumed in the same session (no
   context lost). The run log's "cost 126.39" sums cumulative segment totals; the real cost is
-  the last segment's US$25.80. Work tokens 3,907,400 (natural 846,951) are not yet explained
-  and need a look before the full dial.
+  the last segment's US$25.80. Work tokens first read 3,907,400 (natural 846,951): tokens.mjs
+  counted the zero-usage entries of limit and 403 results as resets. Fixed in 30f3443 and
+  re-scored 2026-11-14: fill900 work 1,449,091 (905,572 top-up and pre-compaction, then the
+  regrowth after cp48).
+- `score-selftest.mjs` passes at 30f3443 (2026-11-14). It needs `--smoke <smoke-gate work dir>
+  --work <empty dir>`; run bare it throws "need --smoke --work", which is not a failure.
 - Pilot spend in all: about US$61.7 (r2 invalid 20.9, natural 14.96, fill900 25.80), inside the
   US$67 approved.

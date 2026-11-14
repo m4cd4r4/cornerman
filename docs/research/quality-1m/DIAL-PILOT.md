@@ -14,6 +14,6 @@ Late segment cp44-cp80, sonnet.
 | Arm | Runs | Late pass | vs natural (95% interval) | Verdict | Chat pass (all runs) | Regressions | Rule violations (distinct) | Probes right | Peak context | Work tokens |
 |:--|--:|--:|:--|:--|:--|--:|--:|--:|--:|--:|
 | natural | 1 | 31/37 | - | - | 12/14 (cp35-58 5/6; cp59-80 7/8) | 1 | 2 (1) | 49/50 | 846951 | 846951 |
-| fill900 | 1 | 28/37 | -8.1 pts (-18.9 to 2.7) | no large effect at n = 1 (exploratory) | 9/14 (cp35-58 4/6; cp59-80 5/8) | 1 | 4 (2) | 48/50 | 963720 | 3907400 |
+| fill900 | 1 | 28/37 | -8.1 pts (-18.9 to 2.7) | no large effect at n = 1 (exploratory) | 9/14 (cp35-58 4/6; cp59-80 5/8) | 1 | 4 (2) | 48/50 | 963720 | 1449091 |
 
 INVALID, excluded: fork-natural-sonnet-r1, fork-natural-sonnet-r2
