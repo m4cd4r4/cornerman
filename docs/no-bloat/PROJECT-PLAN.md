@@ -43,7 +43,7 @@ Questlog wave 2: `card-retention` (finished cards 7 days, unfinished 30 days, af
 
 | Slug | PR | TODO items |
 |---|---|---|
-| `stats` | `/cornerman:stats` command and a "This month" sidebar section, read from the ledger. Wording as options first | new |
+| `stats` | `/cornerman:stats` command, read from the ledger. The "This month" sidebar section shipped in #185 and was removed before release (Macdara, 2026-11-15: stats live in the command only). Wording as options first | new |
 | `ux-polish` | `save.mjs` path spellings; nudge says it once; sticky search box | 3, 4, 11 |
 
 Questlog wave 3: `stats` (`/questlog:stats` and a panel section).

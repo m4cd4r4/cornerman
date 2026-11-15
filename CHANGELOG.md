@@ -22,9 +22,7 @@
 - **See how much the relay did this month.** `/cornerman:stats` prints this month's relay
   windows, sessions and relays by repo, with a total and last month's figures on one line. A
   worktree or subfolder counts under its repo, and the ten busiest repos are listed with the rest
-  on one row. The
-  Handovers sidebar shows the same month as one line of counts and the top three repos, and leaves
-  the section out when there is nothing yet (#184).
+  on one row (#184).
 
 ## 0.7.2
 

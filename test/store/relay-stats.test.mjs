@@ -1,12 +1,12 @@
 // tdd-guard:allow (backfill: relay-stats.mjs was written first from the brief's decided output, then checked against these)
 // Relay stats (docs/no-bloat/PROJECT-PLAN.md, wave 3): the ledger and the live relay
-// files counted together, by month and repo, and the two ways they are shown.
+// files counted together, by month and repo, and what /cornerman:stats prints.
 import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { ledgerLine } from "../../plugin/packages/store/relay-retention.mjs";
-import { ledgerWindows, liveWindows, previousMonth, readRelayStats, relayStats, statsText, thisMonth } from "../../plugin/packages/store/relay-stats.mjs";
+import { ledgerWindows, previousMonth, readRelayStats, relayStats, statsText } from "../../plugin/packages/store/relay-stats.mjs";
 
 const DAY = 86_400_000;
 // Local time, so the month boundary is the one the ledger file names use.
@@ -72,34 +72,6 @@ describe("relayStats", () => {
   it("names the repo by the folder's last name, either separator", () => {
     const stats = relayStats({ live: [win({ cwd: "C:\\work\\repo-b" }), win({ cwd: "/work/repo-c/" })] });
     expect([...stats.get("2026-11").keys()].sort()).toEqual(["repo-b", "repo-c"]);
-  });
-});
-
-describe("thisMonth", () => {
-  it("is one line of counts and the top three repos by relays", () => {
-    const live = [
-      ...Array.from({ length: 4 }, () => win({ cwd: "/work/repo-a", used: 5 })),
-      win({ cwd: "/work/repo-b", used: 7 }),
-      win({ cwd: "/work/repo-c", used: 7 }),
-      win({ cwd: "/work/repo-d", used: 1 }),
-    ];
-    expect(thisMonth(relayStats({ live }), NOW)).toEqual({
-      counts: "7 windows · 35 relays · 4 repos",
-      top: [{ repo: "repo-a", relays: "20 relays" }, { repo: "repo-b", relays: "7 relays" }, { repo: "repo-c", relays: "7 relays" }],
-    });
-  });
-
-  it("says 1 window, 1 relay, 1 repo", () => {
-    expect(thisMonth(relayStats({ live: [win({ used: 1 })] }), NOW)).toEqual({ counts: "1 window · 1 relay · 1 repo", top: [{ repo: "repo-a", relays: "1 relay" }] });
-  });
-
-  it("names no repo that has no relays", () => {
-    expect(thisMonth(relayStats({ live: [win({ used: 0 })] }), NOW)).toEqual({ counts: "1 window · 0 relays · 1 repo", top: [] });
-  });
-
-  it("is left out when this month has no window, even with last month full", () => {
-    expect(thisMonth(relayStats({ live: [win({ updatedAt: OCT })] }), NOW)).toBeUndefined();
-    expect(thisMonth(relayStats({}), NOW)).toBeUndefined();
   });
 });
 
@@ -178,13 +150,6 @@ describe("previousMonth", () => {
   it("steps back across a year", () => {
     expect(previousMonth("2026-01")).toBe("2025-12");
     expect(previousMonth("2026-11")).toBe("2026-10");
-  });
-});
-
-describe("liveWindows", () => {
-  it("keeps only relay files windowFrom would keep", () => {
-    const w = win();
-    expect(liveWindows([w, { ...w, v: 2 }, { ...w, key: "notes" }, null, { key: w.key }])).toEqual([w]);
   });
 });
 
