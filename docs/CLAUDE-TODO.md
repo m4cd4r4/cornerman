@@ -296,4 +296,23 @@ Captured, not built:
    (a run id in the segment env, stamped on the load) if parallel runs in one repo become a real case.
 3. **Rulings dropped by the section cap are gone for the rest of the chain**, because the next save reads
    the previous section, not the old logs. Fine at 30 entries; revisit if a chain shows a lost ruling.
-4. **The retest of the clear arm on NEW held-out chat rules** (about US$25 for n=2) needs Macdara's yes.
+4. **The retest of the clear arm on NEW held-out chat rules** needs Macdara's yes. Re-quoted at about
+   US$34 for n=2 once designed (2026-11-15): it needs a new base run with cornerman installed (item 6),
+   about US$12, plus about US$11 per clear run. Design and dry check live on the clear-resume
+   `research/quality-1m` branch, TASK-DESIGN.md "Clear-arm retest build (2026-11-15)".
+5. **A ruling that reaches the model in a tool result is never logged.** The log reads UserPromptSubmit
+   only, so rules in a pasted file, a spec the user says to read, or a runner's output never reach the
+   handover's rulings section. Found building the retest: the old benchmark plants sat in spec files,
+   so the fix could not see them, and the new plants had to be sent as user messages. By design for
+   now; it matters if users routinely hand rules over as files.
+6. **The log is keyed by session id, so a forked session starts with an empty log.** `claude --resume
+   <id> --fork-session` (and any other path that continues old history under a new id) carries the
+   chat but not `<store>/rulings/<old id>.jsonl`, so its first handover drops every ruling from before
+   the fork. The retest harness copies the log to the fork's id by hand. Fix to consider: on a
+   SessionStart that continues a transcript under a new id, seed the new log from the parent's.
+7. **Automated "continue" prompts are logged as user words.** In the retest dry check the base log held
+   57 entries: 13 rulings and 44 runner prompts ("Continue the task in this repository..."). Only 1 of
+   the 44 had a CUE word, so `bound()` drops them first and all 13 rulings survived. The margin is the
+   CUE list: it includes common words (use, not, no, only, keep), so in a real chat many plain
+   requests count as rulings, and past 30 of those the oldest real ruling goes first. Measure on real
+   store logs (how many entries per session carry a CUE word) before tightening it.
