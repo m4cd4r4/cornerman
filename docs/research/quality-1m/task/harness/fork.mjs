@@ -249,8 +249,11 @@ function verify() {
   ok("repo HEAD is cp43", git("rev-parse", "HEAD").trim() === FORK_HEAD);
   const st = git("status", "--porcelain").trim().split("\n").filter(Boolean);
   // clear211: a base whose agent kept no tests of its own shows the whole test/ folder untracked.
+  // The real base211 agent committed test/visible itself (autocrlf), so the gate's LF rewrite shows them
+  // modified: allowed only when the change is line endings alone (empty diff with --ignore-cr-at-eol).
   const others = git("ls-files", "--others", "--exclude-standard").trim().split("\n").filter(Boolean);
-  ok("only test/visible untracked", C211 ? st.every((l) => l.startsWith("?? test/")) && others.every((f) => f.startsWith("test/visible/"))
+  const eolOnly = (l) => /^ ?M test\/visible\//.test(l) && git("diff", "--ignore-cr-at-eol", "--", l.replace(/^ ?M /, "")).trim() === "";
+  ok("only test/visible untracked", C211 ? st.every((l) => l.startsWith("?? test/") || eolOnly(l)) && others.every((f) => f.startsWith("test/visible/"))
     : st.length === 1 && st[0] === "?? test/visible/", st.join(" | "));
   ok("PROBES.md holds P1-P3 only", (() => { const t = readFileSync(join(REPO, "PROBES.md"), "utf8"); return /P3\.10:/.test(t) && !/P4\./.test(t); })());
   const s = JSON.parse(readFileSync(join(RUN, "gate-state.json"), "utf8"));
