@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { slugify, storeRoot } from "./store.mjs";
 import { fileURLToPath } from "node:url";
 import { autoEnabled, headless, relayOn } from "./auto-flag.mjs";
+import { handoverTemplate } from "./template.mjs";
 
 export const DEFAULT_THRESHOLD = 250_000;
 // A screenshot read is a single JSONL line of base64 megabytes, so a fixed tail
@@ -261,13 +262,21 @@ function remind(env, sessionId, transcriptPath, tokens, limit) {
 // A finished task must NOT save one, or the runner resumes a done job: the Stop
 // hook fires on the final turn end too.
 const SAVE_SCRIPT = fileURLToPath(new URL("../save.mjs", import.meta.url));
+// The sections come from the handover skill's own template (lib/template.mjs), so a
+// headless handover keeps the decisions and do-nots an interactive one keeps.
 function headlessAsk(tokens, limit, midTurn) {
+  // Only the section headings, in one line: the whole 50-line template arrived inside a
+  // Read result looking like file content, and Haiku ignored it as an injection in 2 of 3
+  // sandbox runs (the old short ask: 1 of 1 obeyed, 2026-11-15). The asks stay two sentences.
+  const heads = [...handoverTemplate().matchAll(/^## (.+)$/gm)].map((m) => `"## ${m[1]}"`);
   return (
     `cornerman headless mode (context about ${k(tokens)} tokens, threshold ${k(limit)}${midTurn ? ", turn still running" : ""}): ` +
     `If your task is finished, do not save a handover, just end. ` +
     `Otherwise ${midTurn ? "finish the current step without starting new work, then " : ""}commit all your work on your branch, then save a handover by running ` +
     `node "${SAVE_SCRIPT.replace(/\\/g, "/")}" --title "<short title>" with the handover markdown on stdin (a quoted heredoc), ` +
-    `naming the single next action and copying any open STOP question verbatim, then end your turn with no further tool calls.`
+    (heads.length ? `with the sections ${heads.join(", ")} (an empty one left out, but "Read first", "Decided, not yet applied" and "Open questions" say None), ` : "") +
+    `putting every ruling, decision and do-not the user gave in chat in their own words and copying any open STOP question verbatim, ` +
+    `then end your turn with no further tool calls.`
   );
 }
 

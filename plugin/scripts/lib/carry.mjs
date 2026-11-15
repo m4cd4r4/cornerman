@@ -177,13 +177,19 @@ export function carryForward(body, previous) {
  * long-settled items. With no owner known nothing is picked: guessing could fold
  * another window's chain into this one.
  */
-export function previousHandover({ own = [], loaded = [], owner, sameOwner, now = new Date(), maxAgeDays = 7 }) {
+// The owner the headless runner (lib/run.mjs) stamps on a handover it loads into the
+// next segment. Each segment is a new claude process with an owner of its own, so with
+// `runner` set (a save in segment 2 or later) a load by the runner counts as this one's.
+export const RUNNER_OWNER = "cornerman-run";
+
+export function previousHandover({ own = [], loaded = [], owner, sameOwner, now = new Date(), maxAgeDays = 7, runner = false }) {
   if (!owner) return null;
   const cutoff = new Date(now).getTime() - maxAgeDays * 86_400_000;
   const mineLoaded = loaded.filter((h) => {
     const by = h.archivedBy?.owner;
     const at = Date.parse(h.archivedAt ?? "");
-    return by && sameOwner(by, owner) && Number.isFinite(at) && at >= cutoff;
+    const ours = by && (sameOwner(by, owner) || (runner && by === RUNNER_OWNER && h.archivedBy?.via === "load"));
+    return ours && Number.isFinite(at) && at >= cutoff;
   });
   const when = (h) => Date.parse(h.archivedAt ?? "") || Date.parse(h.meta?.created ?? "") || 0;
   return [...own, ...mineLoaded].sort((a, b) => when(b) - when(a))[0] ?? null;

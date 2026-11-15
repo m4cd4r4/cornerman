@@ -1,0 +1,195 @@
+// The rulings log: what the user said in chat reaches the handover in their own words.
+//
+// A headless clear in the quality-1m fill dial (2026-11-15) saved a handover that held
+// none of the rules the user gave only in chat. The handover was the model's summary,
+// the trail is tool calls, artifacts.md is file paths: nothing recorded what the user
+// said. This does, without a model:
+//
+// - Capture: the UserPromptSubmit hook appends each prompt to
+//   <store>/rulings/<session>.jsonl, one { at, text } row, the user's words as typed.
+// - Store: one small file per session, a sibling of the handover records, so an
+//   archive of the store (#210) takes it as it is.
+// - Carry: save.mjs writes a "Rulings from the user" section into the handover from
+//   this session's log plus the same section of the handover this one continues, so
+//   the first clear has them (from the log) and every later one too (from the chain).
+// - Bound: each entry, the section and the log file have caps (below).
+import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+
+export const RULINGS_HEADING = "Rulings from the user";
+
+const dirOf = (store) => join(store, "rulings");
+const safeId = (id) => String(id ?? "").replace(/[^A-Za-z0-9_-]/g, "");
+export const logPath = (store, session) => join(dirOf(store), `${safeId(session)}.jsonl`);
+export const LOG_MAX = 32 * 1024;
+
+// Prompts cornerman itself submits (hooks/relay.ts RESUME_TEXT, HANDOVER_TEXT and the
+// idle asks), which are not the user's words even though they arrive as user prompts.
+const OWN_PROMPTS = [/^Continue from the cornerman handover/i, /^Write a cornerman handover now/i, /^The user is away and the prompt cache/i];
+// The headless runner resends the task with the handover after this line
+// (lib/run.mjs resumePrompt, unfinishedPrompt): only the task before it is the user's.
+const RUNNER_CUT = /\n\n---\n\ncornerman: this is segment \d+/;
+// A word that makes a short prompt a ruling rather than an acknowledgement.
+const CUE = /\b(never|always|don'?t|do not|must|should|only|instead|prefer|use|keep|avoid|stop|no|not|rule|ruled|decided?|remember|without)\b/i;
+
+/** The user's words in a prompt, or "" when it holds none worth a handover line. */
+export function userWords(prompt) {
+  const raw = String(prompt ?? "");
+  const cut = RUNNER_CUT.exec(raw);
+  const text = (cut ? raw.slice(0, cut.index) : raw).replace(/\s+/g, " ").trim();
+  if (!text || text.startsWith("/") || text.startsWith("<command-")) return "";
+  if (OWN_PROMPTS.some((re) => re.test(text))) return "";
+  // "ok", "yes go", "continue": an answer whose question is not in the log says nothing.
+  if (text.split(" ").length < 3 && !CUE.test(text)) return "";
+  return text.length > ENTRY_MAX ? shorten(text) : text;
+}
+
+// One entry's cap. A pasted log or a long brief keeps only its sentences that carry a
+// CUE word, whole and in order; with none, its opening. "[cut]" marks each gap.
+export const ENTRY_MAX = 500;
+const CUT = "[cut]";
+function shorten(text) {
+  const sentences = text.split(/(?<=[.!?])\s+/);
+  const out = [];
+  let len = 0;
+  let last = -1;
+  sentences.forEach((s, i) => {
+    if (!CUE.test(s) || len + s.length + CUT.length + 2 > ENTRY_MAX) return;
+    if (i !== last + 1) out.push(CUT);
+    out.push(s);
+    len += s.length + CUT.length + 2;
+    last = i;
+  });
+  if (!out.length) return `${text.slice(0, ENTRY_MAX - CUT.length - 1).trimEnd()} ${CUT}`;
+  if (last !== sentences.length - 1) out.push(CUT);
+  return out.join(" ").slice(0, ENTRY_MAX);
+}
+
+/** Append one prompt to the session's log. Never throws. */
+export function record(store, session, prompt, now = new Date()) {
+  try {
+    const id = safeId(session);
+    const text = userWords(prompt);
+    if (!id || !text) return false;
+    mkdirSync(dirOf(store), { recursive: true });
+    const file = logPath(store, id);
+    appendFileSync(file, JSON.stringify({ at: now.toISOString(), text }) + "\n", "utf8");
+    // Past LOG_MAX the file is cut to what the section would keep, so it stays a few KB.
+    if (statSync(file).size > LOG_MAX)
+      writeFileSync(file, bound(merge(readLog(store, id))).kept.map((e) => JSON.stringify(e) + "\n").join(""), "utf8");
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** The session's logged entries, oldest first: [{ at, text }]. */
+export function readLog(store, session) {
+  try {
+    const out = [];
+    for (const line of readFileSync(logPath(store, session), "utf8").split("\n")) {
+      try {
+        const row = JSON.parse(line);
+        if (row && typeof row.text === "string" && row.text) out.push({ at: String(row.at ?? ""), text: row.text });
+      } catch {
+        // a blank or half-written line
+      }
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+// The section's caps: about 1.5k tokens at most, read by every session in the chain.
+export const MAX_ENTRIES = 30;
+export const MAX_CHARS = 6000;
+
+/**
+ * At most MAX_ENTRIES entries and MAX_CHARS of text, in order. Over the cap, a plain
+ * request (no CUE word) goes before a ruling, and the oldest first: a ruling is what a
+ * handover loses, and a later ruling overrides an earlier one. Returns { kept, dropped }.
+ */
+export function bound(entries) {
+  const kept = [...entries];
+  let chars = kept.reduce((n, e) => n + e.text.length, 0);
+  let dropped = 0;
+  while (kept.length > MAX_ENTRIES || (chars > MAX_CHARS && kept.length > 1)) {
+    const plain = kept.findIndex((e) => !CUE.test(e.text));
+    const [gone] = kept.splice(plain > -1 ? plain : 0, 1);
+    chars -= gone.text.length;
+    dropped++;
+  }
+  return { kept, dropped };
+}
+
+/** The section's markdown, or "" when there is nothing to list. */
+export function rulingsSection(entries) {
+  const { kept, dropped } = bound(entries);
+  if (!kept.length) return "";
+  return (
+    `## ${RULINGS_HEADING}\n` +
+    `What the user typed in this chain, in their own words, oldest first; saving adds these. A later one overrides an earlier one. ` +
+    `Some may be requests already done: check before acting, and never drop one that still applies.` +
+    (dropped ? ` ${dropped} older or plainer entries left out to keep this short.` : "") +
+    `\n` +
+    kept.map((e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"`).join("\n")
+  );
+}
+
+/** The body with its rulings section replaced by `section` (or removed when it is ""). */
+export function withRulings(body, section) {
+  const lines = String(body).replace(/\r\n/g, "\n").split("\n");
+  const out = [];
+  let skip = false;
+  for (const line of lines) {
+    if (/^##\s+/.test(line)) skip = new RegExp(`^##\\s+${RULINGS_HEADING}\\s*$`, "i").test(line);
+    else if (/^#\s/.test(line)) skip = false;
+    if (!skip) out.push(line);
+  }
+  const own = out.join("\n").trimEnd();
+  return section ? `${own}\n\n${section}` : own;
+}
+
+/** The entries of a handover's rulings section, oldest first: [{ at, text }]. */
+export function sectionEntries(body) {
+  const out = [];
+  let inside = false;
+  for (const line of String(body ?? "").replace(/\r\n/g, "\n").split("\n")) {
+    if (/^#{1,2}\s/.test(line)) {
+      inside = new RegExp(`^##\\s+${RULINGS_HEADING}\\s*$`, "i").test(line);
+      continue;
+    }
+    const m = inside && /^- (?:\[([0-9-]+)\] )?"(.*)"\s*$/.exec(line);
+    if (m) out.push({ at: m[1] ?? "", text: m[2] });
+  }
+  return out;
+}
+
+const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+/** Previous entries then new ones, each text once (its first, oldest, occurrence). */
+export function merge(...lists) {
+  const seen = new Set();
+  const out = [];
+  for (const e of lists.flat()) {
+    const k = norm(e.text);
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    out.push(e);
+  }
+  return out;
+}
+
+/**
+ * The body with a rulings section from the handover it continues (`previous`, its
+ * body) and this session's log. Any section the model wrote is replaced: the log is
+ * exact. Never throws: on a failure the body comes back as it was.
+ */
+export function addRulings(body, { store, session, previous }) {
+  try {
+    return withRulings(body, rulingsSection(merge(sectionEntries(previous), readLog(store, session))));
+  } catch {
+    return body;
+  }
+}

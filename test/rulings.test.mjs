@@ -1,0 +1,153 @@
+// The rulings log: what the user said in chat reaches the handover in their own words.
+// A headless clear in the quality-1m fill dial (2026-11-15) saved a handover holding
+// none of the rules the user gave only in chat; nothing recorded what the user said.
+// The UserPromptSubmit hook now records each prompt per session, and save.mjs adds a
+// section from that log and from the previous handover's, so the whole chain keeps them.
+// Fixture rulings are neutral and new (a bakery order app), never the quality-1m plants.
+import { execFileSync } from "node:child_process";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, statSync, utimesSync } from "node:fs";
+import { prune } from "../plugin/packages/store/store.mjs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { archive, listWaiting } from "../plugin/scripts/lib/store.mjs";
+import { addRulings, ENTRY_MAX, LOG_MAX, logPath, MAX_CHARS, MAX_ENTRIES, readLog, record } from "../plugin/scripts/lib/rulings.mjs";
+import { GIT_TEST_TIMEOUT, removeTemp } from "./helpers/git-temp.mjs";
+
+const SCRIPTS = fileURLToPath(new URL("../plugin/scripts/", import.meta.url));
+
+let base, root, repo;
+beforeEach(() => {
+  base = realpathSync.native(mkdtempSync(join(tmpdir(), "cr-rulings-")));
+  root = join(base, "store");
+  repo = join(base, "work", "bakery-orders");
+  mkdirSync(repo, { recursive: true });
+  execFileSync("git", ["init", "-q"], { cwd: repo });
+  execFileSync("git", ["-c", "user.email=t@x.invalid", "-c", "user.name=t", "commit", "--allow-empty", "-q", "-m", "init"], { cwd: repo });
+});
+afterEach(() => removeTemp(base));
+
+const env = (session, extra = {}) => ({
+  ...process.env,
+  CORNERMAN_HOME: root,
+  CORNERMAN_SYNC: "off",
+  CORNERMAN_AUTO: "",
+  CORNERMAN_HEADLESS: "",
+  CORNERMAN_WEB: "",
+  CLAUDE_CODE_SESSION_ID: session,
+  CLAUDE_PID: "",
+  ...extra,
+});
+const prompt = (session, text) =>
+  execFileSync(process.execPath, [join(SCRIPTS, "prompt-submit.mjs")], { cwd: repo, input: JSON.stringify({ session_id: session, cwd: repo, prompt: text }), env: env(session), encoding: "utf8" });
+const save = (session, title, body, extra) =>
+  execFileSync(process.execPath, [join(SCRIPTS, "save.mjs"), "--title", title, "--cwd", repo], { cwd: repo, input: body, env: env(session, extra), encoding: "utf8" });
+const saved = (title) => listWaiting(root, repo).find((h) => h.meta.title === title).body;
+
+const BODY = "# Orders\n\n## Goal\nShip the order form.\n\n## Next action\nRun the tests.\n";
+
+describe("the rulings log", () => {
+  it("records each session's own words, and a save carries only its own session's", () => {
+    prompt("sess-a", "Prices are always shown in whole cents, never rounded to the dollar.");
+    prompt("sess-b", "Never email the customer before the baker confirms the order.");
+    prompt("sess-c", "Use the word 'loaf' in the UI, not 'item'.");
+    expect(prompt("sess-b", "Keep the pickup window at 30 minutes.")).toBe("");
+
+    save("sess-b", "Orders B", BODY);
+
+    const body = saved("Orders B");
+    expect(body).toContain('"Never email the customer before the baker confirms the order."');
+    expect(body).toContain('"Keep the pickup window at 30 minutes."');
+    expect(body).not.toContain("whole cents");
+    expect(body).not.toContain("loaf");
+  }, GIT_TEST_TIMEOUT);
+
+  it("carries the rulings down the chain: the second and third clear still list them", () => {
+    const window = { CLAUDE_PID: "999991" }; // one window, its sessions cleared in turn (a dead pid is used bare)
+    prompt("seg-1", "Never email the customer before the baker confirms the order.");
+    save("seg-1", "Orders 1", BODY, window);
+    for (const n of [2, 3]) {
+      // The SessionStart hook loads the waiting handover into the cleared session.
+      archive(root, null, listWaiting(root, repo).find((h) => h.meta.title === `Orders ${n - 1}`).path, { via: "hook", owner: "999991" });
+      prompt(`seg-${n}`, "Continue from the cornerman handover that was just loaded.");
+      save(`seg-${n}`, `Orders ${n}`, BODY, window);
+      expect(saved(`Orders ${n}`)).toContain('"Never email the customer before the baker confirms the order."');
+    }
+    expect(saved("Orders 3").match(/Never email/g)).toHaveLength(1);
+  }, GIT_TEST_TIMEOUT);
+
+  it("carries them down a headless runner chain, where the runner loads each handover itself", () => {
+    const seg = (n) => ({ CORNERMAN_AUTO: "1", CORNERMAN_HEADLESS: "1", CORNERMAN_CHAIN: String(n), CORNERMAN_BUDGET: "5", CLAUDE_PID: String(999980 + n) });
+    prompt("run-1", "Build the order form. Never store card numbers.");
+    prompt("run-1", "Keep the pickup window at 30 minutes."); // a later message in segment 1 (stream-json input)
+    save("run-1", "Run 1", BODY, seg(1));
+    for (const n of [2, 3]) {
+      // lib/run.mjs: the runner archives the handover as loaded, then resends task + handover.
+      archive(root, null, listWaiting(root, repo).find((h) => h.meta.title === `Run ${n - 1}`).path, { via: "load", owner: "cornerman-run" });
+      prompt(`run-${n}`, `Build the order form. Never store card numbers.\n\n---\n\ncornerman: this is segment ${n} of at most 5. The previous segment ran out of context.\n\n# Run`);
+      save(`run-${n}`, `Run ${n}`, BODY, seg(n));
+      expect(saved(`Run ${n}`)).toContain('"Build the order form. Never store card numbers."');
+      expect(saved(`Run ${n}`)).toContain('"Keep the pickup window at 30 minutes."');
+    }
+  }, GIT_TEST_TIMEOUT);
+});
+
+describe("what counts as the user's words", () => {
+  it("skips cornerman's own prompts, slash commands and bare acknowledgements, and cuts a runner resume to the task", () => {
+    for (const p of [
+      "Continue from the cornerman handover that was just loaded.",
+      "Write a cornerman handover now, with the /cornerman:handover skill.",
+      "/cornerman:handover",
+      "<command-name>/clear</command-name>",
+      "ok",
+      "yes go",
+      "Build the order form. Never store card numbers.\n\n---\n\ncornerman: this is segment 2 of at most 5. The previous segment ran out of context and saved the handover below.\n\n# Orders\n## Next action\nRun it.",
+      "use pnpm",
+    ])
+      record(root, "s", p);
+    expect(readLog(root, "s").map((e) => e.text)).toEqual(["Build the order form. Never store card numbers.", "use pnpm"]);
+  });
+});
+
+describe("the bounds", () => {
+  it("caps the section, dropping plain requests before rulings and the oldest first, and an empty log adds nothing", () => {
+    expect(addRulings("# T\n\n## Goal\ng", { store: root, session: "none" })).toBe("# T\n\n## Goal\ng");
+    const at = (i) => new Date(Date.UTC(2026, 0, 1, 0, i));
+    for (let i = 0; i < 80; i++) record(root, "s", i % 2 ? `Never bake batch ${i} above two hundred degrees` : `Look at the batch ${i} oven logs please`, at(i));
+    const out = addRulings("# T", { store: root, session: "s" });
+    const entries = out.split("\n").filter((l) => l.startsWith("- "));
+    expect(entries.length).toBeLessThanOrEqual(MAX_ENTRIES);
+    expect(out.length).toBeLessThanOrEqual(MAX_CHARS + 600);
+    expect(entries.every((l) => l.includes("Never bake"))).toBe(true);
+    expect(entries.at(-1)).toContain("batch 79 ");
+    expect(out).toMatch(/older or plainer entries left out/);
+  });
+
+  it("cuts a long prompt to its ruling sentences, in the user's words", () => {
+    const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
+    record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
+    const [e] = readLog(root, "s");
+    expect(e.text.length).toBeLessThanOrEqual(ENTRY_MAX);
+    expect(e.text).toContain("Do not change the proofing times without asking me first.");
+    expect(e.text).toContain("[cut]");
+  });
+
+  it("keeps the log file itself small however long the session runs", () => {
+    for (let i = 0; i < 600; i++) record(root, "s", `Never reuse proofing tray ${i} for the gluten-free loaves, keep them apart on shelf ${i}.`);
+    expect(statSync(logPath(root, "s")).size).toBeLessThanOrEqual(LOG_MAX);
+    expect(readLog(root, "s").at(-1).text).toContain("tray 599 ");
+  });
+
+  it("the store prune removes a session's log a month after its last prompt", () => {
+    record(root, "old", "Never sell day-old bread at full price.");
+    record(root, "new", "Never sell day-old bread at full price.");
+    const monthAgo = (Date.now() - 31 * 86_400_000) / 1000;
+    utimesSync(logPath(root, "old"), monthAgo, monthAgo);
+
+    prune({ root });
+
+    expect(existsSync(logPath(root, "old"))).toBe(false);
+    expect(existsSync(logPath(root, "new"))).toBe(true);
+  });
+});
