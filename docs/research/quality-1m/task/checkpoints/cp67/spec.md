@@ -11,8 +11,8 @@ however long.
 1. **Length.** A formula input holds at most 1,000 characters, counting the leading `=` and every
    space, as JavaScript's `length` counts them. A formula of 1,000 characters is accepted; 1,001 is
    refused. This is NOT what Excel does (Excel allows 8,192 characters, not counting the `=`).
-2. **Nesting.** Read the input from left to right and count the parentheses open at each point. At
-   most 16 may be open at once. Grouping parentheses count exactly as the parentheses of a function
+2. **Nesting.** Read the input from left to right and track how deep the parentheses nest at each
+   point. The depth may never pass 16. Grouping parentheses count exactly as the parentheses of a function
    call do: `=((((1))))` and `=SUM(MAX(MIN((1))))` both nest 4 deep, and `=SUM((1))` 2 deep. This is
    NOT what Excel does (Excel counts only nested function calls, up to 64).
    - A `"` starts a string literal, which runs to the next `"`; parentheses inside it do not count.

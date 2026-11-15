@@ -14,7 +14,7 @@ function book() {
   return { b, m, d };
 }
 
-test("cp53c ruling: book.names() writes the sheet part as it was typed in ref", () => {
+test("cp53h book.names() writes the sheet part as it was typed in ref", () => {
   const { b } = book();
   b.defineName("total", "data!b3:a1");
   b.defineName("First", "DATA!c2");

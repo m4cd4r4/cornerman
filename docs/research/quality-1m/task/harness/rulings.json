@@ -23,17 +23,6 @@
       "triggerNowReads": ""
     },
     {
-      "id": "N3",
-      "plant": 14,
-      "trigger": 53,
-      "type": "as agreed",
-      "text": "When workbook names arrive, we agree: book.names() keeps a target's sheet name exactly as it was typed in the ref, never in the sheet's own case, and only the cells are normalised, so data!b3:a1 is listed as data!A1:B3.",
-      "test": "cp53c ruling: book.names() writes the sheet part as it was typed in ref",
-      "mutant": "ruling-booknames-sheet-normalised",
-      "deletedFromTrigger": "A cell target is\n  written with its sheet name as it was typed in `ref`, then `!`, then the cells as\n  `sheet.names()` writes them: `book.defineName(\"total\", \"data!b3:a1\")` gives\n  `{ TOTAL: \"data!A1:B3\" }`. A constant\n[...]\nold sheet (ignoring case) to the new name as typed.",
-      "triggerNowReads": "A cell target is\n  written with its sheet name as we agreed when named ranges were built, then `!`, then the cells as\n  `sheet.names()` writes them. A constant\n[...]\nold sheet (ignoring case) to the new name."
-    },
-    {
       "id": "N4",
       "plant": 15,
       "trigger": 45,
@@ -49,8 +38,8 @@
       "plant": 16,
       "trigger": 64,
       "type": "deferred",
-      "text": "When fill down and fill right arrive, every number a series writes must first be rounded half to even to 10 decimal places, as ROUND does: 0 and 0.3333333333333 continue as 0.6666666667, then 1.",
-      "test": "cp64c ruling: series numbers are rounded half to even to 10 decimal places",
+      "text": "When fill down and fill right arrive, every number a series writes must first be rounded to 10 decimal places: 0 and 0.3333333333333 continue as 0.6666666667, then 1.",
+      "test": "cp64c ruling: series numbers are rounded to 10 decimal places",
       "mutant": "ruling-series-unrounded",
       "deletedFromTrigger": "gets the number `first + i * (second - first)`, worked out in floating point and then rounded\n   half to even to 10 decimal places on the shortest decimal form, as `ROUND` does (checkpoint 16).\n   It is written as an input: the shortest number text, no exponent, `-` only when negative. With\n   `0.1` and `0.2`, the next cells get `0.3`, `0.4`, `0.5`. A line of two cells is left as it is.",
       "triggerNowReads": "gets the number `first + i * (second - first)`.\n   It is written as an input: the shortest number text, no exponent, `-` only when negative. A line\n   of two cells is left as it is."

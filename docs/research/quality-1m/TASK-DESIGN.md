@@ -1111,3 +1111,140 @@ spend later (about US$35 once the design is reviewed).
   mutants each, checked by a separate reviewer as the first 14 were), the base run, then clear
   r1-r2 at cp44 with cornerman pinned to d7c1445. Score against the old clear runs (4 and 7 of 14),
   not against the other arms, whose bases differ.
+
+## Clear-arm retest build (2026-11-15, US$0 so far; nothing run for real)
+
+**The ask:** about **US$34** for a new base (cp01-43, about US$12) and clear211 r1-r2 (about US$22).
+About US$50 if a natural control fork from the same base is added (about US$16). Nothing has been
+spent: every run so far used the local stub.
+
+### What is tested
+
+cornerman #211 (main d7c1445, 0.7.3) keeps a per-session rulings log fed by UserPromptSubmit and
+writes it into every handover as "Rulings from the user". The question: does a clear arm with that
+fix keep chat rulings that the 0.7.2 clear arm lost (4 and 7 of 14)?
+
+### The 12 held-out rulings
+
+Built by an Opus agent, reviewed by a separate Sonnet agent given only rulings.json, the specs,
+tests, reference and mutants (trace `.claude/traces/2026-11-15-q1m-clear-retest-rulings.jsonl`).
+None restates or paraphrases the old 14 (reviewer rule 7, pass for all).
+
+| Id | Type | Plant | Trigger | Mutant |
+|:--|:--|:--|:--|:--|
+| N1 | deferred | cp12 | cp47 | ruling-covered-formula-recalc |
+| N2 | deferred | cp13 | cp67 | ruling-paren-goes-negative |
+| N4 | override | cp15 | cp45 | ruling-sumproduct-booleans-zero |
+| N5 | deferred | cp16 | cp64 | ruling-series-unrounded |
+| N6 | override | cp17 | cp60 | ruling-switch-ignores-case |
+| N7 | as agreed | cp19 | cp70 | ruling-diff-load-cell-passthrough |
+| N8 | as agreed | cp20 | cp48 | ruling-sort-errors-first-descending |
+| N9 | rejected approach | cp22 | cp73 | ruling-lint-lists-range-cells |
+| N10 | deferred | cp23 | cp75 | ruling-clear-empties-covered |
+| N11 | override | cp24 | cp54 | ruling-deletesheet-keeps-booknames |
+| N12 | deferred | cp27 | cp55 | ruling-redo-keeps-old-time |
+| N13 | rejected approach | cp27 | cp66 | ruling-nested-batch-joins |
+
+Triggers: 5 in cp44-58 (45, 47, 48, 54, 55), 7 in cp59-77.
+
+**12, not 14.** No fair 7th early-regime fact was found: the cp52, cp56 and cp57 candidates each
+failed a fairness rule. N3 (book.names() keeps the sheet name as typed) was dropped at review:
+"as typed" is the lazy default, so an agent that forgot passes anyway (rule 3). Its cp53 sentence is
+back in the spec and its test is an ordinary `cp53h` test.
+
+**Review fixes applied:**
+- N2: cp67 said "count the parentheses open at each point", which already implies the count never
+  goes below zero. Now "track how deep the parentheses nest at each point. The depth may never
+  pass 16." Kept rather than dropped as the reviewer offered: the hint was the wording, not the fact.
+- N5: the test never asserts a half-even tie, so "half to even" is gone from the ruling and the test
+  name. The reference still rounds half to even.
+- N6: cp60 "the same value" tilted towards case-sensitive; now "an equal value".
+- N13: the test also asserted `#BATCH` before `#ARG` for `x.batch(5)`, which the ruling never says.
+  That case is removed.
+- Kept as flagged: N1's evaluation check is a `<= 3` bound, not exact; N10 and N12 are borderline on
+  rule 3; N12 also fails `cp76h` and N9 can also fail `cp73h`, so a forgetful agent loses 2 points
+  on each.
+
+Verified after the fixes: reference passes every visible and hidden test at all 80 checkpoints;
+`mutants.mjs --filter ruling-` 12/12 KILLED, each failing only its own ruling test except
+`ruling-redo-keeps-old-time` (also cp76); frozen again (339 files).
+
+### How a ruling is delivered and carried
+
+- **Each ruling is its own user message**, sent by the gate before the plant checkpoint
+  (`gate-server.mjs --rulings` pauses until `POST /ruling-delivered`). Spec text is never logged:
+  the log reads UserPromptSubmit only (cornerman TODO 19.5).
+- **The base** (`harness/base.mjs`): cp01-43 on Sonnet 5.5, claude-code 2.1.316, cornerman d7c1445
+  installed in a sandbox config with `CORNERMAN_AUTO=0`, so nothing clears before the fork.
+  `--stop-before 44` ends it at the cp43 commit; find-fork writes `out/base.json`.
+- **The fork** (`harness/fork.mjs`, arm `clear211`): parent from that base, d7c1445 pinned, nudge at
+  250k, `--fork-session --session-id <fixed>`. The rulings log is per session id, so the base's log
+  is copied to the fork's id before the first call (cornerman TODO 19.6).
+- **The old 14 stay in the specs as a within-run control.** They reach the model through tool
+  results (spec reads), so the log never sees them. If the fix works through the log, the new
+  12 should hold and the old 14 should not.
+
+### Scoring
+
+- Primary: the `ruling` group, 12 tests (`tools/score-run.mjs` prints it beside `chat`), per regime.
+  Compared with the old clear runs' chat rate: 4 and 7 of 14 (29% and 50%). The rules differ, so
+  this is a comparison of rates on different sets, not a paired test.
+- Control: the old-14 `chat` group in the same runs.
+- The cp44-80 hidden pass rate is reported but is NOT comparable with the dial runs: the base differs,
+  and so do the 12 trigger specs.
+- n = 2 is exploratory. A clear win would be both runs at 9 of 12 or more; anything between is
+  read as "unclear", not as a pass. Predictions T1-T3 are in PREDICTIONS.md (written before any run).
+
+### Dry check (stub API, real claude-code 2.1.316 + plugin, US$0)
+
+`node docs/research/quality-1m/task/harness/retest-dry.mjs --dir <dir>`: base at stub context 400k
+with the nudge off; fork r1 at 240k (must stay silent); fork r2 at 260k (must fire, save, and open a
+fresh session with the handover).
+
+```text
+A. base (stub context 400k, nudge off)
+OK   base.mjs setup
+OK   base.mjs verify
+OK   base.mjs run
+OK   base.mjs find-fork
+OK   every ruling reaches the model as a user message (not a tool result): 12/12
+OK   no ruling text arrives inside a tool result (spec or gate output)
+OK   the UserPromptSubmit hook logged each ruling, verbatim: 12/12, log 56 entries
+OK   the nudge said nothing in the base (context 400k, above 250k): 112 requests, 0 with a nudge
+OK   base stopped before cp44: fork head "cp43: dry", line 868
+B. fork r1 (stub context 240k, nudge at 250k)
+OK   fork-clear211-sonnet-r1 setup
+OK   fork-clear211-sonnet-r1 verify: 19/19
+OK   fork-clear211-sonnet-r1 run
+OK   fork-clear211-sonnet-r1 park
+OK   the fork carries the base history (rulings in its first request)
+OK   the fork runs under its fixed session id: 2b1daaa3-39cf-4dc8-b526-108da5a797ce
+OK   the nudge stays silent below 250k: 1 requests
+C. fork r2 (stub context 260k, 2 segments)
+OK   fork-clear211-sonnet-r2 setup
+OK   fork-clear211-sonnet-r2 verify: 19/19
+OK   fork-clear211-sonnet-r2 run
+OK   fork-clear211-sonnet-r2 park
+OK   the nudge fires above 250k: 4 of 6 requests
+OK   a handover was saved through save.mjs: 2 record(s)
+OK   the handover's "Rulings from the user" holds every ruling: 12/12
+OK   segment 2 (fresh session) opens with the handover, all rulings in it: 12/12
+dry check: 24/24 pass
+```
+
+Also read from the dry base's store: the rulings log held 56 entries: the 12 rulings and 44 runner prompts, of which 1 carries a CUE word. The 30-entry cap drops
+entries with no CUE word first, so all rulings survive here; the margin is the CUE list (cornerman
+TODO 19.7).
+
+### Cost (measured, not guessed)
+
+- Pilot 3 to the fork point: 33.9% of its tokens, US$8.04. Plus about US$1.6 for the ruling turns:
+  base about US$10, quoted at US$12.
+- The old clear runs cost US$11.26 and US$10.50: 2 clear211 runs about US$22.
+- Total about US$34. With a natural control fork from the new base (about US$16): about US$50.
+
+### Findings for cornerman (docs PR m4cd4r4/cornerman#213, TODO section 19, items 5-7)
+
+1. A ruling that reaches the model in a tool result is never logged.
+2. The log is keyed by session id, so a forked session starts with an empty log.
+3. Runner "continue" prompts are logged as user words; safe here only because they carry no CUE word.

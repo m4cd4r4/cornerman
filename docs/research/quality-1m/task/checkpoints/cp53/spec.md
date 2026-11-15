@@ -13,8 +13,9 @@ sheet's own names (checkpoints 14 and 52) still come first.
 - `book.removeName(name)`: removes a workbook name. Returns `true`, or `false` when the book has
   no such name.
 - `book.names()`: a plain object, name (upper case) -> target, sorted by name as checkpoint 14 sorts them. A cell target is
-  written with its sheet name as we agreed when named ranges were built, then `!`, then the cells as
-  `sheet.names()` writes them. A constant is written as checkpoint 52 writes it.
+  written with its sheet name as it was typed in `ref`, then `!`, then the cells as
+  `sheet.names()` writes them: `book.defineName("total", "data!b3:a1")` gives
+  `{ TOTAL: "data!A1:B3" }`. A constant is written as checkpoint 52 writes it.
 
 ## The target
 
@@ -28,7 +29,7 @@ sheet's own names (checkpoints 14 and 52) still come first.
   `Data!A1` in a workbook name still means `Data!A1`, the new empty row, exactly as a formula
   reference with a sheet name is not rewritten (checkpoint 31). This is NOT what Excel does.
 - `book.renameSheet` (checkpoint 37) rewrites the sheet part of every workbook name that names the
-  old sheet (ignoring case) to the new name.
+  old sheet (ignoring case) to the new name as typed.
 
 ## In formulas
 

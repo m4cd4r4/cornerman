@@ -135,8 +135,8 @@ function verify() {
   ok("cornerman source pinned", (() => { try { return !!pinnedCornerman(); } catch { return false; } })());
   ok("env: nudge off, own store", env().CORNERMAN_AUTO === "0" && env().CORNERMAN_HOME === STORE);
   const rs = rulings();
-  // 13, not 14: no fair 7th early-regime fact was found (TASK-DESIGN.md, "Clear-arm retest build").
-  ok("13 rulings, plants cp12-29, triggers cp44-77", rs.length === 13 && !JSON.stringify(rs).includes("PLACEHOLDER") && rs.every((r) => r.plant >= 12 && r.plant <= 29 && r.trigger >= 44 && r.trigger <= 77));
+  // 12, not 14: no fair 7th early-regime fact was found, and N3 was dropped at review (TASK-DESIGN.md, "Clear-arm retest build").
+  ok("12 rulings, plants cp12-29, triggers cp44-77", rs.length === 12 && !JSON.stringify(rs).includes("PLACEHOLDER") && rs.every((r) => r.plant >= 12 && r.plant <= 29 && r.trigger >= 44 && r.trigger <= 77));
   ok("no ruling text in any spec", rs.every((r) => !readdirSync(join(TASK, "checkpoints")).some((cp) => readFileSync(join(TASK, "checkpoints", cp, "spec.md"), "utf8").includes(r.text.slice(0, 60)))));
   ok("no gate state yet", !existsSync(join(RUN, "gate-state.json")));
   const bad = checks.filter((p) => !p).length;

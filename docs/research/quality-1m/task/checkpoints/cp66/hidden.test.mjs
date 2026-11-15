@@ -131,10 +131,8 @@ test("cp66h rollback restores every undo and redo list", () => {
 
 test("cp66c ruling: a batch started inside a running batch of the same workbook throws #BATCH", () => {
   const { b, m } = book();
-  for (const call of [(x) => x.batch(() => 1), (x) => x.batch(5)]) {
-    assert.throws(() => b.batch((x) => { m.set("Z1", "z"); call(x); }), thrown("#BATCH", "batch"));
-    assert.equal(m.getInput("Z1"), null);
-  }
+  assert.throws(() => b.batch((x) => { m.set("Z1", "z"); x.batch(() => 1); }), thrown("#BATCH", "batch"));
+  assert.equal(m.getInput("Z1"), null);
   let inner = 0;
   assert.throws(() => b.batch((x) => x.batch(() => { inner++; })), thrown("#BATCH", "batch"));
   assert.equal(inner, 0);

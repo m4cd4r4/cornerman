@@ -55,7 +55,7 @@ test("cp64h two plain numbers start a series", () => {
   assert.equal(u.getInput("A2"), null);
 });
 
-test("cp64c ruling: series numbers are rounded half to even to 10 decimal places", () => {
+test("cp64c ruling: series numbers are rounded to 10 decimal places", () => {
   const s = sheet({ B1: "0.1", B2: "0.2", A1: "0", A2: "0.3333333333333", C1: "1", C2: "1.00000000001" });
   s.fillDown("A1:C6");
   assert.deepEqual(inputs(s, ["B3", "B4", "B5", "B6"]), ["0.3", "0.4", "0.5", "0.6"]);

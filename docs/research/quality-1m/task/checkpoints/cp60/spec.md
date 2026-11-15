@@ -33,7 +33,7 @@ equal to `value`. The `default` is optional.
 - With no match, the `default` is evaluated and is the result. With no match and no `default`, the
   result is `#N/A` (`cell` = the formula cell), which sits in the error priority order of
   checkpoint 21.
-- Equal means: the same type and the same value. An empty cell, as `value` or as a case, counts as
+- Equal means: the same type and an equal value. An empty cell, as `value` or as a case, counts as
   the number 0. Numbers are equal within the checkpoint 8 tolerance. Booleans are equal when both are
   `TRUE` or both `FALSE`. A number is never equal to text or a boolean: `SWITCH("5", 5, "n", "t")` is
   `"t"`.

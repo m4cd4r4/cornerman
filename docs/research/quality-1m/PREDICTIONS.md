@@ -212,3 +212,17 @@ task back for a retune before Stage 3, never a published comparison. The earlier
   | D5 | clear chat pass rate below natural's (the 14 facts must survive a handover) | 75% |
   | D6 | compact chat pass rate below natural's | 70% |
   | D7 | mean real cost per run: clear <= 0.7 x natural | 60% |
+- 2026-11-15 (clear-arm retest build, before any retest run; Claude's, not Macdara's): 12 new
+  held-out rulings (`task/harness/rulings.json`, N1-N13 without N3) are sent as user messages at
+  cp12-27, never in a spec. Spec edits: the ruled sentence deleted from each trigger spec, plus the
+  review fixes in cp60 and cp67 (wording that hinted at N6 and N2) and cp53 restored when N3 was
+  dropped. Hidden tests: 12 `cpNNc ruling:` tests, 12 `ruling-*` mutants, all killed; reference
+  80/80. Scored as a separate `ruling` group (`tools/score-run.mjs`); the old 14 `chat` tests and
+  every other number are unchanged in meaning. The cp44-80 hidden rate of a retest run is NOT
+  comparable with the dial runs (different base, different specs).
+
+  | # | Retest prediction (clear211, n = 2, exploratory) | My confidence |
+  |:--|:--|:--|
+  | T1 | Mean ruling pass rate of clear211 r1-r2 above 7/14 (50%), the old clear's best | 70% |
+  | T2 | Both runs pass at least 9 of 12 rulings | 45% |
+  | T3 | Old-14 chat group (tool-delivered plants, never logged) stays at or below 7/14 in both runs | 65% |
