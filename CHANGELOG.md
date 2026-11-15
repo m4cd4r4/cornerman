@@ -23,6 +23,15 @@
   windows, sessions and relays by repo, with a total and last month's figures on one line. A
   worktree or subfolder counts under its repo, and the ten busiest repos are listed with the rest
   on one row (#184).
+- **Handovers keep what you said in chat.** Cornerman now notes each message you type in a session and
+  adds a "Rulings from the user" section to every handover, in your own words, so a rule you gave only in
+  chat survives the first clear and every clear after it. From a long pasted message it keeps the
+  sentences that read as rules, the section holds at most 30 entries, and a session's notes are removed a
+  month after its last message. `CORNERMAN_RULINGS=0` turns it off.
+- **Headless handovers use the same sections as `/cornerman:handover`.** Under the headless runner the
+  handover ask used to ask only for the next step, so decisions and do-nots fell out. It now names the
+  skill's own sections, and a later segment carries forward the open items of the handover the runner
+  loaded for it.
 
 ## 0.7.2
 

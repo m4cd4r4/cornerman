@@ -261,10 +261,12 @@ function isAbandoned(record) {
 // The first-prompt check's marks (plugin/scripts/lib/second-chance.mjs): one empty
 // file per session, needed only until that session's first prompt.
 const START_MARK_DAYS = 7;
+// The rulings log (plugin/scripts/lib/rulings.mjs): one small file per session, read
+// by its saves. A month after the session's last prompt, its handovers hold the words.
+const RULINGS_DAYS = 30;
 
-function pruneStartMarks(root, now) {
-  const dir = join(root, ".cache", "started");
-  const cutoff = new Date(now).getTime() - START_MARK_DAYS * 86_400_000;
+function pruneAged(root, now, dir = join(root, ".cache", "started"), days = START_MARK_DAYS) {
+  const cutoff = new Date(now).getTime() - days * 86_400_000;
   try {
     for (const name of readdirSync(dir)) {
       const path = join(dir, name);
@@ -291,7 +293,8 @@ export function prune({ root = storeRoot(), now = new Date() } = {}) {
     }
   }
   pruneLoaded({ root, now });
-  pruneStartMarks(root, now);
+  pruneAged(root, now);
+  pruneAged(root, now, join(root, "rulings"), RULINGS_DAYS);
   pruneCaptures({ root, now, keep: new Set(records.filter((r) => r.status !== "deleted" && r.sessionId).map((r) => String(r.sessionId))) });
   return affected;
 }

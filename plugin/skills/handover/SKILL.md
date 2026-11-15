@@ -124,6 +124,11 @@ Do not write a "Recent trail" section. Saving adds one from this session's own t
 files written, edited and read, and the last commands that succeeded and failed), and replaces any
 you wrote, so it is exact. `CORNERMAN_TRAIL=0` turns it off.
 
+Do not write a "Rulings from the user" section either. Saving adds one from what the user typed in this
+chain, in their own words, and replaces any you wrote. It is a backstop, not a substitute: still put each
+ruling under "Decided, not yet applied", "Decisions already made" or "Do not". `CORNERMAN_RULINGS=0`
+turns it off.
+
 Leave out sections that would be empty, except "Read first", "Decided, not yet applied" and
 "Open questions", which always appear (say "None"); an empty heading costs the reader a stop.
 

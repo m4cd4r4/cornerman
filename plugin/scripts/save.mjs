@@ -9,6 +9,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
 import { carryForward, missingSections, previousHandover } from "./lib/carry.mjs";
+import { addRulings } from "./lib/rulings.mjs";
 import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
 import { buildTrail, emptyTrail, trailSection, withTrail } from "./lib/trail.mjs";
@@ -66,18 +67,26 @@ try {
   // Carry forward every open item of the handover this one continues that it no
   // longer mentions (lib/carry.mjs, #194). Before the trail, so the trail stays last.
   // Off with CORNERMAN_CARRY=0. A failure here saves the body as written.
+  // The previous handover also feeds the rulings section below, so it is found even with the carry off.
   let carried = [];
   let previous = null;
-  if (body.trim() && owner && process.env.CORNERMAN_CARRY !== "0") {
+  if (body.trim() && owner) {
     try {
       const top = repoInfo(startedIn).top;
       const own = listWaiting(storeRoot(), top).filter((h) => isOwnHandover(owner, h.meta.owner, claimedAt(h), { machine: h.meta.machine }));
-      previous = previousHandover({ own, loaded: listLoaded(storeRoot(), top), owner, sameOwner });
-      if (previous) ({ body, carried } = carryForward(body, { title: previous.meta.title, body: previous.body }));
+      // Under the runner, segment 2 on continues the handover the runner loaded for it.
+      const runner = Boolean(auto) && Number(auto.chain) > 1;
+      previous = previousHandover({ own, loaded: listLoaded(storeRoot(), top), owner, sameOwner, runner });
+      if (previous && process.env.CORNERMAN_CARRY !== "0") ({ body, carried } = carryForward(body, { title: previous.meta.title, body: previous.body }));
     } catch {
       // save as written
     }
   }
+  // The user's own words this chain (lib/rulings.mjs). After the carry, which must not
+  // re-carry them as items, and before the trail, so the trail stays last. Off with
+  // CORNERMAN_RULINGS=0; a kickoff for a session that does not exist yet has none.
+  if (body.trim() && !process.argv.includes("--unowned") && process.env.CORNERMAN_RULINGS !== "0")
+    body = addRulings(body, { store: storeRoot(), session: process.env.CLAUDE_CODE_SESSION_ID, previous: previous?.body });
   addTrail();
   const { path, id, short, title, top, main, replaced } = saveHandover({ cwd: startedIn, title: arg("--title"), body, owner, auto, sessionId: process.argv.includes("--unowned") ? "" : process.env.CLAUDE_CODE_SESSION_ID, openQuestion: process.argv.includes("--open-question") });
   // Every folder is printed by shownPath, so one folder reads the same each time it

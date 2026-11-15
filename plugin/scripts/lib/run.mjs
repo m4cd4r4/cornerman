@@ -10,10 +10,11 @@ import { delimiter, join, resolve } from "node:path";
 import { migrateHeadlessStore, resolveHeadlessStore } from "../../packages/store/rename.mjs";
 import { listAll } from "../../packages/store/store.mjs";
 import { archive, repoInfo, repoKey, listWaiting } from "./store.mjs";
+import { RUNNER_OWNER } from "./carry.mjs";
 
 export const EXIT = { usage: 2, stall: 3, cap: 4 };
 export const DEFAULT_STORE = () => resolveHeadlessStore();
-const RUNNER = "cornerman-run";
+const RUNNER = RUNNER_OWNER;
 
 class Usage extends Error {}
 

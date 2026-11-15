@@ -7,6 +7,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { resolveStore } from "../packages/store/rename.mjs";
+import { record } from "./lib/rulings.mjs";
 
 let input;
 try {
@@ -15,6 +16,8 @@ try {
   process.exit(0);
 }
 const id = String(input?.session_id ?? "").replace(/[^A-Za-z0-9_-]/g, "");
+// The rulings log (lib/rulings.mjs): the user's words, for the handover. One append.
+if (id && process.env.CORNERMAN_RULINGS !== "0") record(resolveStore(), id, input?.prompt);
 if (!id || existsSync(join(resolveStore(), ".cache", "started", id))) process.exit(0);
 
 let out = null;

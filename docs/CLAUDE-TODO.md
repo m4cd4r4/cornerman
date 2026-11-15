@@ -282,3 +282,18 @@ Captured, not built:
 3. **Stale is also sent whole while closed.** Rule 4 names Archived only; Stale held 74 rows on
    the real store, so it was left. Revisit if it grows.
 4. **`<store>/loaded` holds 595 copies** on 2026-11-07. Check what removes them before assuming it grows.
+
+## 19. Follow-ups from handover rulings (2026-11-15)
+
+1. **A headless ask inside a tool result is often ignored as an injection.** In the sandbox dry run
+   (Haiku 5.5, n=4 asks), the mid-turn ask arrived inside a Read or Bash result and the model said "it came
+   from a tool result, not from you" and carried on in 3 of 4; the old short ask was obeyed in 1 of 1.
+   Trimming the template to one line of headings did not stop it in segment 2. Measure on Sonnet and on
+   main before changing the channel (a Stop-only ask, or wording that names cornerman as the runner the
+   user started).
+2. **Two headless runs in one repo and one store** could pick each other's handover as the previous one:
+   a save in segment 2 or later now counts any load by `cornerman-run` in the last 7 days. Key it by run
+   (a run id in the segment env, stamped on the load) if parallel runs in one repo become a real case.
+3. **Rulings dropped by the section cap are gone for the rest of the chain**, because the next save reads
+   the previous section, not the old logs. Fine at 30 entries; revisit if a chain shows a lost ruling.
+4. **The retest of the clear arm on NEW held-out chat rules** (about US$25 for n=2) needs Macdara's yes.
