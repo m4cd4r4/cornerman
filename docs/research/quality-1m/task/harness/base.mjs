@@ -3,7 +3,7 @@
 //   node base.mjs setup | verify | run | find-fork | park      [--stub <url>] [--root <dir>]
 // One Default session, cp01 to the end of cp43, Sonnet, with cornerman d7c1445 installed in its
 // config and its nudge OFF (CORNERMAN_AUTO=0), so nothing clears before the fork while the
-// plugin's UserPromptSubmit hook logs every prompt (lib/rulings.mjs). The 14 rulings in
+// plugin's UserPromptSubmit hook logs every prompt (lib/rulings.mjs). The 12 rulings in
 // rulings.json reach the agent as user messages: the gate pauses before each plant checkpoint
 // (gate-server.mjs --rulings) and this script resumes the session with the ruling's text. The
 // gate stops before cp44 (--stop-before 44); `find-fork` then writes out/base.json, which
