@@ -1248,3 +1248,6 @@ TODO 19.7).
 1. A ruling that reaches the model in a tool result is never logged.
 2. The log is keyed by session id, so a forked session starts with an empty log.
 3. Runner "continue" prompts are logged as user words; safe here only because they carry no CUE word.
+
+**Approved 2026-11-15 19:15 AWST (Macdara, card):** US$34, base + clear211 r1-r2, no natural
+control. Base run started the same evening at commit d46a270.
