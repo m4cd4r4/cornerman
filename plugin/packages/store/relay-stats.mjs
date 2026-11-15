@@ -1,12 +1,11 @@
-// Relay stats (docs/no-bloat/PROJECT-PLAN.md, wave 3): what /cornerman:stats and the
-// sidebar's "This month" show. The ledger only holds a window once it has been idle 14
+// Relay stats (docs/no-bloat/PROJECT-PLAN.md, wave 3): what /cornerman:stats shows. The ledger only holds a window once it has been idle 14
 // days and its file deleted, so this month's numbers come mostly from the live relay
 // files: both are read, and a window in both counts once, as its live file says.
 // Read only: nothing here writes under the store.
 import { readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { ledgerMonth, repoOf, windowFrom, windowValue } from "./relay-retention.mjs";
+import { ledgerMonth, repoOf, windowFrom } from "./relay-retention.mjs";
 import { repoNamer } from "./repo-name.mjs";
 
 /** The month a window is counted under: the one its last change fell in, local time. */
@@ -103,23 +102,6 @@ export const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
 /** Most repos /cornerman:stats lists by name; the rest share one row. */
 export const TABLE_REPOS = 10;
 
-/** Most repos the sidebar names under its counts. */
-export const TOP_REPOS = 3;
-
-/**
- * The sidebar's "This month": one line of counts, then the repos with the most relays
- * (at most three, none with no relays). Undefined when this month has no window, so
- * the section is left out.
- */
-export function thisMonth(stats, now) {
-  const { repos, total } = monthRows(stats, ledgerMonth(now));
-  if (!total.windows) return undefined;
-  return {
-    counts: `${plural(total.windows, "window")} · ${plural(total.relays, "relay")} · ${plural(repos.length, "repo")}`,
-    top: repos.filter((r) => r.relays > 0).slice(0, TOP_REPOS).map((r) => ({ repo: r.repo, relays: plural(r.relays, "relay") })),
-  };
-}
-
 /** What /cornerman:stats prints: this month's table by repo with a total row, then the month before on one line. */
 export function statsText(stats, now) {
   const month = ledgerMonth(now);
@@ -184,9 +166,4 @@ export async function readRelayStats({ store, months }) {
   const texts = await readAll(names.map((n) => join(relayDir, n)));
   const live = names.map((n, i) => windowFrom(n, texts[i])).filter(Boolean);
   return relayStats({ ledgers, live, repoName: repoNamer() });
-}
-
-/** The relay files the extension already holds, parsed, kept only where windowFrom would keep them. */
-export function liveWindows(files) {
-  return files.filter((f) => f && typeof f === "object" && typeof f.key === "string" && windowValue(f.key, f));
 }
