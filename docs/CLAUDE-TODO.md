@@ -291,9 +291,21 @@ Captured, not built:
    Trimming the template to one line of headings did not stop it in segment 2. Measure on Sonnet and on
    main before changing the channel (a Stop-only ask, or wording that names cornerman as the runner the
    user started).
+   **Measured on Sonnet 5.5, main d7c1445 (2026-11-15):** same bakery fixture, plus one line telling
+   the model to write each poem with the Write tool, no scripts. 3 of 3 runs saved a handover at the nudge,
+   none called the ask an injection, and every handover held all three chat rules (Rulings, Decided and
+   Do not sections present). A 4th run without that line scripted all 200 poems in one Bash call that
+   was running when the nudge fired, so it finished with no later step and no handover: inconclusive, not
+   counted. US$0.95 total. So far this is Haiku-only; leave the channel alone unless it shows on Sonnet.
 2. **Two headless runs in one repo and one store** could pick each other's handover as the previous one:
    a save in segment 2 or later now counts any load by `cornerman-run` in the last 7 days. Key it by run
    (a run id in the segment env, stamped on the load) if parallel runs in one repo become a real case.
 3. **Rulings dropped by the section cap are gone for the rest of the chain**, because the next save reads
    the previous section, not the old logs. Fine at 30 entries; revisit if a chain shows a lost ruling.
-4. **The retest of the clear arm on NEW held-out chat rules** (about US$25 for n=2) needs Macdara's yes.
+4. **The retest of the clear arm on NEW held-out chat rules** needs a design first, then Macdara's yes on
+   about US$35, not US$25 (ruled 2026-11-15: design first, spend later). New rules must be planted
+   at cp12-29, inside the fork base, so it needs a new base run to cp43 (about US$12) as well as the 2
+   clear runs (about US$22). The base must also run with cornerman installed and the nudge off. The
+   rulings log captures only through UserPromptSubmit, so rules sitting in forked history never reach it,
+   and a retest from the old fork could not exercise the fix. The design lives on
+   `research/quality-1m`.
