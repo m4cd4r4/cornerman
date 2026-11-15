@@ -1063,3 +1063,29 @@ snapshots cp01-42, transcript holds the fork message at line 2695). No model cal
   least one handover clear, new). INVALID allowance 8 per batch; one arm INVALID 3 times in a row
   stops the batch as systematic. How often clear fails to fire is itself reported.
 - fill700 r1 top-up landed at 717,986 (target 700,000).
+
+## Dial halted at n=2 (2026-11-15)
+
+The batch died on 2026-11-14 at 19:39 AWST, when the session that launched it ended. It had
+finished 10 of 25 runs (US$131.98 dial spend). fill900 r3 died mid-run; it is parked as
+`fork-fill900-sonnet-r3-HALTED` with an INVALID marker and not scored. Every run that finished
+hit its arm's context target.
+
+| Arm | cp44-80 hidden (of 37) | Chat tests (of 14) | Cost per run (US$) |
+|---|---|---|---|
+| natural | 31, 31 | 12, 12 | 14.96, 16.56 |
+| fill700 | 32, 32 | 12, 12 | 21.57, 22.35 |
+| fill900 | 28, 30 | 9, 9 | 25.80, 22.99 |
+| compact | 28, 31 | 8, 9 | 15.01, 11.74 |
+| clear (cornerman 0.7.2, nudge 250k) | 23, 25 | 4, 7 | 11.26, 10.50 |
+
+Exploratory, n=2. Cause of the clear losses: the clear r1 handover held none of the 14 chat-only
+rules. `nudge.mjs` headlessAsk() asks only for the next action and any open STOP question, and
+skips the handover skill's "Decisions already made" and "Do not" sections. carry.mjs carries open
+items from the previous handover only, so the first clear carries nothing.
+
+Macdara ruled on 2026-11-15, in his words: "The primary goal should be to improve cornerman, not
+to finish the tests." So the dial is halted, and the fix is being built on cornerman
+`feat/handover-rulings`: one handover template for both paths, plus a per-session rulings log.
+The retest runs the clear arm on NEW held-out chat rules, never the 14 used here. It costs about
+US$25 for n=2 and needs his separate yes.
