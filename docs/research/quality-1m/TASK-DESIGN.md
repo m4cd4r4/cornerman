@@ -1089,3 +1089,25 @@ to finish the tests." So the dial is halted, and the fix is being built on corne
 `feat/handover-rulings`: one handover template for both paths, plus a per-session rulings log.
 The retest runs the clear arm on NEW held-out chat rules, never the 14 used here. It costs about
 US$25 for n=2 and needs his separate yes.
+
+## Clear-arm retest: design first (2026-11-15)
+
+cornerman `feat/handover-rulings` merged as #211 (main d7c1445). Before any dial spend, a sandbox
+check on Sonnet 5.5 against that main (bakery fixture, Write tool only): 3 of 3 runs saved a
+handover at the nudge, and each held all three chat rules. US$0.95. The Haiku "ignored as an
+injection" result (cornerman TODO 19.1) did not show on Sonnet.
+
+The retest is bigger than the US$25 first quoted. Macdara ruled on 2026-11-15: design first,
+spend later (about US$35 once the design is reviewed).
+
+- **New plants need a new base.** The 14 old plants sit at cp12-29, inside the fork base (pilot 3,
+  cut at cp43). New held-out rules have to be planted at the same depth, so the base is rebuilt
+  with a new run from cp01 to cp43, about US$12 (pilot 3's whole run cost US$23.86).
+- **cornerman must be in the base, with the nudge off.** The rulings log records a ruling only
+  when it passes through UserPromptSubmit. Plants that sit in forked history never pass through
+  it, so a retest from the old fork could not exercise the fix. The base runs with the plugin
+  installed and the nudge disabled, so the plants are logged and nothing clears before cp44.
+- **To design:** 14 new chat rules (plant at cp12-29, trigger at cp44-77, a hidden chat test and
+  mutants each, checked by a separate reviewer as the first 14 were), the base run, then clear
+  r1-r2 at cp44 with cornerman pinned to d7c1445. Score against the old clear runs (4 and 7 of 14),
+  not against the other arms, whose bases differ.
