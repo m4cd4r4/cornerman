@@ -1251,3 +1251,53 @@ TODO 19.7).
 
 **Approved 2026-11-15 19:15 AWST (Macdara, card):** US$34, base + clear211 r1-r2, no natural
 control. Base run started the same evening at commit d46a270.
+
+## Clear-arm retest result (2026-11-15): the clear arm never cleared
+
+**Both forks ran cp44-80 in one session with zero clears.** Each was auto-compacted once near 965k
+tokens and finished on the compacted context. So this retest did not test the #211 rulings log
+through a handover. Predictions T1-T3 are **not tested**: no score below is a clear-arm score.
+
+| Run | Cost | Sessions | Clears | Compaction | ruling (new 12) | chat (old 14) | late cp44+ | rule violations |
+|:--|--:|--:|--:|:--|:--|:--|:--|:--|
+| base211-sonnet (cp01-43) | US$12.07 | 1 | 0 (nudge off) | none | 12/12 logged | n/a | n/a | n/a |
+| fork-clear211-sonnet-r1 | US$16.37 | 1 | 0 | auto 968,775 -> 23,244 | 12/12 (early 5/5, late 7/7) | 13/14 | 28/37 | 0 |
+| fork-clear211-sonnet-r2 | US$15.79 | 1 | 0 | auto 966,490 -> 17,388 | 12/12 (early 5/5, late 7/7) | 12/14 | 30/37 | 5 (2 distinct) |
+
+Both reached 80/80, regressions 0, probes 50/50. r2 hit two usage-limit waits after cp80 (resumed
+the same session, no extra work).
+
+### Why it never cleared (read from the parked forks)
+
+1. **The ask was delivered once and ignored.** At the first tool call of the fork (context 556k)
+   cornerman's PostToolUse hook gave the headless mid-turn ask as additionalContext: "finish the
+   current step without starting new work, then commit ... then save a handover". It is in the
+   transcript (`cm-store/.nudged/<sid>`: `asks: 1, tokens: 556128`, both runs). The agent's next call
+   was `node gate.mjs next`, and it carried on through cp80.
+2. **It was never repeated.** `runMidTurn` returns nothing once `claimNudge` has fired for the
+   session, and in headless mode the Stop path also returns nothing on a repeat ("the process ending
+   is the answer"). The agent never ended its turn before cp80, so the Stop hook never ran.
+3. **Claude Code's auto-compaction then did what the clear should have done**, near 965k.
+4. **Why the dry check missed it:** the stub ends a turn every few requests, so its Stop hook fired
+   and saved a handover (dry check C). It never modelled a real agent that ignores one mid-turn ask
+   and keeps one turn going for 37 checkpoints.
+
+### What the numbers do say (n = 2, not a clear-arm result)
+
+- On this base, a 1M-context run that compacts once near 965k kept every new ruling (12/12 in both)
+  and 12-13 of the old 14. The old 0.7.2 clear arm kept 4 and 7 of 14. Different base, different
+  ruling set, different arm: a pointer, not a comparison.
+- The cp44-80 hidden rate is not comparable with the dial runs (see Scoring).
+
+### Spend
+
+US$44.23 measured (12.07 + 16.37 + 15.79) against the US$34 approved: **US$10.23 over**. Both forks
+cost more than the old clear runs (US$11.26, US$10.50) because without clears they ran the whole
+late regime on a 556k-plus context. No further run without Macdara's yes on a US$ figure.
+
+### For cornerman (headless runner)
+
+A single mid-turn ask is not enough in headless mode. Options: re-ask mid-turn every N tokens
+above the threshold, or make the headless mid-turn ask firmer than "when this step is done"
+(here the agent read "this step" as cp43 and treated the next checkpoint as more of the task). Any
+fix needs a dry check with a stub that ignores the first ask and never ends its turn.
