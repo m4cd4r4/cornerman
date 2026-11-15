@@ -17,10 +17,9 @@ Each line is filled on its own, in one of two ways:
 1. **A series**, when the first two cells of the line both hold numbers typed as inputs (inputs that
    match the checkpoint 1 number grammar, such as `5`, `-2.5` or `007`; a formula or text is not
    one). The first two cells are left as they are, and the cell at position `i` (the first cell is
-   0) gets the number `first + i * (second - first)`, worked out in floating point and then rounded
-   half to even to 10 decimal places on the shortest decimal form, as `ROUND` does (checkpoint 16).
-   It is written as an input: the shortest number text, no exponent, `-` only when negative. With
-   `0.1` and `0.2`, the next cells get `0.3`, `0.4`, `0.5`. A line of two cells is left as it is.
+   0) gets the number `first + i * (second - first)`.
+   It is written as an input: the shortest number text, no exponent, `-` only when negative. A line
+   of two cells is left as it is.
    This is NOT what Excel does (Excel's fill down always copies the first cell; only its fill
    handle makes a series).
 2. **A copy** otherwise. Every other cell of the line gets the first cell's input, exactly as

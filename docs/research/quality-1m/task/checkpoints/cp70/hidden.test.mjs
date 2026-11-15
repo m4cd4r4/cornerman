@@ -107,7 +107,7 @@ test("cp70h names sort by name and constants are written as names() writes them"
   const { b, m } = book();
   const s1 = b.save();
   for (const n of ["Z", "A_B", "AB", "Q"]) m.defineConstant(n, n === "Q" ? 0.5 : true);
-  b.defineName("b_2", "data!a1:b2");
+  b.defineName("b_2", "Data!a1:b2");
   b.defineConstant("A", 'say "x"');
   assert.deepEqual(diffWorkbooks(s1, b.save()), [
     name("Main", "AB", null, "=TRUE"),
@@ -115,11 +115,19 @@ test("cp70h names sort by name and constants are written as names() writes them"
     name("Main", "Q", null, "=0.5"),
     name("Main", "Z", null, "=TRUE"),
     name(null, "A", null, '="say ""x"""'),
-    name(null, "B_2", null, "data!A1:B2"),
+    name(null, "B_2", null, "Data!A1:B2"),
   ]);
 });
 
-test("cp70h load errors name the side, before first", () => {
+test("cp70h a save text that does not load is #LOAD", () => {
+  const { b } = book();
+  const ok = b.save();
+  for (const [x, y] of [[ok, "{x"], ["{x", "{y"], [null, ok], [ok, 5]]) {
+    assert.throws(() => diffWorkbooks(x, y), (e) => e && e.code === "#LOAD" && typeof e.message === "string" && e.message.length > 0);
+  }
+});
+
+test("cp70c ruling: a load error's cell names the side, then the loader's cell", () => {
   const { b } = book();
   const ok = b.save();
   const badSheet = '{"format":"workbook","version":2,"errorOrder":"priority","sheets":[{"name":"1x","cells":{},"names":{}}]}';

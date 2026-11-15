@@ -649,6 +649,20 @@ const MUTANTS = [
   { name: "chat-errorcells-reading-order", file: "audit.mjs", find: "const byCode = (list) => list.sort((x, y) => rank(x.code) - rank(y.code));", replace: "const byCode = (list) => list;", target: "cp72" },
   { name: "chat-listener-throw-propagates", file: "events.mjs", find: "        } catch {\n          // A listener that throws changes nothing: the change stays and the others still run.\n        }", replace: "        } finally {\n        }", target: "cp65" },
   { name: "chat-csv-text-types-plain", file: "csv.mjs", find: "const asText = (f) => (NUMBER.test(f) || f.startsWith(\"=\") ? `=\"${f.replaceAll('\"', '\"\"')}\"` : f);", replace: "const asText = (f) => f;", target: "cp69" },
+  // Held-out rulings (rulings.json, plants delivered as user chat messages, one hidden `cpNNc ruling:` test per trigger).
+  {"name":"ruling-covered-formula-recalc","file":"sheet.mjs","find":"const dirty = sorted(parsed.keys()).filter((k) => !engine.cache.has(g(k)) && !layers.L.covered.has(k));","replace":"const dirty = sorted(parsed.keys()).filter((k) => !engine.cache.has(g(k)));","target":"cp47"},
+  {"name":"ruling-paren-goes-negative","file":"limits.mjs","find":"    else if (ch === \")\" && open > 0) open--;","replace":"    else if (ch === \")\") open--;","target":"cp67"},
+  {"name":"ruling-booknames-sheet-normalised","file":"booknames.mjs","find":"    defineName: (name, ref) => define(checkName(name), parseBookRef(ref)),","replace":"    defineName: (name, ref) => { const n = checkName(name); const d = parseBookRef(ref); const hit = book.sheetNames().find((x) => x.toUpperCase() === d.sheet.toUpperCase()); return define(n, hit ? { ...d, sheet: hit } : d); },","target":"cp53"},
+  {"name":"ruling-sumproduct-booleans-zero","file":"products.mjs","find":"typeof v === \"boolean\" ? (v ? 1 : 0) : 0","replace":"0","target":"cp45"},
+  {"name":"ruling-series-unrounded","file":"fill.mjs","find":"numberText(roundDecimal(x + (i + 2) * step, 10, \"even\"))","replace":"numberText(x + (i + 2) * step)","target":"cp64"},
+  {"name":"ruling-switch-ignores-case","file":"choose.mjs","find":"  return typeof x === \"number\" ? numEqual(x, y) : x === y;","replace":"  return typeof x === \"number\" ? numEqual(x, y) : typeof x === \"string\" ? x.toLowerCase() === y.toLowerCase() : x === y;","target":"cp60"},
+  {"name":"ruling-diff-load-cell-passthrough","file":"diff.mjs","find":"e.cell === \"\" ? side : `${side}.${e.cell}`","replace":"e.cell","target":"cp70"},
+  {"name":"ruling-sort-errors-first-descending","file":"sort.mjs","target":"cp48","edits":[["  if (descending && ga < 3) ga = 2 - ga;\n  if (descending && gb < 3) gb = 2 - gb;","  if (descending && ga < 3) ga = 2 - ga; else if (descending && ga === 3) ga = -1;\n  if (descending && gb < 3) gb = 2 - gb; else if (descending && gb === 3) gb = -1;"],["  if (ga >= 3) return 0;","  if (ga >= 3 || ga < 0) return 0;"]]},
+  {"name":"ruling-lint-lists-range-cells","file":"lint.mjs","find":"      case \"call\": n.args.forEach(walk); break;","replace":"      case \"range\": out.push(n.a, n.b); break;\n      case \"call\": n.args.forEach(walk); break;","target":"cp73"},
+  {"name":"ruling-clear-empties-covered","file":"api3.mjs","find":"t.keys.filter((k) => core.input(k) !== null && !core.layers.L.covered.has(k))","replace":"t.keys.filter((k) => core.input(k) !== null)","target":"cp75"},
+  {"name":"ruling-deletesheet-keeps-booknames","file":"workbook.mjs","find":"      for (const [n, d] of [...engine.bookNames]) if (d.sheet && d.sheet.toUpperCase() === OLD) engine.setBookName(n, undefined);\n","replace":"","target":"cp54"},
+  {"name":"ruling-redo-keeps-old-time","file":"history.mjs","find":"      apply(e, \"after\");\n      e.t = ++CLOCK;","replace":"      apply(e, \"after\");","target":"cp55"},
+  {"name":"ruling-nested-batch-joins","file":"batch.mjs","find":"    if (open) refuse(\"batch\");","replace":"    if (open) { if (typeof fn !== \"function\") throw makeError(\"#ARG\", String(fn), \"batch takes a function\"); return fn(book); }","target":"cp66"},
 ];
 
 const work = process.argv[process.argv.indexOf("--work") + 1];

@@ -1,0 +1,147 @@
+{
+  "rulings": [
+    {
+      "id": "N1",
+      "plant": 12,
+      "trigger": 47,
+      "type": "deferred",
+      "text": "When merged cells arrive, a formula in a covered cell must not be evaluated at all while it is covered: it adds nothing to stats().evaluations and recalc() never lists it.",
+      "test": "cp47c ruling: a covered formula is not evaluated and recalc never lists it",
+      "mutant": "ruling-covered-formula-recalc",
+      "deletedFromTrigger": "- A formula in a covered cell is not evaluated while it is covered, so it adds nothing to\n  `stats().evaluations`, and `recalc()` (checkpoint 12) never lists it.\n",
+      "triggerNowReads": ""
+    },
+    {
+      "id": "N2",
+      "plant": 13,
+      "trigger": 67,
+      "type": "deferred",
+      "text": "When the formula nesting limit arrives, a ) with nothing open before it must be ignored, so the open count never drops below zero: =))) followed by 17 ( is still 17 deep and refused.",
+      "test": "cp67c ruling: a ) with nothing open is ignored",
+      "mutant": "ruling-paren-goes-negative",
+      "deletedFromTrigger": "   - A `)` with no `(` open before it is ignored.\n",
+      "triggerNowReads": ""
+    },
+    {
+      "id": "N3",
+      "plant": 14,
+      "trigger": 53,
+      "type": "as agreed",
+      "text": "When workbook names arrive, we agree: book.names() keeps a target's sheet name exactly as it was typed in the ref, never in the sheet's own case, and only the cells are normalised, so data!b3:a1 is listed as data!A1:B3.",
+      "test": "cp53c ruling: book.names() writes the sheet part as it was typed in ref",
+      "mutant": "ruling-booknames-sheet-normalised",
+      "deletedFromTrigger": "A cell target is\n  written with its sheet name as it was typed in `ref`, then `!`, then the cells as\n  `sheet.names()` writes them: `book.defineName(\"total\", \"data!b3:a1\")` gives\n  `{ TOTAL: \"data!A1:B3\" }`. A constant\n[...]\nold sheet (ignoring case) to the new name as typed.",
+      "triggerNowReads": "A cell target is\n  written with its sheet name as we agreed when named ranges were built, then `!`, then the cells as\n  `sheet.names()` writes them. A constant\n[...]\nold sheet (ignoring case) to the new name."
+    },
+    {
+      "id": "N4",
+      "plant": 15,
+      "trigger": 45,
+      "type": "override",
+      "text": "When SUMPRODUCT arrives, a boolean in a range must count as 1 for TRUE and 0 for FALSE, unlike SUM here and unlike Excel, which both skip booleans in ranges.",
+      "test": "cp45c ruling: booleans in a range count as 1 and 0",
+      "mutant": "ruling-sumproduct-booleans-zero",
+      "deletedFromTrigger": "- A number counts as itself. A boolean counts as 1 (`TRUE`) or 0 (`FALSE`). This is NOT what\n  Excel does (Excel counts booleans in ranges as 0).\n",
+      "triggerNowReads": "- A number counts as itself.\n"
+    },
+    {
+      "id": "N5",
+      "plant": 16,
+      "trigger": 64,
+      "type": "deferred",
+      "text": "When fill down and fill right arrive, every number a series writes must first be rounded half to even to 10 decimal places, as ROUND does: 0 and 0.3333333333333 continue as 0.6666666667, then 1.",
+      "test": "cp64c ruling: series numbers are rounded half to even to 10 decimal places",
+      "mutant": "ruling-series-unrounded",
+      "deletedFromTrigger": "gets the number `first + i * (second - first)`, worked out in floating point and then rounded\n   half to even to 10 decimal places on the shortest decimal form, as `ROUND` does (checkpoint 16).\n   It is written as an input: the shortest number text, no exponent, `-` only when negative. With\n   `0.1` and `0.2`, the next cells get `0.3`, `0.4`, `0.5`. A line of two cells is left as it is.",
+      "triggerNowReads": "gets the number `first + i * (second - first)`.\n   It is written as an input: the shortest number text, no exponent, `-` only when negative. A line\n   of two cells is left as it is."
+    },
+    {
+      "id": "N6",
+      "plant": 17,
+      "trigger": 60,
+      "type": "override",
+      "text": "When SWITCH arrives, it must match text with its case: SWITCH(\"a\", \"A\", 1, 2) is 2, even though \"a\" = \"A\" is TRUE and Excel's SWITCH ignores case.",
+      "test": "cp60c ruling: SWITCH matches text only with the same case",
+      "mutant": "ruling-switch-ignores-case",
+      "deletedFromTrigger": "- Text is equal only with the same case: `SWITCH(\"a\", \"A\", 1, 2)` is 2. This is NOT what Excel does\n  (Excel ignores case, as `=` does in checkpoint 6). `\"a\" = \"A\"` is still `TRUE`.\n",
+      "triggerNowReads": ""
+    },
+    {
+      "id": "N7",
+      "plant": 19,
+      "trigger": 70,
+      "type": "as agreed",
+      "text": "When comparing two saves arrives, we agree: a load failure must throw #LOAD whose cell is \"before\" or \"after\", then a dot and the loader's own cell when it has one, so \"after.sheets.0.name\", or just \"after\" for text that is not JSON.",
+      "test": "cp70c ruling: a load error's cell names the side, then the loader's cell",
+      "mutant": "ruling-diff-load-cell-passthrough",
+      "deletedFromTrigger": "When one fails with `#LOAD`\n(checkpoint 30), `diffWorkbooks` throws `#LOAD` with `cell` = `\"before\"` or `\"after\"`, then, when\nthe `loadWorkbook` error's `cell` is not `\"\"`, a `.` and that cell: `\"after.sheets.0.name\"`,\n`\"before.a1\"` (a bad cell key `a1` in a version 1 sheet save), and `\"after\"` for text that is not\nJSON.",
+      "triggerNowReads": "When one fails with `#LOAD`\n(checkpoint 30), `diffWorkbooks` throws `#LOAD`, and its `cell` follows what we agreed when dates\nwere built."
+    },
+    {
+      "id": "N8",
+      "plant": 20,
+      "trigger": 48,
+      "type": "as agreed",
+      "text": "When sorting arrives, we agree: errors always sort after every other value, in a descending sort too, with only empty cells after them. Descending reverses numbers, text and booleans only.",
+      "test": "cp48c ruling: in a descending sort errors stay after every value, before empty cells",
+      "mutant": "ruling-sort-errors-first-descending",
+      "deletedFromTrigger": "- Descending order: booleans (`TRUE` first), then text (Z to A), then numbers (largest first), then\n  errors, then empty cells. Errors and empty cells stay last.\n",
+      "triggerNowReads": "- Descending order: booleans (`TRUE` first), then text (Z to A), then numbers (largest first).\n  Where errors go follows what we agreed when ISERROR and IFERROR were built. Empty cells stay last.\n"
+    },
+    {
+      "id": "N9",
+      "plant": 22,
+      "trigger": 73,
+      "type": "rejected approach",
+      "text": "When lint arrives, only one-cell references written in a formula count as empty references; never list the cells of a range or of a defined name. We tried building it on precedents(), and it flagged every empty cell inside SUM ranges.",
+      "test": "cp73c ruling: only one-cell references count, never cells in a range or behind a name",
+      "mutant": "ruling-lint-lists-range-cells",
+      "deletedFromTrigger": "- `{ kind: \"empty-ref\", address, ref }`: the formula in `address` (upper case) writes a one-cell\n  reference to `ref`, and `ref` is empty.\n[...]\n- Only one-cell references written in the formula count. A cell inside a range (`A1:A3`), and the\n  cells a defined name points at, are never listed, even when they are empty: `=SUM(A1:A3)` with\n  `A2` empty gives no finding. This is NOT what you might expect.\n- Every one-cell reference in the text counts, also one in an `IF` branch that is not taken",
+      "triggerNowReads": "- `{ kind: \"empty-ref\", address, ref }`: the formula in `address` (upper case) has a reference to\n  `ref`, and `ref` is empty.\n[...]\n- A reference in the text counts also in an `IF` branch that is not taken"
+    },
+    {
+      "id": "N10",
+      "plant": 23,
+      "trigger": 75,
+      "type": "deferred",
+      "text": "When sheet.clear arrives, it must skip the covered cells of a merge: their hidden inputs stay, so unmerge brings them back, and they are not counted in the number clear returns.",
+      "test": "cp75c ruling: clear skips covered cells and does not count them",
+      "mutant": "ruling-clear-empties-covered",
+      "deletedFromTrigger": "  - A covered cell of a merge (checkpoint 47) is skipped: its hidden input stays, so `unmerge`\n    after `clear` brings it back, and it is not counted. This is NOT what you might expect.\n",
+      "triggerNowReads": ""
+    },
+    {
+      "id": "N11",
+      "plant": 24,
+      "trigger": 54,
+      "type": "override",
+      "text": "When deleting a sheet for good arrives, every workbook name pointing at that sheet must be removed, so formulas using it give #NAME?, not #REF! as in Excel. Workbook constants and names on other sheets stay.",
+      "test": "cp54c ruling: workbook names on the deleted sheet are removed",
+      "mutant": "ruling-deletesheet-keeps-booknames",
+      "deletedFromTrigger": "## Workbook names\n\n- Every workbook name (checkpoint 53) whose target is on the deleted sheet is removed from the\n  book. A formula that used it then gives `#NAME?`, unless its own sheet has a name of that name.\n  This is NOT what Excel does (Excel keeps the name, pointing at `#REF!`). Workbook constants and\n  names on other sheets are kept. Each sheet's own names never point at another sheet and are\n  kept.\n\n",
+      "triggerNowReads": ""
+    },
+    {
+      "id": "N12",
+      "plant": 27,
+      "trigger": 55,
+      "type": "deferred",
+      "text": "When undo across a whole workbook arrives, a redone step must count as made at the moment of the redo, not when it was first made, so book.undo() takes it before older steps on other sheets.",
+      "test": "cp55c ruling: a redone step counts as made at the time of the redo",
+      "mutant": "ruling-redo-keeps-old-time",
+      "deletedFromTrigger": "- Every step has the time it was made. A step that is redone (by `sheet.redo()` or `book.redo()`)\n  counts as made at the time of the redo, and a step that is undone (by either) has the time of that\n  undo.",
+      "triggerNowReads": "- Every step has the time it was made, and a step that is undone (by `sheet.undo()` or\n  `book.undo()`) has the time of that undo."
+    },
+    {
+      "id": "N13",
+      "plant": 27,
+      "trigger": 66,
+      "type": "rejected approach",
+      "text": "When batches arrive, book.batch called while a batch of the same workbook is running must throw #BATCH with cell \"batch\", never join it. We tried joining, and the inner rollback threw away the outer batch's work.",
+      "test": "cp66c ruling: a batch started inside a running batch of the same workbook throws #BATCH",
+      "mutant": "ruling-nested-batch-joins",
+      "deletedFromTrigger": "- `book.addSheet`, `book.removeSheet`, `book.renameSheet`, `book.deleteSheet` and `book.batch` throw\n  `#BATCH` when called while `fn` runs (`cell` = the method name, such as `\"addSheet\"`), changing\n  nothing. Thrown out of `fn`, that error rolls the batch back like any other. This is NOT what you\n  might expect (a nested batch is refused, not joined).\n[...]\n`batch` checks, in this order, and throws at the first failure, calling nothing:\n\n| Check | `code` | `cell` |\n| --- | --- | --- |\n| no batch of this workbook is running | `#BATCH` | `\"batch\"` |\n| `fn` is a function | `#ARG` | `String(fn)` |",
+      "triggerNowReads": "- `book.addSheet`, `book.removeSheet`, `book.renameSheet` and `book.deleteSheet` throw `#BATCH` when\n  called while `fn` runs (`cell` = the method name, such as `\"addSheet\"`), changing nothing. Thrown\n  out of `fn`, that error rolls the batch back like any other.\n[...]\n`batch` checks, and throws when it fails, calling nothing:\n\n| Check | `code` | `cell` |\n| --- | --- | --- |\n| `fn` is a function | `#ARG` | `String(fn)` |"
+    }
+  ]
+}

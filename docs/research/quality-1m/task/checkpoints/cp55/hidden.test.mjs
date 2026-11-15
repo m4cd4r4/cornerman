@@ -28,7 +28,21 @@ test("cp55h steps come back in the order they were made, across sheets", () => {
   assert.equal(b.redo(), false);
 });
 
-test("cp55h sheet undo and redo mix with the book's; a redo counts as new", () => {
+test("cp55h sheet undo and redo mix with the book's", () => {
+  const { b, m, d } = book();
+  m.set("A1", "1");
+  d.set("A1", "2");
+  assert.equal(m.undo(), true);
+  assert.equal(b.undo(), true);
+  assert.equal(d.getInput("A1"), null);
+  assert.equal(b.redo(), true);
+  assert.equal(d.getInput("A1"), "2");
+  assert.equal(m.redo(), true);
+  assert.equal(m.getInput("A1"), "1");
+  assert.equal(b.redo(), false);
+});
+
+test("cp55c ruling: a redone step counts as made at the time of the redo", () => {
   const { b, m, d } = book();
   m.set("A1", "1");
   d.set("A1", "2");
@@ -70,7 +84,7 @@ test("cp55h a change clears only its own list's redo", () => {
   assert.equal(b.redo(), false);
   b.defineConstant("K", 1);
   b.undo();
-  b.undo();
+  d.undo();
   assert.equal(d.getInput("A1"), null);
   assert.equal(m.getInput("B1"), "new");
   b.defineConstant("J", 2);
@@ -157,13 +171,13 @@ test("cp55h a removed sheet takes its steps with it", () => {
   assert.equal(b.undo(), false);
   assert.equal(d.undo(), true);
   assert.equal(d.getInput("A2"), null);
-  n.set("A1", "x");
   assert.equal(b.redo(), true);
   assert.equal(m.getInput("A1"), "2");
-  assert.equal(b.undo(), true);
-  assert.equal(m.getInput("A1"), null);
+  n.set("A1", "x");
   assert.equal(b.undo(), true);
   assert.equal(n.getInput("A1"), null);
+  assert.equal(b.undo(), true);
+  assert.equal(m.getInput("A1"), null);
   assert.equal(d.getInput("A1"), "1");
 });
 

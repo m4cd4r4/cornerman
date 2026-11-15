@@ -38,23 +38,29 @@ test("cp64h text and single numbers are copied, never counted up", () => {
 });
 
 test("cp64h two plain numbers start a series", () => {
-  const s = sheet({ A1: "1", A2: "3", B1: "0.1", B2: "0.2", C1: "10", C2: "7.5", D1: "007", D2: "9", E1: "-1", E2: "-1" });
+  const s = sheet({ A1: "1", A2: "3", B1: "0.5", B2: "0.75", C1: "10", C2: "7.5", D1: "007", D2: "9", E1: "-1", E2: "-1" });
   s.fillDown("A1:E6");
   assert.deepEqual(inputs(s, ["A3", "A4", "A5", "A6"]), ["5", "7", "9", "11"]);
-  assert.deepEqual(inputs(s, ["B3", "B4", "B5", "B6"]), ["0.3", "0.4", "0.5", "0.6"]);
+  assert.deepEqual(inputs(s, ["B3", "B4", "B5", "B6"]), ["1", "1.25", "1.5", "1.75"]);
   assert.deepEqual(inputs(s, ["C3", "C4", "C5", "C6"]), ["5", "2.5", "0", "-2.5"]);
   assert.deepEqual(inputs(s, ["D1", "D2", "D3", "D4"]), ["007", "9", "11", "13"]);
   assert.deepEqual(inputs(s, ["E3", "E6"]), ["-1", "-1"]);
   assert.equal(s.get("C5"), 0);
-  const t = sheet({ A1: "0", A2: "0.3333333333333", B1: "100000000000000000000", B2: "200000000000000000000", C1: "1", C2: "1.00000000001" });
-  t.fillDown("A1:C4");
-  assert.deepEqual(inputs(t, ["A3", "A4"]), ["0.6666666667", "1"]);
+  const t = sheet({ B1: "100000000000000000000", B2: "200000000000000000000" });
+  t.fillDown("B1:B4");
   assert.deepEqual(inputs(t, ["B3", "B4"]), ["300000000000000000000", "400000000000000000000"]);
-  assert.deepEqual(inputs(t, ["C3", "C4"]), ["1", "1"]);
   const u = sheet({ A1: "1", A2: "2" });
   u.fillDown("A1:A2");
   assert.equal(u.undo(), true);
   assert.equal(u.getInput("A2"), null);
+});
+
+test("cp64c ruling: series numbers are rounded half to even to 10 decimal places", () => {
+  const s = sheet({ B1: "0.1", B2: "0.2", A1: "0", A2: "0.3333333333333", C1: "1", C2: "1.00000000001" });
+  s.fillDown("A1:C6");
+  assert.deepEqual(inputs(s, ["B3", "B4", "B5", "B6"]), ["0.3", "0.4", "0.5", "0.6"]);
+  assert.deepEqual(inputs(s, ["A3", "A4"]), ["0.6666666667", "1"]);
+  assert.deepEqual(inputs(s, ["C3", "C4"]), ["1", "1"]);
 });
 
 test("cp64h fill right makes series and copies along rows", () => {

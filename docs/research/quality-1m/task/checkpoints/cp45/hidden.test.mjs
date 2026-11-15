@@ -37,12 +37,15 @@ test("cp45h products of 2-D ranges in position order", () => {
   assert.equal(val("=SUMPRODUCT(H1:H2, I1:I2)", s), 0.1 + 0.2);
 });
 
-test("cp45h booleans count as 1 and 0; text and empty as 0", () => {
+test("cp45c ruling: booleans in a range count as 1 and 0", () => {
   assert.equal(val("=SUMPRODUCT(E1:E2, F1:F2)"), 5);
   assert.equal(val("=SUMPRODUCT(E1:E2)"), 1);
+  assert.equal(val("=SUMPRODUCT(E1:F2)"), 1 + 5 + 7);
+});
+
+test("cp45h text and empty cells count as 0", () => {
   assert.equal(val("=SUMPRODUCT(G1:G2, F1:F2)"), 0);
   assert.equal(val("=SUMPRODUCT(Q1:Q2, F1:F2)"), 0);
-  assert.equal(val("=SUMPRODUCT(E1:F2)"), 1 + 5 + 7);
   const s = sheet();
   s.set("G1", '=""');
   assert.equal(val("=SUMPRODUCT(G1:G2, F1:F2)", s), 0);
@@ -119,7 +122,7 @@ test("cp45h ranges on other sheets", () => {
   m.set("B2", "=SUMPRODUCT(A1:A2, Gone!B1:B2)");
   assert.equal(m.get("B1"), 530);
   assert.ok(isErr(m.get("B2"), "#REF!", "B2"));
-  d.set("B2", "=TRUE");
+  d.set("B2", "1");
   assert.equal(m.get("B1"), 130);
 });
 

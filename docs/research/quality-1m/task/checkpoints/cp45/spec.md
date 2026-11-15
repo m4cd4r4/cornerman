@@ -22,8 +22,7 @@ adds the products.
 ## Values
 
 - Positions are matched row by row, left to right, in each range.
-- A number counts as itself. A boolean counts as 1 (`TRUE`) or 0 (`FALSE`). This is NOT what
-  Excel does (Excel counts booleans in ranges as 0).
+- A number counts as itself.
 - Text (even text such as `"5"`), the text `""`, and empty cells count as 0.
 - If any cell of any range holds an error, the result is the winning error by the checkpoint 4
   rules among all of them, wherever they are and whatever the other factors at their position.

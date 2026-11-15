@@ -40,29 +40,44 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TASK = resolve(HERE, "..");
 const CPS = join(TASK, "checkpoints");
 const [cmd, name] = process.argv.slice(2);
-const m = /^fork-(natural|compact|clear|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
-if (!m) throw new Error("name must be fork-<natural|compact|clear|fillNNN>-sonnet-r<n>");
+const m = /^fork-(natural|compact|clear211|clear|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
+if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|fillNNN>-sonnet-r<n>");
 const arm = m[1], fillTo = m[2] ? Number(m[2]) * 1000 : null;
-// clear arm: cornerman pinned exactly as arm.mjs pins it.
-const CM_TAG = "v0.7.2", CM_SHA = "a8c36539063ae3871745a41d46be376d873e84fd";
+// clear211 (TASK-DESIGN.md, "Clear-arm retest build"): the clear arm from the retest's own base
+// (base.mjs), cornerman pinned to d7c1445 (#211, the rulings log). Everything below that names
+// pilot 3 is read from that base's out/base.json instead.
+const C211 = arm === "clear211";
+const CLEARS = arm === "clear" || C211;
+// --stub <url> (dry check only, retest-dry.mjs): no model call. Q1M_BASE / Q1M_FORK_LIVE /
+// Q1M_FORK_PARK move the folders out of I:/Scratch/_q1m for the same check.
+const STUB = (() => { const i = process.argv.indexOf("--stub"); return i === -1 ? null : process.argv[i + 1]; })();
+const BASE_DIR = process.env.Q1M_BASE || "I:/Scratch/_q1m-pilot/base211-sonnet";
+const BASE = C211 ? JSON.parse(readFileSync(join(BASE_DIR, "out", "base.json"), "utf8")) : null;
+if (BASE && BASE.dry !== !!STUB) throw new Error(`base.json is ${BASE.dry ? "a dry" : "a real"} base; this run is ${STUB ? "dry" : "real"}`);
+// clear arm: cornerman pinned exactly as arm.mjs pins it; clear211: as base.mjs pins it.
+const CM_TAG = C211 ? "d7c1445" : "v0.7.2", CM_SHA = C211 ? "d7c14458534ddf202d74f6555bdb9d7e5d753c11" : "a8c36539063ae3871745a41d46be376d873e84fd";
+const CM_VERSION = C211 ? "0.7.3" : "0.7.2";
 const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}`;
 const CM_NUDGE = 250000;
 const MODEL_ID = "claude-sonnet-5-5";
 
 // The parent: pilot 3, scored and parked.
-const PARENT = "I:/Scratch/_q1m-pilot/default-sonnet-r3";
-const PARENT_SID = "9f17f65f-b298-4272-877c-a8eb2e286255";
-const FORK_MSG = "msg_011Cgy5CiyhMKuLH8UdtZW6i";
+const PARENT = BASE ? BASE_DIR : "I:/Scratch/_q1m-pilot/default-sonnet-r3";
+const PARENT_SID = BASE ? BASE.session : "9f17f65f-b298-4272-877c-a8eb2e286255";
+const FORK_MSG = BASE ? BASE.forkMessage : "msg_011Cgy5CiyhMKuLH8UdtZW6i";
 // --resume-session-at takes the transcript entry's uuid, not the API message id (r1 failed on
 // that, US$0): the entry at line 2695, the Bash call that commits cp43 and runs the gate.
-const FORK_UUID = "21df1607-cafb-4752-84ca-93fd876f2e2f";
-const FORK_HEAD = "55ac83d0a688cb1739566a1516b10133ef444c58"; // "cp43: COUNTIF and AVERAGEIF"
-const PARENT_COST = 23.73828820000001; // pilot 3's own total_cost_usd, carried into every fork
+const FORK_UUID = BASE ? BASE.forkUuid : "21df1607-cafb-4752-84ca-93fd876f2e2f";
+const FORK_HEAD = BASE ? BASE.forkHead : "55ac83d0a688cb1739566a1516b10133ef444c58"; // "cp43: COUNTIF and AVERAGEIF"
+// The parent's own total_cost_usd, carried into every fork. The base ran as one session, so its
+// final figure is used; its BASE END turn after the fork point costs cents, taken off with it.
+const PARENT_COST = BASE ? BASE.cost : 23.73828820000001;
 const FORK_CP = 43; // gate state: cp43 revealed, not yet done
-const BASE_CTX = 457180; // context at the fork message: 2 + 2,040 + 454,259 input, 879 output
-const PROJECT_KEY = "I--Scratch--q1m-default-sonnet-r3-repo";
-const LIVE = "I:/Scratch/_q1m/default-sonnet-r3";
-const FORK_PARK = "I:/Scratch/_q1m-fork";
+const BASE_CTX = BASE ? BASE.baseCtx : 457180; // context at the fork message: 2 + 2,040 + 454,259 input, 879 output
+const PROJECT_KEY = BASE ? BASE.projectKey : "I--Scratch--q1m-default-sonnet-r3-repo";
+// The base's transcript holds the base's live paths, so its forks run there (base.mjs BASE_LIVE).
+const LIVE = BASE ? (process.env.Q1M_FORK_LIVE || "I:/Scratch/_q1m/base211-sonnet") : "I:/Scratch/_q1m/default-sonnet-r3";
+const FORK_PARK = process.env.Q1M_FORK_PARK || "I:/Scratch/_q1m-fork";
 const ROOT = cmd === "score" ? join(FORK_PARK, name) : LIVE;
 const HOME = join(ROOT, "home"), CONFIG = join(HOME, ".claude"), REPO = join(ROOT, "repo");
 const RUN = join(ROOT, "run"), OUT = join(ROOT, "out"), TMP = join(ROOT, "tmp");
@@ -77,6 +92,7 @@ const ROAMING = process.env.APPDATA || join(homedir(), "AppData", "Roaming");
 const CLAUDE = join(ROAMING, "npm", "node_modules", "@anthropic-ai", "claude-code", "bin", "claude.exe");
 const CLI_VERSION = "2.1.316";
 const token = () => readFileSync(join(homedir(), ".claude", "secrets", "claude-oauth-token"), "utf8").trim();
+const auth = () => (STUB ? { ANTHROPIC_BASE_URL: STUB, ANTHROPIC_API_KEY: "sk-ant-stub-not-a-key" } : { CLAUDE_CODE_OAUTH_TOKEN: token() });
 const events = (line) => { mkdirSync(OUT, { recursive: true }); appendFileSync(join(OUT, "events.log"), `${new Date().toISOString()} ${line}\n`); console.log(line); };
 const sha = (b) => createHash("sha256").update(b).digest("hex");
 const git = (...a) => execFileSync("git", ["-C", REPO, ...a], { encoding: "utf8", maxBuffer: 1 << 28 });
@@ -90,7 +106,7 @@ function env() {
   }
   return Object.assign(e, {
     USERPROFILE: HOME, HOME, HOMEDRIVE: HOME.slice(0, 2), HOMEPATH: HOME.slice(2),
-    CLAUDE_CONFIG_DIR: CONFIG, TEMP: TMP, TMP, CLAUDE_CODE_OAUTH_TOKEN: token(), DISABLE_AUTOUPDATER: "1",
+    CLAUDE_CONFIG_DIR: CONFIG, TEMP: TMP, TMP, ...auth(), DISABLE_AUTOUPDATER: "1",
   });
 }
 const ALLOWED = [
@@ -122,6 +138,8 @@ function setup() {
   const P = join(PARENT, "home");
   cpSync(join(P, ".gitconfig"), join(HOME, ".gitconfig"));
   for (const f of [".claude.json", "settings.json", "CLAUDE.md", "rules", "skills"]) cpSync(join(P, ".claude", f), join(CONFIG, f), { recursive: true });
+  // clear211: the base's settings.json enables cornerman, which is installed again below.
+  if (C211) { const st = JSON.parse(readFileSync(join(CONFIG, "settings.json"), "utf8")); delete st.enabledPlugins; writeFileSync(join(CONFIG, "settings.json"), JSON.stringify(st, null, 2) + "\n"); }
 
   // Repo at cp43 committed, cp44 not revealed. node_modules is ignored and pilot 3 has none.
   execFileSync("git", ["clone", "--quiet", "--no-hardlinks", join(PARENT, "repo"), REPO]);
@@ -159,13 +177,23 @@ function setup() {
   const info = { name, arm, fillTo, parent: PARENT, parentSession: PARENT_SID, forkMessage: FORK_MSG, forkHead: FORK_HEAD, cli,
     transcriptSha: sha(readFileSync(tr)), probesAnswered: Object.keys(probes), gateLogLines: kept.length };
   if (fillTo) Object.assign(info, buildTopup());
-  if (arm === "clear") {
+  if (CLEARS) {
     // The plugin goes into the fork's own config, as arm.mjs installs it for the CM arms.
     for (const a of [["plugin", "marketplace", "add", pinnedCornerman()], ["plugin", "install", "cornerman@cornerman"]]) {
       const r = spawnSync(CLAUDE, a, { cwd: HOME, env: env(), encoding: "utf8" });
       if (r.status !== 0) throw new Error(`claude ${a.join(" ")} -> exit ${r.status}: ${r.stderr}`);
     }
     Object.assign(info, { cornerman: pluginVersion(), cornermanTag: CM_TAG, cornermanSha: CM_SHA, nudgeAt: CM_NUDGE });
+  }
+  if (C211) {
+    // --fork-session gives the fork a new session id, and the rulings log is kept per session id.
+    // In the use this models there is no fork: the session that heard the rulings is the one that
+    // saves. So the fork's id is fixed here (--session-id) and the base's log copied to it as is.
+    const forkSid = randomUUID();
+    const from = join(PARENT, "cm-store", "rulings", `${PARENT_SID}.jsonl`);
+    mkdirSync(join(ROOT, "cm-store", "rulings"), { recursive: true });
+    cpSync(from, join(ROOT, "cm-store", "rulings", `${forkSid}.jsonl`));
+    Object.assign(info, { forkSession: forkSid, rulingsLogSha: sha(readFileSync(from)), base: BASE });
   }
   writeFileSync(join(OUT, "fork.json"), JSON.stringify(info, null, 2));
   events(`setup ${name}: fork of ${PARENT_SID} at ${FORK_MSG}, repo at ${FORK_HEAD.slice(0, 7)}, gate cp${FORK_CP}, claude-code ${cli}${fillTo ? `, top-up ${info.topupChars} chars (~${info.topupTokensEst} tokens) for ${fillTo}` : ""}${info.cornerman ? `, cornerman ${info.cornerman} (${CM_TAG} ${CM_SHA.slice(0, 7)}) nudge ${CM_NUDGE}` : ""}`);
@@ -220,7 +248,10 @@ function verify() {
   ok("claude-code pinned", (() => { try { assertCli(); return true; } catch { return false; } })());
   ok("repo HEAD is cp43", git("rev-parse", "HEAD").trim() === FORK_HEAD);
   const st = git("status", "--porcelain").trim().split("\n").filter(Boolean);
-  ok("only test/visible untracked", st.length === 1 && st[0] === "?? test/visible/", st.join(" | "));
+  // clear211: a base whose agent kept no tests of its own shows the whole test/ folder untracked.
+  const others = git("ls-files", "--others", "--exclude-standard").trim().split("\n").filter(Boolean);
+  ok("only test/visible untracked", C211 ? st.every((l) => l.startsWith("?? test/")) && others.every((f) => f.startsWith("test/visible/"))
+    : st.length === 1 && st[0] === "?? test/visible/", st.join(" | "));
   ok("PROBES.md holds P1-P3 only", (() => { const t = readFileSync(join(REPO, "PROBES.md"), "utf8"); return /P3\.10:/.test(t) && !/P4\./.test(t); })());
   const s = JSON.parse(readFileSync(join(RUN, "gate-state.json"), "utf8"));
   ok("gate at cp43, not finished", s.current === FORK_CP && !s.finished);
@@ -232,21 +263,31 @@ function verify() {
   const pass = Number((/^# pass (\d+)/m.exec(vt.stdout || "") || [])[1] || 0), fail = Number((/^# fail (\d+)/m.exec(vt.stdout || "") || [])[1] || 0);
   ok("visible tests cp01-43 pass on the fork tree", vt.status === 0 && pass > 0 && fail === 0, `pass ${pass} fail ${fail}`);
   const tr = readFileSync(join(TRANSCRIPTS, `${PARENT_SID}.jsonl`), "utf8").split("\n");
-  const at = tr.findIndex((l) => l.includes(`"id":"${FORK_MSG}"`) && l.includes(`"uuid":"${FORK_UUID}"`) && l.includes("node gate.mjs next"));
+  // clear211: the agent may chain the gate call (`git commit ... && node gate.mjs next`); in the dry
+  // check the stub's call is dry-agent.mjs, which runs the gate itself.
+  const gateCall = C211 ? /gate\.mjs next|dry-agent\.mjs/ : /node gate\.mjs next/;
+  const at = tr.findIndex((l) => l.includes(`"id":"${FORK_MSG}"`) && l.includes(`"uuid":"${FORK_UUID}"`) && gateCall.test(l));
   ok("transcript has the fork message (Bash: commit cp43 && gate next)", at !== -1, `line ${at + 1}`);
   const sid = (l) => { try { return JSON.parse(l).sessionId; } catch { return null; } };
   ok("transcript session id", sid(tr[0]) === PARENT_SID || sid(tr[1]) === PARENT_SID);
-  ok("transcript paths point at the live fork", tr[at].includes("I:\\\\Scratch\\\\_q1m\\\\default-sonnet-r3\\\\repo") || tr.slice(0, at).some((l) => l.includes("_q1m\\\\default-sonnet-r3\\\\repo")));
+  const liveRepo = JSON.stringify(resolve(REPO)).slice(1, -1); // as JSON writes it: I:\\Scratch\\...
+  ok("transcript paths point at the live fork", tr.slice(0, at + 1).some((l) => l.includes(liveRepo)), liveRepo);
   if (fillTo) {
     const f = JSON.parse(readFileSync(join(OUT, "fork.json"), "utf8"));
     ok("top-up file matches its recorded hash", sha(readFileSync(join(ROOT, "topup.txt"), "utf8")) === f.topupSha, `${f.topupChars} chars, ~${f.topupTokensEst} tokens, ${f.undiciFiles} undici files`);
     ok("top-up has no spreadsheet words in the undici part", !/spreadsheet|formula|COUNTIF|#REF!|#DIV\/0|workbook/i.test(readFileSync(join(ROOT, "topup.txt"), "utf8").split("=== end of undici ===")[0].slice(600)));
   }
-  if (arm === "clear") {
-    ok("cornerman 0.7.2 installed in the fork config", existsSync(pluginBase()) && pluginVersion() === "0.7.2" && existsSync(join(pluginDir(), "scripts", "save.mjs")), existsSync(pluginBase()) ? pluginVersion() : "missing");
+  if (CLEARS) {
+    ok(`cornerman ${CM_VERSION} installed in the fork config`, existsSync(pluginBase()) && pluginVersion() === CM_VERSION && existsSync(join(pluginDir(), "scripts", "save.mjs")), existsSync(pluginBase()) ? pluginVersion() : "missing");
     ok("cornerman enabled in settings.json", JSON.stringify(JSON.parse(readFileSync(join(CONFIG, "settings.json"), "utf8")).enabledPlugins || {}).includes("cornerman@cornerman"));
     ok("cornerman source pinned", (() => { try { return !!pinnedCornerman(); } catch { return false; } })());
-    ok("no cornerman store yet", !existsSync(join(ROOT, "cm-store")));
+    if (!C211) ok("no cornerman store yet", !existsSync(join(ROOT, "cm-store")));
+    else {
+      const f = JSON.parse(readFileSync(join(OUT, "fork.json"), "utf8")), store = join(ROOT, "cm-store");
+      ok("store holds only the fork's rulings log", JSON.stringify(readdirSync(store)) === '["rulings"]' && JSON.stringify(readdirSync(join(store, "rulings"))) === JSON.stringify([`${f.forkSession}.jsonl`]));
+      ok("the fork's rulings log is the base's, unchanged", sha(readFileSync(join(store, "rulings", `${f.forkSession}.jsonl`))) === f.rulingsLogSha);
+      ok("cornerman has the rulings log code", existsSync(join(pluginDir(), "scripts", "lib", "rulings.mjs")));
+    }
   } else {
     ok("no cornerman plugin in the config", !existsSync(join(CONFIG, "plugins")));
   }
@@ -310,7 +351,7 @@ async function run() {
   writeFileSync(join(LOCK, "owner.txt"), `${name} since ${new Date().toISOString()} pid ${process.pid}\n`);
   const gate = spawn(process.execPath, [join(HERE, "gate-server.mjs"), "--repo", REPO, "--run", RUN], { stdio: ["ignore", "pipe", "inherit"] });
   await new Promise((ok) => gate.stdout.once("data", ok));
-  events(`run ${name}: gate up at cp ${gateStatus().current}, model ${MODEL_ID}, arm ${arm}, claude-code ${cli}${arm === "clear" ? `, cornerman ${pluginVersion()} nudge ${CM_NUDGE}` : ""}`);
+  events(`run ${name}${STUB ? " (DRY, stub)" : ""}: gate up at cp ${gateStatus().current}, model ${MODEL_ID}, arm ${arm}, claude-code ${cli}${CLEARS ? `, cornerman ${pluginVersion()} nudge ${CM_NUDGE}` : ""}`);
   writeFileSync(join(OUT, "started.txt"), new Date().toISOString() + "\n");
   // total_cost_usd is cumulative per session: keep the last figure per session, sum the sessions.
   const costs = new Map();
@@ -319,11 +360,12 @@ async function run() {
   let waits = 0;
   const wait = async (why) => { waits++; events(`usage limit${why}: wait 20 min (wait ${waits})`); await sleep(WAIT); };
   try {
-    const cm = arm === "clear" ? await clearKit() : null;
+    const cm = CLEARS ? await clearKit() : null;
     let chain = 1, chainStarted = Date.now();
     // Segment 1 forks. Until a model call has run the fork is retried after a limit wait.
     let sid = null, n = 0, r = null;
-    const forkArgs = [...CLAUDE_ARGS, "--resume", PARENT_SID, "--resume-session-at", FORK_UUID, "--fork-session"];
+    const forkArgs = [...CLAUDE_ARGS, "--resume", PARENT_SID, "--resume-session-at", FORK_UUID, "--fork-session",
+      ...(C211 ? ["--session-id", JSON.parse(readFileSync(join(OUT, "fork.json"), "utf8")).forkSession] : [])];
     const first = arm === "compact" ? "/compact" : fillTo ? readFileSync(join(ROOT, "topup.txt"), "utf8") : CONTINUE;
     while (!sid) {
       n++;
@@ -368,8 +410,11 @@ async function run() {
     // cur.first: a fresh clear segment's opening prompt, kept until a model call has run on it, so
     // a limit before that call re-sends it (in a new session id) instead of a bare CONTINUE.
     let cur = { sid, forked: true, first: null }, stale = 0, last = gateStatus().current;
+    // Dry check only: stop after this many segments (the stub never reaches ALL DONE on its own terms).
+    const DRY_CAP = STUB ? Number(process.env.Q1M_DRY_MAX_SEGMENTS || 2) : Infinity;
     const fresh = (prompt) => { cur = { sid: randomUUID(), forked: false, first: prompt }; return [[...CLAUDE_ARGS, "--session-id", cur.sid], prompt]; };
     while (!gateStatus().finished) {
+      if (n >= DRY_CAP) { events(`dry: stopped after ${n} segments`); break; }
       if (r.limited) await wait("");
       let args = [...CLAUDE_ARGS, "--resume", cur.sid], input = CONTINUE, how = `resume ${cur.sid}`;
       const saved = cm ? cm.savedSince(chainStarted) : [];
@@ -414,7 +459,7 @@ async function run() {
 // scripts/lib/run.mjs at v0.7.2 (prompts, savedSince, the archive calls), max segments unlimited.
 async function clearKit() {
   const D = pluginDir();
-  if (pluginVersion() !== "0.7.2") throw new Error(`cornerman ${pluginVersion()} installed, expected 0.7.2`);
+  if (pluginVersion() !== CM_VERSION) throw new Error(`cornerman ${pluginVersion()} installed, expected ${CM_VERSION}`);
   const S = await import(pathToFileURL(join(D, "scripts", "lib", "store.mjs")).href);
   const P = await import(pathToFileURL(join(D, "packages", "store", "store.mjs")).href);
   const STORE = join(ROOT, "cm-store"), RUNNER = "cornerman-run";

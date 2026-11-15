@@ -14,15 +14,23 @@ function book() {
   return { b, m, d };
 }
 
-test("cp53h names() writes the sheet as typed and the cells normalised", () => {
+test("cp53c ruling: book.names() writes the sheet part as it was typed in ref", () => {
   const { b } = book();
   b.defineName("total", "data!b3:a1");
   b.defineName("First", "DATA!c2");
+  b.defineName("mixed", "dAtA!A1");
+  assert.deepEqual(b.names(), { FIRST: "DATA!C2", MIXED: "dAtA!A1", TOTAL: "data!A1:B3" });
+});
+
+test("cp53h names() writes the cells normalised", () => {
+  const { b } = book();
+  b.defineName("total", "Data!b3:a1");
+  b.defineName("First", "Data!c2");
   b.defineName("one", "Data!A1:A1");
   b.defineConstant("rate", 0.5);
   b.defineConstant("LABEL", 'say "hi"');
   b.defineName("Later", "Nope!A1");
-  assert.deepEqual(b.names(), { FIRST: "DATA!C2", LABEL: '="say ""hi"""', LATER: "Nope!A1", ONE: "Data!A1:A1", RATE: "=0.5", TOTAL: "data!A1:B3" });
+  assert.deepEqual(b.names(), { FIRST: "Data!C2", LABEL: '="say ""hi"""', LATER: "Nope!A1", ONE: "Data!A1:A1", RATE: "=0.5", TOTAL: "Data!A1:B3" });
   b.defineConstant("Total", 1);
   assert.equal(b.names().TOTAL, "=1");
   assert.equal(b.removeName("total"), true);
@@ -211,13 +219,13 @@ test("cp53h saved after the sheets, only when there are any", () => {
   const { b, m } = book();
   const plain = b.save();
   assert.equal(plain, '{"format":"workbook","version":2,"errorOrder":"priority","sheets":[{"name":"Main","cells":{},"names":{}},{"name":"Data","cells":{"A1":"1","A2":"2","A3":"3"},"names":{}}]}');
-  b.defineName("all", "data!a1:a3");
+  b.defineName("all", "Data!a1:a3");
   b.defineConstant("K", true);
   m.set("A1", "=SUM(ALL)*K");
   const text = b.save();
-  assert.equal(text, '{"format":"workbook","version":2,"errorOrder":"priority","sheets":[{"name":"Main","cells":{"A1":"=SUM(ALL)*K"},"names":{}},{"name":"Data","cells":{"A1":"1","A2":"2","A3":"3"},"names":{}}],"names":{"ALL":"data!A1:A3","K":"=TRUE"}}');
+  assert.equal(text, '{"format":"workbook","version":2,"errorOrder":"priority","sheets":[{"name":"Main","cells":{"A1":"=SUM(ALL)*K"},"names":{}},{"name":"Data","cells":{"A1":"1","A2":"2","A3":"3"},"names":{}}],"names":{"ALL":"Data!A1:A3","K":"=TRUE"}}');
   const c = loadWorkbook(text);
-  assert.deepEqual(c.names(), { ALL: "data!A1:A3", K: "=TRUE" });
+  assert.deepEqual(c.names(), { ALL: "Data!A1:A3", K: "=TRUE" });
   assert.equal(c.sheet("main").get("A1"), 6);
   assert.equal(c.save(), text);
   b.removeName("ALL");

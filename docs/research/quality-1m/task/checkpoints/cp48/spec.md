@@ -15,8 +15,8 @@ A sheet can now reorder the rows of a range by the values in one of its columns.
 - The key of each row is the value its `column` cell has before the sort (what `get` gives then).
 - Ascending order: numbers (smallest first, equal within the checkpoint 8 tolerance), then text
   (A to Z, ignoring case), then booleans (`FALSE` before `TRUE`), then errors, then empty cells.
-- Descending order: booleans (`TRUE` first), then text (Z to A), then numbers (largest first), then
-  errors, then empty cells. Errors and empty cells stay last.
+- Descending order: booleans (`TRUE` first), then text (Z to A), then numbers (largest first).
+  Where errors go follows what we agreed when ISERROR and IFERROR were built. Empty cells stay last.
 - The sort is stable in both directions: rows whose keys are equal (all errors are equal, and all
   empty cells) keep the order they had. So descending is not ascending reversed. This is NOT what
   you might expect.

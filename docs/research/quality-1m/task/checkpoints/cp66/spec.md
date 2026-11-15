@@ -21,10 +21,9 @@ it changed in the workbook is put back.
   it ends, each sheet whose inputs differ from before the batch gets one event listing those cells (as checkpoint 65 lists them),
   sheets in the order the batch first wrote to them. A batch that is rolled back fires no event for
   the sheets of this workbook.
-- `book.addSheet`, `book.removeSheet`, `book.renameSheet`, `book.deleteSheet` and `book.batch` throw
-  `#BATCH` when called while `fn` runs (`cell` = the method name, such as `"addSheet"`), changing
-  nothing. Thrown out of `fn`, that error rolls the batch back like any other. This is NOT what you
-  might expect (a nested batch is refused, not joined).
+- `book.addSheet`, `book.removeSheet`, `book.renameSheet` and `book.deleteSheet` throw `#BATCH` when
+  called while `fn` runs (`cell` = the method name, such as `"addSheet"`), changing nothing. Thrown
+  out of `fn`, that error rolls the batch back like any other.
 
 ## Rollback
 
@@ -46,11 +45,10 @@ When `fn` throws, before `batch` throws:
 
 ## Errors
 
-`batch` checks, in this order, and throws at the first failure, calling nothing:
+`batch` checks, and throws when it fails, calling nothing:
 
 | Check | `code` | `cell` |
 | --- | --- | --- |
-| no batch of this workbook is running | `#BATCH` | `"batch"` |
 | `fn` is a function | `#ARG` | `String(fn)` |
 
 Add a line for this checkpoint to CHANGES.md, as in checkpoint 40.

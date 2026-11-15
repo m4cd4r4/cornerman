@@ -21,7 +21,7 @@ test("cp73h names first by name, then references by address, each pair once", ()
   assert.equal(s.lint().length, 8);
 });
 
-test("cp73h cells inside ranges and behind names are never listed", () => {
+test("cp73c ruling: only one-cell references count, never cells in a range or behind a name", () => {
   const s = createSheet();
   s.set("A1", "1");
   s.defineName("SPOT", "H8");

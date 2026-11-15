@@ -45,7 +45,15 @@ test("cp67h grouping parentheses count as deeply as function calls", () => {
   assert.throws(() => s.set("A6", "=1+" + deep(17).slice(1)), limit("A6"));
 });
 
-test("cp67h parentheses in strings do not count; stray ) is ignored", () => {
+test("cp67c ruling: a ) with nothing open is ignored", () => {
+  const s = createSheet();
+  s.set("A5", "=" + ")".repeat(5) + "(".repeat(16));
+  assert.equal(err(s.get("A5")), "#PARSE!@A5");
+  assert.throws(() => s.set("A6", "=" + ")".repeat(3) + "(".repeat(17)), limit("A6"));
+  assert.throws(() => s.set("A7", "=1)" + "(".repeat(17)), limit("A7"));
+});
+
+test("cp67h parentheses in strings do not count", () => {
   const s = createSheet();
   s.set("A1", '=LEN("' + "(".repeat(40) + '")');
   assert.equal(s.get("A1"), 40);
@@ -54,9 +62,6 @@ test("cp67h parentheses in strings do not count; stray ) is ignored", () => {
   s.set("A3", '="' + "(".repeat(30));
   assert.equal(err(s.get("A3")), "#PARSE!@A3");
   assert.throws(() => s.set("A4", '=""&' + deep(17).slice(1)), limit("A4"));
-  s.set("A5", "=" + ")".repeat(5) + "(".repeat(16));
-  assert.equal(err(s.get("A5")), "#PARSE!@A5");
-  assert.throws(() => s.set("A6", "=" + ")".repeat(3) + "(".repeat(17)), limit("A6"));
   s.set("A7", "=" + "(1)".repeat(300));
   assert.equal(err(s.get("A7")), "#PARSE!@A7");
 });

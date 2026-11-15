@@ -34,14 +34,6 @@ sheet for good: the references to it are rewritten as `#REF!`.
   `#REF!` error). A sheet added later with the deleted sheet's name is NOT read by these formulas;
   that is the difference from `removeSheet`.
 
-## Workbook names
-
-- Every workbook name (checkpoint 53) whose target is on the deleted sheet is removed from the
-  book. A formula that used it then gives `#NAME?`, unless its own sheet has a name of that name.
-  This is NOT what Excel does (Excel keeps the name, pointing at `#REF!`). Workbook constants and
-  names on other sheets are kept. Each sheet's own names never point at another sheet and are
-  kept.
-
 ## Undo
 
 A delete is not recorded for undo. It clears the undo and redo lists of every sheet that was in

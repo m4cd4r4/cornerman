@@ -21,6 +21,14 @@ test("cp48h ascending: numbers, text, booleans, errors, empty; stable", () => {
 });
 
 test("cp48h descending reverses the value groups only, and stays stable", () => {
+  const s = createSheet();
+  s.fromCSV("b,1\n10,2\nA,3\n,4\n2,5\n=TRUE,6\na,7\n=FALSE,8\n10,9", "A1");
+  s.sort("A1:B9", "A", { descending: true });
+  assert.deepEqual(shown(s, "A", 9), ["TRUE", "FALSE", "b", "A", "a", "10", "10", "2", ""]);
+  assert.deepEqual(shown(s, "B", 9), ["6", "8", "1", "3", "7", "2", "9", "5", "4"]);
+});
+
+test("cp48c ruling: in a descending sort errors stay after every value, before empty cells", () => {
   const s = mixed();
   s.sort("A1:B10", "A", { descending: true });
   assert.deepEqual(shown(s, "A", 10), ["TRUE", "FALSE", "b", "A", "a", "10", "10", "2", "#DIV/0!", ""]);

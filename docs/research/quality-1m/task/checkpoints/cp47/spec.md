@@ -21,8 +21,6 @@ before; the other cells of the merge are "covered": they read as empty.
   `""`, and every formula that reads it (directly, in a range, by a name, or from another sheet of
   the workbook) sees an empty cell. `SUM(A1:C2)` over a merge `A1:B2` adds only `A1`, `C1` and
   `C2`.
-- A formula in a covered cell is not evaluated while it is covered, so it adds nothing to
-  `stats().evaluations`, and `recalc()` (checkpoint 12) never lists it.
 - `toCSV()` writes `""` for a covered cell, and so does `toCSV({ formulas: true })`.
 - Precedents, dependents and cycles still come from formula text (checkpoints 9 and 10): a formula
   that reads a covered cell still has it as a precedent.

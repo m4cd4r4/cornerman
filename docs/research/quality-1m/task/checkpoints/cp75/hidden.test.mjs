@@ -48,25 +48,33 @@ test("cp75h clear counts the cells it empties; nothing to clear is no undo step"
   assert.equal(s.get("C3"), 0);
 });
 
-test("cp75h clear removes inputs only; covered cells keep their hidden inputs", () => {
+test("cp75c ruling: clear skips covered cells and does not count them", () => {
   const s = createSheet();
-  s.setMany({ A1: "5", B1: "under", A2: "7", A3: "3" });
+  s.setMany({ A1: "5", B1: "under", C1: "x" });
+  s.merge("A1:B1");
+  assert.equal(s.clear("A1:C1"), 2);
+  assert.deepEqual(s.addresses(), ["B1"]);
+  s.unmerge("A1");
+  assert.equal(s.value("B1"), "under");
+  assert.equal(s.clear("B1"), 1);
+  assert.deepEqual(s.addresses(), []);
+});
+
+test("cp75h clear removes inputs only", () => {
+  const s = createSheet();
+  s.setMany({ A1: "5", A2: "7", A3: "3" });
   s.setFormat("A2", "0.00");
   s.setNote("A2", "kept");
   s.setValidation("A3", { type: "whole", min: 1, max: 9 });
   s.merge("A1:B1");
   s.hideRows(3);
   assert.equal(s.clear("A1:B3"), 3);
-  assert.deepEqual(s.addresses(), ["B1"]);
+  assert.deepEqual(s.addresses(), []);
   assert.equal(s.getFormat("A2"), "0.00");
   assert.equal(s.getNote("A2"), "kept");
   assert.deepEqual(s.getValidation("A3"), { type: "whole", min: 1, max: 9 });
   assert.deepEqual(s.merges(), ["A1:B1"]);
   assert.deepEqual(s.hiddenRows(), [3]);
-  s.unmerge("A1");
-  assert.equal(s.value("B1"), "under");
-  assert.equal(s.clear("B1"), 1);
-  assert.deepEqual(s.addresses(), []);
 });
 
 test("cp75h clear and protection: a locked cell with an input refuses, an empty one does not", () => {

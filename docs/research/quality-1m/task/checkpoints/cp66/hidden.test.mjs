@@ -129,11 +129,22 @@ test("cp66h rollback restores every undo and redo list", () => {
   assert.equal(m.getInput("B1"), "m1");
 });
 
-test("cp66h sheet-list methods and nested batches throw #BATCH", () => {
+test("cp66c ruling: a batch started inside a running batch of the same workbook throws #BATCH", () => {
+  const { b, m } = book();
+  for (const call of [(x) => x.batch(() => 1), (x) => x.batch(5)]) {
+    assert.throws(() => b.batch((x) => { m.set("Z1", "z"); call(x); }), thrown("#BATCH", "batch"));
+    assert.equal(m.getInput("Z1"), null);
+  }
+  let inner = 0;
+  assert.throws(() => b.batch((x) => x.batch(() => { inner++; })), thrown("#BATCH", "batch"));
+  assert.equal(inner, 0);
+});
+
+test("cp66h sheet-list methods throw #BATCH; another workbook's batch runs", () => {
   const { b, m } = book();
   const other = createWorkbook();
   other.addSheet("O");
-  for (const [k, call] of [["addSheet", (x) => x.addSheet("New")], ["removeSheet", (x) => x.removeSheet("Data")], ["renameSheet", (x) => x.renameSheet("Data", "D2")], ["deleteSheet", (x) => x.deleteSheet("Data")], ["batch", (x) => x.batch(() => 1)], ["batch", (x) => x.batch(5)]]) {
+  for (const [k, call] of [["addSheet", (x) => x.addSheet("New")], ["removeSheet", (x) => x.removeSheet("Data")], ["renameSheet", (x) => x.renameSheet("Data", "D2")], ["deleteSheet", (x) => x.deleteSheet("Data")]]) {
     assert.throws(() => b.batch((x) => { m.set("Z1", "z"); call(x); }), thrown("#BATCH", k), k);
     assert.equal(m.getInput("Z1"), null);
   }

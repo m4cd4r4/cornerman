@@ -38,7 +38,7 @@ test("cp47h covered cells keep their inputs and read as empty", () => {
   assert.equal(s.get("D2"), 2);
 });
 
-test("cp47h covered formulas are not evaluated; graph from text", () => {
+test("cp47c ruling: a covered formula is not evaluated and recalc never lists it", () => {
   const s = sheet();
   s.get("D1");
   s.set("C3", "=C2*10");
@@ -50,6 +50,15 @@ test("cp47h covered formulas are not evaluated; graph from text", () => {
   assert.equal(s.get("C2"), null);
   assert.ok(s.stats().evaluations - before <= 3);
   assert.deepEqual(s.recalc(), []);
+});
+
+test("cp47h covered formulas read as empty; graph from text", () => {
+  const s = sheet();
+  s.get("D1");
+  s.set("C3", "=C2*10");
+  s.merge("C1:C2");
+  assert.equal(s.get("C2"), null);
+  assert.equal(s.get("C3"), 0);
   assert.deepEqual(s.precedents("C3"), ["C2"]);
   assert.deepEqual(s.dependents("C2"), ["D1", "C3"]);
   s.set("C3", "=C3+C2");

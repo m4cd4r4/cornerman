@@ -108,19 +108,26 @@ const distinct = new Set([...rows.flatMap((r) => r.rules || []), ...commitViolat
 // hidden file ran, and no failed test carries its prefix. Reported beside the primary late rate, never
 // folded into it: overall, and per regime (triggers cp35-58 vs cp59-80).
 const EARLY_LAST = 58;
-const chatCount = (cp) => {
-  const f = join(CPS, cp, "hidden.test.mjs");
-  return existsSync(f) ? [...readFileSync(f, "utf8").matchAll(/^test\("(cp\d\d)c chat: /gm)].length : 0;
-};
-const chat = { total: 0, passed: 0, early: { total: 0, passed: 0 }, late: { total: 0, passed: 0 } };
-for (const [i0, r] of rows.entries()) {
-  const total = chatCount(r.cp);
-  const ran = r.reached && r.hidden && r.hidden.total > 0;
-  const failed = ran ? r.hidden.failed.filter((x) => x.startsWith(`${r.cp}c chat:`)).length : total;
-  r.chat = { total, passed: total - Math.min(total, failed) };
-  const regime = i0 + 1 <= EARLY_LAST ? chat.early : chat.late;
-  for (const t of [chat, regime]) { t.total += r.chat.total; t.passed += r.chat.passed; }
+// The clear-arm retest adds a second group the same way, `cpNNc ruling: ...`: a fact the harness sent
+// once as a user message (harness/rulings.json), never in a spec. Scored and reported separately.
+function layer(tag) {
+  const count = (cp) => {
+    const f = join(CPS, cp, "hidden.test.mjs");
+    return existsSync(f) ? [...readFileSync(f, "utf8").matchAll(new RegExp(`^test\\("(cp\\d\\d)c ${tag}: `, "gm"))].length : 0;
+  };
+  const sum = { total: 0, passed: 0, early: { total: 0, passed: 0 }, late: { total: 0, passed: 0 } };
+  for (const [i0, r] of rows.entries()) {
+    const total = count(r.cp);
+    const ran = r.reached && r.hidden && r.hidden.total > 0;
+    const failed = ran ? r.hidden.failed.filter((x) => x.startsWith(`${r.cp}c ${tag}:`)).length : total;
+    r[tag] = { total, passed: total - Math.min(total, failed) };
+    const regime = i0 + 1 <= EARLY_LAST ? sum.early : sum.late;
+    for (const t of [sum, regime]) { t.total += r[tag].total; t.passed += r[tag].passed; }
+  }
+  return sum;
 }
+const chat = layer("chat");
+const ruling = layer("ruling");
 
 const late = K ? rows.slice(K - 1) : [];
 const summary = {
@@ -129,6 +136,7 @@ const summary = {
   passed: rows.filter((r) => r.pass).length,
   k: K, latePassed: late.filter((r) => r.pass).length, lateTotal: late.length,
   chat,
+  ruling,
   regressions: regress.length,
   ruleViolations: rows.reduce((s, r) => s + (r.rules?.length || 0), 0) + commitViolations.length,
   ruleViolationsDistinct: distinct.size,
@@ -138,7 +146,7 @@ const summary = {
 const result = { summary, rows, regress, commitViolations, probes };
 if (JSON_FILE) writeFileSync(JSON_FILE, JSON.stringify(result, null, 2));
 
-console.log(`reached ${summary.reached}/${summary.total}  passed ${summary.passed}  late ${K ? `${summary.latePassed}/${summary.lateTotal} from cp${String(K).padStart(2, "0")}` : "-"}  chat ${chat.passed}/${chat.total} (cp35-${EARLY_LAST} ${chat.early.passed}/${chat.early.total}, cp${EARLY_LAST + 1}-${ALL.length} ${chat.late.passed}/${chat.late.total})  regressions ${summary.regressions}  rule violations ${summary.ruleViolations} (${summary.ruleViolationsDistinct} distinct)  probes ${summary.probesRight}/${summary.probesTotal}`);
+console.log(`reached ${summary.reached}/${summary.total}  passed ${summary.passed}  late ${K ? `${summary.latePassed}/${summary.lateTotal} from cp${String(K).padStart(2, "0")}` : "-"}  chat ${chat.passed}/${chat.total} (cp35-${EARLY_LAST} ${chat.early.passed}/${chat.early.total}, cp${EARLY_LAST + 1}-${ALL.length} ${chat.late.passed}/${chat.late.total})${ruling.total ? `  ruling ${ruling.passed}/${ruling.total} (early ${ruling.early.passed}/${ruling.early.total}, late ${ruling.late.passed}/${ruling.late.total})` : ""}  regressions ${summary.regressions}  rule violations ${summary.ruleViolations} (${summary.ruleViolationsDistinct} distinct)  probes ${summary.probesRight}/${summary.probesTotal}`);
 if (tl) console.log(`tokens: sessions ${tl.sessions}  compactions ${tl.compactions}  peak ${tl.peak}  work ${tl.work}`);
 for (const r of rows) {
   if (r.pass && !r.rules?.length) continue;

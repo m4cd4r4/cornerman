@@ -65,10 +65,15 @@ test("cp60h every reference is a precedent, whichever value is picked", () => {
   assert.equal(err(s.get("B2")), "#CYCLE!@B2");
 });
 
-test("cp60h SWITCH compares type-strictly and with case", () => {
+test("cp60c ruling: SWITCH matches text only with the same case", () => {
   assert.equal(val('=SWITCH("a", "A", 1, 2)'), 2);
   assert.equal(val('=SWITCH("a", "A", 1)'), "#N/A@F6");
   assert.equal(val('=SWITCH("Ab", "ab", 1, "AB", 2, "Ab", 3)'), 3);
+  assert.equal(val('=IF("a" = "A", SWITCH("a", "A", "same", "differ"))'), "differ");
+});
+
+test("cp60h SWITCH compares type-strictly", () => {
+  assert.equal(val('=SWITCH("b", "b", 1, 2)'), 1);
   assert.equal(val('=SWITCH("5", 5, "n", "t")'), "t");
   assert.equal(val('=SWITCH(5, "5", 1, 5, 2)'), 2);
   assert.equal(val('=SWITCH(1, TRUE, "b", 1, "n")'), "n");
@@ -76,7 +81,6 @@ test("cp60h SWITCH compares type-strictly and with case", () => {
   assert.equal(val('=SWITCH(1=1, "TRUE", 1, FALSE, 2, TRUE, 3)'), 3);
   assert.equal(val('=SWITCH(0.1+0.2, 0.3, "yes", "no")'), "yes");
   assert.equal(val('=SWITCH(1, 1+10^-12, "near", "far")'), "near");
-  assert.equal(val('=IF("a" = "A", SWITCH("a", "A", "same", "differ"))'), "differ");
 });
 
 test("cp60h an empty cell counts as the number 0", () => {
@@ -128,7 +132,7 @@ test("cp60h names, constants, other sheets, insert, copy and rename", () => {
   m.defineConstant("PICK", 2);
   m.defineName("COLOURS", "B1:B3");
   m.set("A1", "=CHOOSE(PICK, Data!A1, Data!A2, Data!A3)");
-  m.set("A2", '=SWITCH(A1, "green", 1, "Green", 2, 0)');
+  m.set("A2", '=SWITCH(A1, "Green", 2, 0)');
   m.set("A3", "=CHOOSE(1, COLOURS)");
   assert.equal(m.get("A1"), "Green");
   assert.equal(m.get("A2"), 2);
@@ -139,11 +143,11 @@ test("cp60h names, constants, other sheets, insert, copy and rename", () => {
   b.renameSheet("Data", "Colours");
   assert.equal(m.getInput("A1"), "=CHOOSE(PICK, Colours!A1, Colours!A2, Colours!A3)");
   m.insertRows(1);
-  assert.equal(m.getInput("A3"), '=SWITCH(A2, "green", 1, "Green", 2, 0)');
+  assert.equal(m.getInput("A3"), '=SWITCH(A2, "Green", 2, 0)');
   m.copy("A3", "B4");
-  assert.equal(m.getInput("B4"), '=SWITCH(B3, "green", 1, "Green", 2, 0)');
+  assert.equal(m.getInput("B4"), '=SWITCH(B3, "Green", 2, 0)');
   assert.equal(m.get("B4"), 0);
-  assert.equal(m.canonical("A3"), '=SWITCH(A2,"green",1,"Green",2,0)');
+  assert.equal(m.canonical("A3"), '=SWITCH(A2,"Green",2,0)');
   const c = loadWorkbook(b.save());
   assert.equal(c.sheet("Main").get("A3"), 0);
   assert.equal(c.sheet("Main").get("A2"), "blue");

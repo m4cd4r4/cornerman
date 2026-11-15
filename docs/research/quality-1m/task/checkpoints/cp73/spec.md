@@ -10,8 +10,8 @@ uses, and references to cells that hold nothing.
 - `{ kind: "unused-name", name }`: a name the sheet itself defines (`defineName`, checkpoint 14, or
   `defineConstant`, checkpoint 52) that no formula on the sheet uses. `name` is upper case, as
   `names()` gives it.
-- `{ kind: "empty-ref", address, ref }`: the formula in `address` (upper case) writes a one-cell
-  reference to `ref`, and `ref` is empty. `ref` is written as `precedents()` labels a cell
+- `{ kind: "empty-ref", address, ref }`: the formula in `address` (upper case) has a reference to
+  `ref`, and `ref` is empty. `ref` is written as `precedents()` labels a cell
   (checkpoint 32): plain (`B1`) on the formula's own sheet, also when the reference names its own
   sheet (`Main!B1` written on `Main`), and `Name!B1` for another sheet of the workbook, with the
   sheet's name as the workbook has it (`data!b1` written in a formula, on a sheet added as `Data`,
@@ -42,10 +42,7 @@ and `ref` are listed once, however many times the formula writes that reference.
 
 ## Empty references
 
-- Only one-cell references written in the formula count. A cell inside a range (`A1:A3`), and the
-  cells a defined name points at, are never listed, even when they are empty: `=SUM(A1:A3)` with
-  `A2` empty gives no finding. This is NOT what you might expect.
-- Every one-cell reference in the text counts, also one in an `IF` branch that is not taken
+- A reference in the text counts also in an `IF` branch that is not taken
   (`=IF(TRUE, 1, B9)` lists `B9` when it is empty) or in any argument a function ignores. This is
   NOT what you might expect: `lint` does not care whether the cell would ever be read.
 - A cell is empty when it holds no input, or when it is a covered cell of a merge (checkpoint 47),

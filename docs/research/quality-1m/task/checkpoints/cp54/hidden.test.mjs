@@ -109,7 +109,7 @@ test("cp54h the deleted sheet keeps working on its own", () => {
   assert.equal(d.undo(), true);
 });
 
-test("cp54h workbook names on the deleted sheet are removed", () => {
+test("cp54c ruling: workbook names on the deleted sheet are removed", () => {
   const { b, m, x } = book();
   b.defineName("ALL", "data!A1:A3");
   b.defineName("FIRST", "DATA!A1");

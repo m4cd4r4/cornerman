@@ -18,7 +18,6 @@ however long.
    - A `"` starts a string literal, which runs to the next `"`; parentheses inside it do not count.
      A doubled `""` inside a string is a quote character and does not end it. A string that is never
      closed runs to the end of the input.
-   - A `)` with no `(` open before it is ignored.
    - Nesting is counted on the text, so a formula that does not parse is checked too: an input of
      `=` followed by 17 `(` is refused, not stored as `#PARSE!` (checkpoint 2).
 

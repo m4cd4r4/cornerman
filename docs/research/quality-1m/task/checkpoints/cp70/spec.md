@@ -41,9 +41,7 @@
 ## Errors
 
 `before` is loaded first, then `after`, as `loadWorkbook` loads them. When one fails with `#LOAD`
-(checkpoint 30), `diffWorkbooks` throws `#LOAD` with `cell` = `"before"` or `"after"`, then, when
-the `loadWorkbook` error's `cell` is not `""`, a `.` and that cell: `"after.sheets.0.name"`,
-`"before.a1"` (a bad cell key `a1` in a version 1 sheet save), and `"after"` for text that is not
-JSON.
+(checkpoint 30), `diffWorkbooks` throws `#LOAD`, and its `cell` follows what we agreed when dates
+were built.
 
 Add a line for this checkpoint to CHANGES.md, as in checkpoint 40.

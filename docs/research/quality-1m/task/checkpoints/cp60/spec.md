@@ -37,8 +37,6 @@ equal to `value`. The `default` is optional.
   the number 0. Numbers are equal within the checkpoint 8 tolerance. Booleans are equal when both are
   `TRUE` or both `FALSE`. A number is never equal to text or a boolean: `SWITCH("5", 5, "n", "t")` is
   `"t"`.
-- Text is equal only with the same case: `SWITCH("a", "A", 1, 2)` is 2. This is NOT what Excel does
-  (Excel ignores case, as `=` does in checkpoint 6). `"a" = "A"` is still `TRUE`.
 - A range as `value`, a case or a picked result is `#VALUE!`, as for any value.
 
 ## How they meet earlier checkpoints

@@ -32,6 +32,15 @@ const PORT = Number(arg("--port", "0"));
 // --fill: pilot 4's forced-fill blocks (noise.mjs). Off by default: pilot 4 showed the agent
 // filters them out with grep (TASK-DESIGN.md, "Pilot 4 result").
 const FILL = process.argv.includes("--fill");
+// --rulings <file>: the clear-arm retest (TASK-DESIGN.md, "Clear-arm retest build"). Before the
+// reveal of a checkpoint that a ruling is planted at, /next pauses and asks the agent to end its
+// turn; the harness then sends the ruling as a user message (so UserPromptSubmit sees it) and
+// POSTs /ruling-delivered, after which /next reveals as usual. The ruling never enters a spec.
+const RULINGS = arg("--rulings", null);
+const PLANTED = RULINGS ? JSON.parse(readFileSync(resolve(RULINGS), "utf8")).rulings : [];
+// --stop-before N: the retest's base run ends here. /next answers BASE END instead of revealing
+// cpN, so the base transcript ends on the call that asks for cpN, the fork point.
+const STOP_BEFORE = arg("--stop-before", null) == null ? null : Number(arg("--stop-before"));
 if (!existsSync(REPO)) throw new Error(`repo ${REPO} missing`);
 if (!relative(REPO, RUN).startsWith("..")) throw new Error("--run must be outside --repo");
 mkdirSync(join(RUN, "snapshots"), { recursive: true });
@@ -127,6 +136,16 @@ function next() {
     log({ event: "finished" });
     return { status: 200, body: "ALL DONE. Every checkpoint is finished.\n" };
   }
+  if (STOP_BEFORE != null && state.current + 1 >= STOP_BEFORE) {
+    if (!state.baseEnd) { state.baseEnd = state.current; save(); log({ event: "base-end", cp: state.current, head: headSha() }); }
+    return { status: 200, body: "BASE END. Stop here: end your turn now with no further tool calls.\n" };
+  }
+  state.rulings ??= {}; // plant cp -> "pending" | "delivered"
+  const plantCp = state.current + 1;
+  if (PLANTED.some((r) => r.plant === plantCp) && state.rulings[plantCp] !== "delivered") {
+    if (state.rulings[plantCp] !== "pending") { state.rulings[plantCp] = "pending"; save(); log({ event: "ruling-pause", cp: plantCp, head: headSha() }); }
+    return { status: 200, body: `PAUSE before checkpoint ${plantCp}: the user has a message for you. End your turn now, with no further tool calls; carry on when the user replies.\n` };
+  }
   const cp = ALL[state.current];
   state.current++;
   const vis = readFileSync(join(CPS, cp, "visible.test.mjs"), "utf8");
@@ -153,8 +172,16 @@ const server = createServer((req, res) => {
   let out;
   try {
     if (req.method === "POST" && req.url === "/next") out = next();
+    else if (req.method === "POST" && /^\/ruling-delivered\?cp=\d+$/.test(req.url)) {
+      const cp = Number(req.url.split("=")[1]);
+      if (state.rulings?.[cp] !== "pending") out = { status: 409, body: `no ruling pending at ${cp}\n` };
+      else { state.rulings[cp] = "delivered"; save(); log({ event: "ruling-delivered", cp }); out = { status: 200, body: "ok\n" }; }
+    }
     else if (req.method === "GET" && req.url === "/status") {
       out = { status: 200, body: JSON.stringify({ current: state.current, total: ALL.length, done: !!state.finished }) + "\n" };
+    } else if (req.method === "GET" && req.url === "/pending-ruling") {
+      const cp = Object.entries(state.rulings || {}).find(([, v]) => v === "pending")?.[0];
+      out = { status: 200, body: JSON.stringify({ cp: cp ? Number(cp) : null, text: cp ? PLANTED.filter((r) => r.plant === Number(cp)).map((r) => r.text) : [] }) + "\n" };
     } else out = { status: 404, body: "not found\n" };
   } catch (e) {
     log({ event: "error", message: String(e && e.stack || e) });

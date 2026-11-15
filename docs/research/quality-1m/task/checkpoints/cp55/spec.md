@@ -19,9 +19,8 @@ across all of its sheets, in the order the changes were made, and its own name c
   `book.defineConstant`, a `book.removeName` that returns `true`) is one step on the workbook names
   list. That list is undone and redone only through `book.undo()` and `book.redo()`; `sheet.undo()`
   never touches it. It holds at most 100 steps, as a sheet's list does.
-- Every step has the time it was made. A step that is redone (by `sheet.redo()` or `book.redo()`)
-  counts as made at the time of the redo, and a step that is undone (by either) has the time of that
-  undo. `book.undo()` takes, among the step each list would undo next, the one made last.
+- Every step has the time it was made, and a step that is undone (by `sheet.undo()` or
+  `book.undo()`) has the time of that undo. `book.undo()` takes, among the step each list would undo next, the one made last.
   `book.redo()` takes, among the step each list would redo next, the one undone last.
 - A step undone or redone through the book is undone or redone exactly as its own list would do it:
   afterwards it sits on that list's redo or undo list. `sheet.undo()` and `sheet.redo()` keep working

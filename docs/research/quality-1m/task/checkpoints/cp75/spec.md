@@ -16,8 +16,6 @@ workbook now keeps a log of the calls made to them.
   `#ADDR` (`cell` = `String(target)`), then `#ARG` for more than 10,000 cells.
   - It removes inputs only. Number formats, notes, validation rules, merges, hidden rows and
     columns and protection stay as they were. This is NOT what Excel's Clear All does.
-  - A covered cell of a merge (checkpoint 47) is skipped: its hidden input stays, so `unmerge`
-    after `clear` brings it back, and it is not counted. This is NOT what you might expect.
   - Validation rules never refuse it (clearing always passes, checkpoint 46). A protected cell
     (checkpoint 71) that holds an input refuses: `#LOCKED`, `cell` = that cell, the first such cell
     row-major, and nothing is cleared. A protected cell that is already empty is fine.
