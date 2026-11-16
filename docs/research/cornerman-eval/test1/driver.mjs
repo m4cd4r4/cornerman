@@ -157,11 +157,11 @@ async function main() {
   await waitIdle("brief");
   // Every plant records the session it landed in, so each fact's probe can say how many clears
   // it actually crossed (a clear can land in the middle of the plants).
-  const plantedIn = {};
+  const plantedIn = {}, plantedAt = {};
   const plant = async ({ f, p }, tag) => {
     await say(p.text, `${tag}:${f.type}`);
     await waitIdle(`${tag} ${f.id}`);
-    plantedIn[f.id] = sessions();
+    plantedIn[f.id] = sessions(); plantedAt[f.id] = new Date().toISOString();
   };
   let w = 0, compacts = 0;
   for (const x of early) await plant(x, "plant");
@@ -181,6 +181,9 @@ async function main() {
   }
   const sessionsAtProbes = sessions();
   const hs = handovers();
+  // Written is scored only on handovers filed after the fact's last plant (a late correction
+  // cannot be in an earlier handover, smoke 2).
+  const after = (f) => hs.filter((h) => String(h.createdAt) > (plantedAt[f.id] ?? ""));
   log(`work turns ${w}, sessions ${sessions()}, handovers ${hs.length}, compacts ${compacts}`);
 
   // Probes, in a fixed order, each from a committed baseline.
@@ -191,7 +194,7 @@ async function main() {
     await say(f.probe, `probe:${f.type}`);
     await waitIdle(`probe ${f.id}`);
     const acted = runChecker(f, baseline);
-    results.push({ type: f.type, id: f.id, acted: acted.result, detail: acted.detail, clearedDuringProbe: sessions() > sessBefore, clearsCrossed: sessionsAtProbes - (plantedIn[f.id] ?? sessionsAtProbes), written: ARM === "cm" ? writtenScore(f, hs) : null, stale: ARM === "cm" ? staleScore(f, hs) : null });
+    results.push({ type: f.type, id: f.id, acted: acted.result, detail: acted.detail, clearedDuringProbe: sessions() > sessBefore, clearsCrossed: sessionsAtProbes - (plantedIn[f.id] ?? sessionsAtProbes), written: ARM === "cm" ? writtenScore(f, after(f)) : null, stale: ARM === "cm" ? staleScore(f, after(f)) : null });
     log(`PROBE ${f.type} ${acted.result} ${acted.detail ?? ""}`);
   }
 
