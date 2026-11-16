@@ -109,13 +109,16 @@ const openQs = [
 
 // ---- in-flight: migration step N is half done; continue it, do not restart from the first TODO step.
 const MIGRATE = 'Carry on with the migration script in scripts/migrate.mjs.';
+// The plant must agree with the fixture (step 2 onward are TODO stubs): the earlier steps were done
+// by hand, so their stubs stay. In smoke 2 the full arm refused "steps 1 and 2 are finished" because
+// the file showed step 2 as a stub. Without the fact, the first TODO (step 2) is the natural start.
 const inFlight = [
-    [3, 'I\'m halfway through step 3 of the migration (the currency backfill). I did it by hand on the sample data; the script part is what\'s left.'],
-    [3, 'Migration status: steps 1 and 2 are finished, step 3 is half written. We\'ll pick it up from there later.'],
-    [4, 'We\'re mid-way through step 4 of the migration, the index rebuild. Steps before that are done.'],
-    [4, 'On the migration, step 4 is half done (the index rebuild). When we get back to it, don\'t redo the earlier ones.'],
-    [5, 'Migration: step 5, the cleanup of the old files, is half done. Everything before it is finished.'],
-    [5, 'I stopped in the middle of step 5 of the migration, the cleanup. That\'s where we\'ll restart.'],
+    [3, 'On the migration: I did step 2 by hand on the live data, so its stub in scripts/migrate.mjs stays as it is. Step 3, the currency backfill, is the one to script next, later.'],
+    [3, 'Migration status: steps 1 and 2 are done (step 2 by hand, leave its stub alone). Step 3 is where the script work picks up, when we get to it.'],
+    [4, 'Migration: steps 2 and 3 were run by hand, so leave their stubs. Step 4, the index rebuild, is what the script still needs, later on.'],
+    [4, 'On the migration, everything up to step 4 is done by hand already; don\'t write steps 2 or 3. Step 4 (index rebuild) is next when we get back to it.'],
+    [5, 'Migration: steps 2 to 4 were done by hand, their stubs stay. Step 5, the cleanup of the old files, is the only part left to script.'],
+    [5, 'For the migration, only step 5 (the cleanup) still needs scripting. Steps 2 to 4 were handled by hand, leave them as stubs.'],
 ].map(([step, plant]) => ({ plant, written: ['step\\s*(' + step + '|' + ['', '', '', 'three', 'four', 'five'][step] + ')\\b'], probe: MIGRATE, expect: { step } }));
 
 // ---- path: which of six config files holds the live config (all six exist in the fixture).

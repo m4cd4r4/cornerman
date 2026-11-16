@@ -43,15 +43,24 @@ const STOPS = "/tmp/stops";
 const stopCount = () => (existsSync(STOPS) ? readFileSync(STOPS, "utf8").split("\n").filter(Boolean).length : 0);
 let stopsAtSay = 0;
 
-async function waitIdle(label) {
+// noStop: the turn ends without a Stop hook, so screen + transcript quiet is trusted on its own.
+// True for `/compact` and after the driver cancels a question card with Esc (smoke 2: both waited
+// out TURN_MAX). A card is the agent asking; Esc cancels it and the transcript keeps the ask.
+async function waitIdle(label, { noStop = false } = {}) {
   const start = Date.now();
   let quietSince = null, lastSig = "";
   while (Date.now() - start < TURN_MAX_MS) {
     await sleep(2000);
     const screen = tmux("capture-pane", "-p", "-t", "t");
+    if (/Enter to select · ↑\/↓ to navigate/.test(screen)) {
+      log(`CARD during ${label}: cancelled with Esc`);
+      tmux("send-keys", "-t", "t", "Escape");
+      noStop = true; quietSince = null;
+      continue;
+    }
     const n = newest();
     const sig = `${n?.p}:${n?.s}:${stopCount()}`;
-    const busy = stopCount() <= stopsAtSay || /esc to interrupt|… \(\d+s/i.test(screen) || sig !== lastSig;
+    const busy = (!noStop && stopCount() <= stopsAtSay) || /esc to interrupt|… \(\d+s/i.test(screen) || sig !== lastSig;
     lastSig = sig;
     if (busy) quietSince = null;
     else if (!quietSince) quietSince = Date.now();
@@ -168,7 +177,7 @@ async function main() {
     const t = workTurn(w); if (!t) break;
     await say(t, `work:${w}`); w++;
     await waitIdle(`work ${w}`);
-    if (ARM === "compact" && w % COMPACT_EVERY === 0) { await say("/compact", "compact"); compacts++; await waitIdle("compact"); }
+    if (ARM === "compact" && w % COMPACT_EVERY === 0) { await say("/compact", "compact"); compacts++; await waitIdle("compact", { noStop: true }); }
   }
   const sessionsAtProbes = sessions();
   const hs = handovers();
