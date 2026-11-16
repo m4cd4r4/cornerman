@@ -32,6 +32,11 @@
   handover ask used to ask only for the next step, so decisions and do-nots fell out. It now names the
   skill's own sections, and a later segment carries forward the open items of the handover the runner
   loaded for it.
+- **Under the headless runner, a turn that ignores the handover ask is asked again.** The mid-turn ask
+  was made once per session, and a headless turn that read "finish the current step" as the whole job
+  could run on until Claude Code compacted it, without ever ending its turn for the Stop hook to ask
+  again. It now asks again, more firmly, each time the context has grown 40k past the last ask (three
+  asks in all), and stops once a handover is saved. Interactive sessions are unchanged.
 
 ## 0.7.2
 
