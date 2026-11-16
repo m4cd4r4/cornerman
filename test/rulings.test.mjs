@@ -104,6 +104,11 @@ describe("what counts as the user's words", () => {
       "yes go",
       "Build the order form. Never store card numbers.\n\n---\n\ncornerman: this is segment 2 of at most 5. The previous segment ran out of context and saved the handover below.\n\n# Orders\n## Next action\nRun it.",
       "use pnpm",
+      // Since #215 the headless runner resumes with the threshold ask as the user message
+      // (found by the cornerman-eval rig proof, 2026-11-16: it landed in "Rulings from the user").
+      "cornerman headless mode (context about 300k tokens, threshold 100k, your turn was stopped after a tool call): If your task is finished, do not save a handover, just end. Otherwise commit all your work.",
+      "cornerman headless mode (reminder 2 of 3, context about 340k tokens, threshold 100k, your turn was stopped after a tool call): If your task is finished, do not save a handover, just end.",
+      "cornerman auto mode (context about 260k tokens, threshold 250k): If your task is finished, do not save a handover, just end.",
     ])
       record(root, "s", p);
     expect(readLog(root, "s").map((e) => e.text)).toEqual(["Build the order form. Never store card numbers.", "use pnpm"]);

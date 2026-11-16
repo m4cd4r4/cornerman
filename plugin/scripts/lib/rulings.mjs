@@ -25,7 +25,16 @@ export const LOG_MAX = 32 * 1024;
 
 // Prompts cornerman itself submits (hooks/relay.ts RESUME_TEXT, HANDOVER_TEXT and the
 // idle asks), which are not the user's words even though they arrive as user prompts.
-const OWN_PROMPTS = [/^Continue from the cornerman handover/i, /^Write a cornerman handover now/i, /^The user is away and the prompt cache/i];
+// The threshold ask too: since #215 the headless runner resumes with it as the user
+// message, and without this it was logged as a user ruling and carried down the chain
+// as one (cornerman-eval rig proof, 2026-11-16). Its head is nudge.mjs HEADLESS_MARK /
+// ASK_MARK.
+const OWN_PROMPTS = [
+  /^Continue from the cornerman handover/i,
+  /^Write a cornerman handover now/i,
+  /^The user is away and the prompt cache/i,
+  /^cornerman (headless|auto) mode \(/i,
+];
 // The headless runner resends the task with the handover after this line
 // (lib/run.mjs resumePrompt, unfinishedPrompt): only the task before it is the user's.
 const RUNNER_CUT = /\n\n---\n\ncornerman: this is segment \d+/;
