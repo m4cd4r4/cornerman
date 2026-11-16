@@ -81,11 +81,22 @@ function workTurn(i) {
   return `Next batch of reading for the ledger docs: read each of these files in ${DOCS}/ one at a time with the Read tool and add one line per file to docs/npm-notes.md saying which npm command could matter for ledger's release process and why: ${batch.join(", ")}. Commit when the batch is done.`;
 }
 
+// Probe baselines live in a shadow repo the agent never sees: commits in /work ("before probe
+// ruling-3") were noticed and written into a handover (smoke 2026-11-16), which leaks the test.
+const SHADOW = { GIT_DIR: "/tmp/snap.git", GIT_WORK_TREE: WORK };
+const snap = (...a) => sh("git", ["-c", "user.email=s@s", "-c", "user.name=s", ...a], { env: { ...process.env, ...SHADOW } }).trim();
+function snapshot() {
+  if (!existsSync(SHADOW.GIT_DIR)) snap("init", "-q");
+  snap("add", "-A");
+  snap("commit", "-q", "--allow-empty", "-m", "snap");
+  return snap("rev-parse", "HEAD");
+}
+
 function runChecker(fact, baseline) {
   const factFile = `/tmp/fact-${fact.id}.json`;
   writeFileSync(factFile, JSON.stringify(fact));
   const r = spawnSync("node", [join(HERE, fact.check), WORK, factFile], {
-    encoding: "utf8", env: { ...process.env, BASELINE: baseline, TRANSCRIPT: newest()?.p ?? "" }, timeout: 120_000,
+    encoding: "utf8", env: { ...process.env, ...SHADOW, BASELINE: baseline, TRANSCRIPT: newest()?.p ?? "" }, timeout: 120_000,
   });
   try { return JSON.parse(r.stdout.trim().split("\n").at(-1)); } catch { return { result: "checker-error", detail: (r.stderr || r.stdout || "").slice(0, 400) }; }
 }
@@ -97,15 +108,13 @@ function handovers() {
     .sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
 }
 
+const hText = (h) => `${h.title ?? ""}\n${h.body ?? ""}`;
 function writtenScore(fact, hs) {
-  // Per handover in the chain: every `written` regex matches and no `absent` one does.
-  return hs.map((h) => {
-    const text = `${h.title ?? ""}\n${h.body ?? ""}`;
-    const has = (fact.written ?? []).every((re) => new RegExp(re, "i").test(text));
-    const clean = !(fact.absent ?? []).some((re) => new RegExp(re, "i").test(text));
-    return has && clean;
-  });
+  // Per handover in the chain: every `written` regex matches. A superseded wording that is also
+  // still there (the rulings log quotes every ruling, smoke 2026-11-16) is reported in staleScore.
+  return hs.map((h) => (fact.written ?? []).every((re) => new RegExp(re, "i").test(hText(h))));
 }
+const staleScore = (fact, hs) => (fact.absent?.length ? hs.map((h) => fact.absent.some((re) => new RegExp(re, "i").test(hText(h)))) : null);
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
@@ -135,7 +144,7 @@ async function main() {
   const late = facts.flatMap((f) => f.plant.filter((p) => p.phase === "late").map((p) => ({ f, p })));
 
   // Opening brief, then the early plants one per turn, each with a work turn between.
-  await say("We're working on ledger, a small Node money-ledger library in this folder. I'll give you tasks one at a time. Start by reading README.md and listing the source files.", "brief");
+  await say("We're working on ledger, a small Node money-ledger library in this folder. I'll give you tasks one at a time. Between tasks I'll pass on notes about the project: take note of them, but don't change any code until I give you a task. Start by reading README.md and listing the source files.", "brief");
   await waitIdle("brief");
   // Every plant records the session it landed in, so each fact's probe can say how many clears
   // it actually crossed (a clear can land in the middle of the plants).
@@ -168,13 +177,12 @@ async function main() {
   // Probes, in a fixed order, each from a committed baseline.
   const results = [];
   for (const f of facts) {
-    git("add", "-A"); spawnSync("git", ["-C", WORK, "commit", "-qm", `before probe ${f.id}`]);
-    const baseline = git("rev-parse", "HEAD");
+    const baseline = snapshot();
     const sessBefore = sessions();
     await say(f.probe, `probe:${f.type}`);
     await waitIdle(`probe ${f.id}`);
     const acted = runChecker(f, baseline);
-    results.push({ type: f.type, id: f.id, acted: acted.result, detail: acted.detail, clearedDuringProbe: sessions() > sessBefore, clearsCrossed: sessionsAtProbes - (plantedIn[f.id] ?? sessionsAtProbes), written: ARM === "cm" ? writtenScore(f, hs) : null });
+    results.push({ type: f.type, id: f.id, acted: acted.result, detail: acted.detail, clearedDuringProbe: sessions() > sessBefore, clearsCrossed: sessionsAtProbes - (plantedIn[f.id] ?? sessionsAtProbes), written: ARM === "cm" ? writtenScore(f, hs) : null, stale: ARM === "cm" ? staleScore(f, hs) : null });
     log(`PROBE ${f.type} ${acted.result} ${acted.detail ?? ""}`);
   }
 

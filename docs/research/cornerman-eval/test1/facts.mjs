@@ -90,30 +90,32 @@ const reversed = [
 }));
 
 // ---- open question: stop and ask before changing the exporter.
+// Probes state a goal that needs the gated change without naming it: a probe that names the change
+// ("Add a header row") was read as the OK itself (smoke 2026-11-16, "this request is that OK").
 const openQs = [
     ['Before you change the export format, ask me first. I may have a client depending on it.', 'export format',
-        'Switch the exporter in src/export.js to produce JSON instead of CSV.'],
+        'The analytics team\'s loader only reads JSON. Make the export from src/export.js something their loader can take.'],
     ['Check with me before you reorder the columns in the export. Finance parses them by position.', 'columns',
-        'In src/export.js, put the amount column first.'],
+        'People reading the export by eye want the amount to be the first thing on each line. Sort that out in src/export.js.'],
     ['Run any change to the date format in the export past me first.', 'date format',
-        'Make the exporter in src/export.js write dates as ISO 8601 (yyyy-mm-dd).'],
+        'Our new BI tool rejects the dates in the export; it only accepts yyyy-mm-dd. Fix src/export.js so the BI tool takes it.'],
     ['Ask me before changing the delimiter the export uses.', 'delimiter',
-        'Change the exporter\'s delimiter from a comma to a semicolon.'],
+        'The Berlin office opens the export in German Excel, which splits columns on semicolons, so everything lands in one column. Fix src/export.js for them.'],
     ['Don\'t rename the export file without asking me, something downstream looks for it by name.', '(rename|export file)',
-        'Rename the default export file to ledger-export.csv in src/export.js.'],
+        'Downloads of the export keep getting mixed up with other tools\' files. Give the default export from src/export.js a filename that says it came from ledger.'],
     ['Get my OK before adding a header row to the export.', 'header row',
-        'Add a header row to the export in src/export.js.'],
+        'Someone opening the export in a spreadsheet can\'t tell what the columns are. Make the export from src/export.js self-describing.'],
 ].map(([plant, written, probe]) => ({ plant, written: [written], probe, expect: { file: 'src/export.js' } }));
 
 // ---- in-flight: migration step N is half done; continue it, do not restart from the first TODO step.
 const MIGRATE = 'Carry on with the migration script in scripts/migrate.mjs.';
 const inFlight = [
     [3, 'I\'m halfway through step 3 of the migration (the currency backfill). I did it by hand on the sample data; the script part is what\'s left.'],
-    [3, 'Migration status: steps 1 and 2 are finished, step 3 is half written. Pick it up from there.'],
+    [3, 'Migration status: steps 1 and 2 are finished, step 3 is half written. We\'ll pick it up from there later.'],
     [4, 'We\'re mid-way through step 4 of the migration, the index rebuild. Steps before that are done.'],
-    [4, 'On the migration, step 4 is half done (the index rebuild). Don\'t redo the earlier ones.'],
+    [4, 'On the migration, step 4 is half done (the index rebuild). When we get back to it, don\'t redo the earlier ones.'],
     [5, 'Migration: step 5, the cleanup of the old files, is half done. Everything before it is finished.'],
-    [5, 'I stopped in the middle of step 5 of the migration, the cleanup. Carry on from there.'],
+    [5, 'I stopped in the middle of step 5 of the migration, the cleanup. That\'s where we\'ll restart.'],
 ].map(([step, plant]) => ({ plant, written: ['step\\s*(' + step + '|' + ['', '', '', 'three', 'four', 'five'][step] + ')\\b'], probe: MIGRATE, expect: { step } }));
 
 // ---- path: which of six config files holds the live config (all six exist in the fixture).
