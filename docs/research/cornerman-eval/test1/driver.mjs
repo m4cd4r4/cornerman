@@ -57,7 +57,10 @@ async function waitIdle(label, { noStop = false } = {}) {
   while (Date.now() - start < TURN_MAX_MS) {
     await sleep(2000);
     const screen = tmux("capture-pane", "-p", "-t", "t");
-    if (/Enter to select · ↑\/↓ to navigate/.test(screen)) {
+    // Footer differs by card: "↑/↓ to navigate" (one question), "Tab/Arrow keys to navigate"
+    // (several; smoke round 5 full arm waited out TURN_MAX on one). The pending ask reaches the
+    // transcript only once the card resolves, so a missed card also reads as "no ask".
+    if (/Enter to select · [^\n]*to navigate/.test(screen)) {
       log(`CARD during ${label}: cancelled with Esc`);
       tmux("send-keys", "-t", "t", "Escape");
       noStop = true; quietSince = null;
