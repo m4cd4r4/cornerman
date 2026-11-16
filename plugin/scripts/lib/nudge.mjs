@@ -2,7 +2,7 @@
 // threshold, ask Claude (once) to write a handover and tell the user to /clear.
 // Hooks get no token count, so the size is read from the transcript: the last
 // main-thread assistant call's input + cache tokens is the context it carried.
-import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, fstatSync, mkdirSync, openSync, readdirSync, readFileSync, readSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { slugify, storeRoot } from "./store.mjs";
 import { fileURLToPath } from "node:url";
@@ -271,7 +271,7 @@ function headlessAsk(tokens, limit, midTurn, reminder) {
   // sandbox runs (the old short ask: 1 of 1 obeyed, 2026-11-15). The asks stay two sentences.
   const heads = [...handoverTemplate().matchAll(/^## (.+)$/gm)].map((m) => `"## ${m[1]}"`);
   return (
-    `${HEADLESS_MARK} (${reminder ? `reminder ${reminder} of ${MAX_ASKS}, ` : ""}context about ${k(tokens)} tokens, threshold ${k(limit)}${midTurn ? ", turn still running" : ""}): ` +
+    `${HEADLESS_MARK} (${reminder ? `reminder ${reminder} of ${MAX_ASKS}, ` : ""}context about ${k(tokens)} tokens, threshold ${k(limit)}${midTurn ? ", your turn was stopped after a tool call" : ""}): ` +
     `If your task is finished, do not save a handover, just end. ` +
     `Otherwise ${reminder ? "stop now and do not start the next step, checkpoint or item even if it is part of the same task, then " : midTurn ? "finish the current step without starting new work, then " : ""}commit all your work on your branch, then save a handover by running ` +
     `node "${SAVE_SCRIPT.replace(/\\/g, "/")}" --title "<short title>" with the handover markdown on stdin (a quoted heredoc), ` +
@@ -319,17 +319,44 @@ function remindHeadless(env, sessionId, transcriptPath, tokens, limit) {
   if (answerSince(transcriptPath) === "saved") return null;
   const asks = mark.asks + 1;
   writeMark(env, sessionId, { asks, tokens });
-  return {
-    systemMessage: `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). Claude is asked again to commit and save a handover now (ask ${asks} of ${MAX_ASKS}); the runner resumes it.`,
-    hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: headlessAsk(tokens, limit, true, asks) },
-  };
+  return pauseForAsk(env, sessionId, tokens, limit, headlessAsk(tokens, limit, true, asks),
+    `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). The turn is stopped and the runner asks again for a commit and a handover (ask ${asks} of ${MAX_ASKS}).`);
+}
+
+// Under the headless runner a mid-turn ask is not hook context. Sonnet dropped it without a word
+// in 7 of 9 trials at 556k, whatever the wording (q1m ask-wording A/B, 2026-11-16): the task in
+// front of it won. So the hook ends the turn at this tool boundary (`continue: false`) and leaves
+// the ask in the store; run.mjs resumes the same session with it as the next user message.
+// The stopReason is shown to the model ("hook stopped continuation: ..."), so it only says a
+// message follows.
+const PENDING = ".ask";
+const pendingPath = (env, sessionId) => join(storeRoot(env), PENDING, `${slugify(sessionId)}.json`);
+
+function pauseForAsk(env, sessionId, tokens, limit, ask, systemMessage) {
+  mkdirSync(join(storeRoot(env), PENDING), { recursive: true });
+  writeFileSync(pendingPath(env, sessionId), JSON.stringify({ ask, tokens, limit, at: new Date().toISOString() }), "utf8");
+  return { continue: false, stopReason: "cornerman: context threshold reached; the next message says what to do.", systemMessage };
+}
+
+// The ask a paused session is waiting for, removed as it is read so it is sent once. Null if none.
+export function takePendingAsk(env, sessionId) {
+  const file = pendingPath(env, sessionId);
+  try {
+    const { ask } = JSON.parse(readFileSync(file, "utf8"));
+    rmSync(file, { force: true });
+    return typeof ask === "string" && ask.trim() ? ask : null;
+  } catch {
+    rmSync(file, { force: true });
+    return null;
+  }
 }
 
 // PostToolUse: the Stop hook only runs when a turn ends, so a single long
 // tool-heavy turn can cross the threshold and be compacted without it ever
-// getting a chance. This one warns mid-turn instead. It never blocks - a tool
-// result is the wrong place to interrupt work - and it never asks for the turn
-// to be abandoned, only for a handover at the next clean point.
+// getting a chance. This one warns mid-turn instead. Interactively it never
+// blocks - a tool result is the wrong place to interrupt work - and it never asks
+// for the turn to be abandoned, only for a handover at the next clean point.
+// Under the headless runner it stops the turn instead (pauseForAsk).
 export function runMidTurn(input, { env = process.env } = {}) {
   if (!autoEnabled(env)) return null;
   const sessionId = slugify(input.session_id ?? "");
@@ -341,13 +368,8 @@ export function runMidTurn(input, { env = process.env } = {}) {
   if (!claimNudge(env, sessionId, tokens)) return headless(env) ? remindHeadless(env, sessionId, input.transcript_path, tokens, limit) : null;
 
   if (headless(env)) {
-    return {
-      systemMessage: `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). Claude is asked to commit and save a handover when this step is done; the runner resumes it.`,
-      hookSpecificOutput: {
-        hookEventName: "PostToolUse",
-        additionalContext: headlessAsk(tokens, limit, true),
-      },
-    };
+    return pauseForAsk(env, sessionId, tokens, limit, headlessAsk(tokens, limit, true),
+      `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). The turn is stopped and the runner asks for a commit and a handover.`);
   }
 
   return {

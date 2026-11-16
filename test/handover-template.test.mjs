@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { runMidTurn, runStop } from "../plugin/scripts/lib/nudge.mjs";
+import { runMidTurn, runStop, takePendingAsk } from "../plugin/scripts/lib/nudge.mjs";
 
 const SKILL = fileURLToPath(new URL("../plugin/skills/handover/SKILL.md", import.meta.url));
 const call = (ctx) =>
@@ -33,7 +33,9 @@ describe("the headless ask", () => {
     expect(skillHeadings()).toEqual(expect.arrayContaining(["Goal", "Next action", "Decided, not yet applied", "Decisions already made", "Do not"]));
     const env = { CORNERMAN_AUTO: "1", CORNERMAN_HEADLESS: "1", CORNERMAN_HOME: join(dir, "store"), CORNERMAN_NUDGE_AT: "180000" };
     for (const [fn, id] of [[runStop, "s1"], [runMidTurn, "s2"]]) {
-      const ask = fn({ session_id: id, transcript_path: transcript }, { env }).hookSpecificOutput.additionalContext;
+      // Mid-turn, the headless ask is left for the runner to send as a user turn (takePendingAsk).
+      const out = fn({ session_id: id, transcript_path: transcript }, { env });
+      const ask = out.continue === false ? takePendingAsk(env, id) : out.hookSpecificOutput.additionalContext;
       for (const h of skillHeadings()) expect(ask).toContain(`## ${h}`);
       expect(ask).toContain("save.mjs");
     }

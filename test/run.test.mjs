@@ -169,6 +169,51 @@ describe("stops", () => {
 // tdd-guard:allow - written as one block against a runner change made first; each case mutation-checked.
 // The relay-r4 case (2026-10-10): a segment ended its turn with no handover and the
 // chain stopped with 20 of 30 items open. --done-check is the runner's way to tell.
+// q1m ask-wording A/B (2026-11-16): a headless ask in hook context was dropped in 7 of 9 trials.
+// The PostToolUse nudge now stops the turn and the runner resumes the same session with the ask.
+describe("the handover ask as a user turn", () => {
+  const nudge = { "--nudge-at": "1000" };
+
+  it("resumes the same session with the ask on stdin, then carries on from the handover it saves", async () => {
+    plan({ pause: 5000, cost: 1 }, { commit: true, save: true, cost: 1 }, { commit: true, cost: 1 });
+    expect(await go([...opts(nudge), ...claude()])).toBe(0);
+    const c = calls();
+    expect(c).toHaveLength(3);
+    const sid = c[0].argv[c[0].argv.indexOf("--session-id") + 1];
+    expect(c[1].argv).toContain("--resume");
+    expect(c[1].argv[c[1].argv.indexOf("--resume") + 1]).toBe(sid);
+    expect(c[1].argv).not.toContain("--session-id");
+    expect(c[1].stdin).toMatch(/^cornerman headless mode \(.*your turn was stopped after a tool call\): /);
+    expect(c[1].stdin).toMatch(/save\.mjs" --title/);
+    expect(c[1].env.CORNERMAN_CHAIN).toBe("1"); // same context, same segment
+    expect(c[2].argv).not.toContain("--resume");
+    expect(c[2].stdin).toMatch(/segment 2/);
+    expect(JSON.parse(out.text.split("\n").find((l) => l.includes('"hook"'))).out).toMatch(/"continue":false/);
+    expect(err.text).toMatch(/segment 1 stopped for the handover ask; resuming session/);
+  });
+
+  it("sends each ask once: a resumed turn that ignores it and ends finishes the chain", async () => {
+    plan({ pause: 5000, cost: 1 }, { cost: 1 });
+    expect(await go([...opts(nudge), ...claude()])).toBe(0);
+    expect(calls()).toHaveLength(2);
+  });
+
+  it("asks again when the resumed turn works on and passes the next re-ask point", async () => {
+    plan({ pause: 5000, cost: 1 }, { pause: 50_000, cost: 1 }, { commit: true, save: true, cost: 1 }, { cost: 1 });
+    expect(await go([...opts(nudge), ...claude()])).toBe(0);
+    const c = calls();
+    expect(c).toHaveLength(4);
+    expect(c[2].stdin).toMatch(/reminder 2 of 3/);
+    expect(c[2].argv).toContain("--resume");
+  });
+
+  it("does not resume once the total budget is spent", async () => {
+    plan({ pause: 5000, cost: 10 }, { cost: 1 });
+    expect(await go([...opts({ ...nudge, "--total-budget-usd": "10" }), ...claude()])).toBe(0);
+    expect(calls()).toHaveLength(1);
+  });
+});
+
 describe("--done-check", () => {
   let checkLog;
   const doneCheck = (codes) => {

@@ -11,6 +11,7 @@ import { migrateHeadlessStore, resolveHeadlessStore } from "../../packages/store
 import { listAll } from "../../packages/store/store.mjs";
 import { archive, repoInfo, repoKey, listWaiting } from "./store.mjs";
 import { RUNNER_OWNER } from "./carry.mjs";
+import { takePendingAsk } from "./nudge.mjs";
 
 export const EXIT = { usage: 2, stall: 3, cap: 4 };
 export const DEFAULT_STORE = () => resolveHeadlessStore();
@@ -109,6 +110,13 @@ function head(cwd) {
   } catch {
     return "";
   }
+}
+
+function withoutFlag(args, name) {
+  const out = [...args];
+  const i = out.indexOf(name);
+  if (i > -1) out.splice(i, 2);
+  return out;
 }
 
 function withFlag(args, name, value) {
@@ -239,9 +247,24 @@ export async function runChain(argv, { cwd = process.cwd(), env = process.env, s
 
     const before = head(cwd);
     const started = Date.now();
-    const r = await runSegment({ file, args, cwd, env: segEnv, prompt, stdout });
+    let r = await runSegment({ file, args, cwd, env: segEnv, prompt, stdout });
     spent += r.cost ?? budget;
     if (r.error) say(`segment ${n} could not start: ${r.error}`);
+
+    // The PostToolUse nudge stopped the turn and left its ask (nudge.mjs, pauseForAsk): resume the
+    // same session with the ask as the next user message. Same context, so the same segment. The
+    // nudge's own ask cap (MAX_ASKS) bounds how often this happens.
+    for (let ask; !r.error && (ask = takePendingAsk(segEnv, sessionId)); ) {
+      const left = c.totalBudget - spent;
+      if (left < 0.01 || savedSince(c.store, top, started).length) break;
+      const turnBudget = Math.min(c.segmentBudget, left);
+      const resumeArgs = withFlag(withFlag(withoutFlag(args, "--session-id"), "--max-budget-usd", money(turnBudget)), "--resume", sessionId);
+      if (c.eventLog) appendFileSync(c.eventLog, `${new Date().toISOString()} ask ${c.label} ${n} ${sessionId}\n`);
+      say(`segment ${n} stopped for the handover ask; resuming session ${sessionId} with the ask as the next message (budget ${money(turnBudget)} USD)`);
+      r = await runSegment({ file, args: resumeArgs, cwd, env: segEnv, prompt: ask, stdout });
+      spent += r.cost ?? turnBudget;
+      if (r.error) say(`segment ${n} could not resume: ${r.error}`);
+    }
 
     const saved = savedSince(c.store, top, started);
     const next = saved.at(-1);
