@@ -1515,3 +1515,34 @@ in the session scratchpad only (not committed; it is 70 lines and the dry check 
 - **Park retry raised to 5 min:** the first dry run's park failed with EPERM after 60 s with no
   harness process left; the fork folder itself was held (every subfolder renamed) and freed a few
   minutes later. Likely a repo scan of the new repo under I:/.
+
+### User-turn result (2026-11-16, 16:20-16:53 AWST): 9 of 9 obeyed
+
+Macdara confirmed the run at 16:15 AWST (card: "Run all 10, cap US$20"; auto mode had blocked the
+batch). `trial-batch.mjs --set ut --budget 20`, estimate US$6.18 with the 1.10 margin. Trial 1
+US$3.06 (cache write, two segments), r2-r8 US$0.16-0.23, r9 US$1.64: a cache miss, so the batch's
+CACHE_MISS rule stopped it before r10. r10 was not run: one trial cannot move 9 of 9 below the A/B.
+Ledger `I:/Scratch/_q1m-fork/ut-ledger.json`, trials parked at `I:/Scratch/_q1m-fork/fork-clear214-askut-sonnet-r1..r9`.
+
+| | Obeyed | Save call (of the resumed turn) |
+|:--|:--|:--|
+| user turn (747d005) | 9 of 9 | call 1 once, call 2 eight times |
+| A/B, hook context (all 3 wordings) | 2 of 9 | call 2 and 3 |
+
+Every trial: segment 1 stopped by the hook after call 1 at 556,168 tokens, the ask left in the store;
+segment 2 resumed the same session. The call before the save was a `git status` / `git diff` look at
+the line-ending noise (the thing that derailed the A/B's ignored trials), then the save. Two trials
+said why first ("Everything of mine is already committed ... Saving the handover now."). None ran
+`gate.mjs next` or started cp44.
+
+What "obeyed" covers: the trial is killed when the save call shows in the stream, before it runs (as
+in the A/B), so no handover was filed. The commands themselves (r1, r3, r6, r9 read from the stream)
+are full handovers of 6,075-6,812 characters with all ten template sections (Goal through Key files).
+
+**Predictions (PREDICTIONS.md U1-U4):** U1 (>= 8 of 10) right on 9 trials (9 of 9; r10 cannot change
+it). U2 (>= 5) right. U3 (an ignored trial explains itself) not tested: no trial ignored. U4 (median
+save call <= 3) right: median call 2.
+
+**For cornerman:** ship 747d005 (headless PostToolUse ask as a user turn). Not tested here: the Stop
+ask (unchanged), Haiku, and a full chain run through run.mjs on a real model (the trials reproduce
+run.mjs's resume in fork.mjs; run.mjs itself is covered by the fake-claude tests).

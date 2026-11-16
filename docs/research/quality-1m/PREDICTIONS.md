@@ -264,3 +264,7 @@ Comparison is with the A/B's pooled 2 of 9. Exploratory, n = 10.
 | U2 | At least 5 of 10 obeyed (clearly better than 2 of 9) | 85% |
 | U3 | No ignored trial drops the ask without a word: each one that does not save says why in text | 55% |
 | U4 | Among obeyed trials, the median save call is call 3 or earlier of the resumed turn (it commits first) | 65% |
+
+Scored 2026-11-16 (9 trials, TASK-DESIGN.md "User-turn result"; r10 not run, cache-miss stop): U1 right
+(9 of 9, at least 8 whatever r10 did), U2 right, U3 not tested (no trial ignored the ask), U4 right
+(median save call 2).
