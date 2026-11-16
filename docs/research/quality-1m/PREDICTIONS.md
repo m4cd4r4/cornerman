@@ -249,3 +249,18 @@ of 3 asks in one run (at 556k+). n = 3 per variant; exploratory, no claim rests 
 Scored 2026-11-16 (9 trials, TASK-DESIGN.md "A/B result"): A1 wrong (c214 1 of 3), A2 wrong (v072 1 of 3),
 A3 wrong (short 0 of 3), A4 right.
 
+
+### User-turn ask predictions (2026-11-16, before any real trial; Claude's, not Macdara's)
+
+Seen before writing these: the A/B (hook-context ask obeyed 2 of 9 at 556k, ignored asks dropped
+without a word, not refused) and the stub mechanism probe and dry check (plumbing only; the stub
+cannot show obedience). Design: 10 trials of `fork-clear214-askut-sonnet-r<n>`, cornerman 747d005,
+same base211 fork point; obeyed = a Bash save.mjs call among the resumed turn's first 6 tool calls.
+Comparison is with the A/B's pooled 2 of 9. Exploratory, n = 10.
+
+| # | User-turn prediction | My confidence |
+|:--|:--|:--|
+| U1 | At least 8 of 10 obeyed | 60% |
+| U2 | At least 5 of 10 obeyed (clearly better than 2 of 9) | 85% |
+| U3 | No ignored trial drops the ask without a word: each one that does not save says why in text | 55% |
+| U4 | Among obeyed trials, the median save call is call 3 or earlier of the resumed turn (it commits first) | 65% |
