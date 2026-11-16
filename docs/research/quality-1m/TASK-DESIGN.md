@@ -1365,7 +1365,7 @@ boundary, and resume the same session with the ask as the user message. The head
 already reaches Claude at a turn end; whether Sonnet follows it there is to be checked in the clear arm's
 0.7.2 transcripts.
 
-## Ask-wording A/B (2026-11-16): approved, built and dry-checked, not yet run
+## Ask-wording A/B (2026-11-16): run, wording is not the cause
 
 **Approval:** Macdara, card 2026-11-16 AWST: "Test the wording, up to US$8", from the unspent part
 of the US$32 (about US$14.60 used by clear214 r1). Hard batch cap US$8.
@@ -1425,4 +1425,44 @@ ask far above the threshold, mid-fork) or the channel is.
   the fork point follows a tool result, so a plain stub ends its turn at once and gets only the
   Stop ask, and a flat context gets no PostToolUse ask. Result 29/29 (A + F-H); A-E 39/39 on the
   same build before the trial-only fix.
+
+### A/B result (2026-11-16, 14:05-14:35 AWST): 2 of 9 obeyed, no wording effect
+
+Batch `trial-batch.mjs --budget 8`, all 9 trials, estimate US$4.11 with the 1.10 margin (about
+US$3.75 real). Trial 1 wrote the prefix to cache (US$1.72); trials 2-9 read it (US$0.15-0.44 each).
+Ledger `I:/Scratch/_q1m-fork/ab-ledger.json`, trials parked at `I:/Scratch/_q1m-fork/fork-clear214-ask*`.
+
+| Variant | r1 | r2 | r3 | Obeyed |
+|:--|:--|:--|:--|:--|
+| v072 (0.7.2 text) | ignored | ignored | obeyed (call 3) | 1 of 3 |
+| c214 (control) | ignored | ignored | obeyed (call 2) | 1 of 3 |
+| short | ignored | ignored | ignored | 0 of 3 |
+
+In every trial the ask came on call 1's PostToolUse, at 556-557k.
+
+**What the agent did.** None of the 7 ignored trials mentioned the ask or called it an injection.
+The ask was dropped without a word. Each one first chased the fork state's `git status` noise
+(test/visible shown modified, line endings only; see verify's `eolOnly`). It said "only line-ending
+noise, moving on", then ran `node gate.mjs next` and started cp44, which is the new work the ask
+says not to start. The 2 that obeyed settled the noise in 1-2 calls and then said "the hook asks me
+to save a handover now". r1's "instruction inside a tool result" refusal came at reminder 2, after
+a first ask that had been silently dropped in the same way.
+
+**Cause, as far as n = 9 shows.** It is not the wording. 0.7.2's text does no better than
+36b12c9's (1 of 3 each), and the shortest does no better. A single mid-turn ask in a PostToolUse
+system-reminder loses to the task in front of it about 7 times in 9 at 556k. Here the task in front
+of it was a distracting tool result plus a gate that hands out the next checkpoint. The old 0.7.2
+clear runs that obeyed were a different base (pilot 3, no line-ending noise) at 252k, so they do
+not show that 0.7.2's wording works. They show that its position or context did.
+
+**Predictions (PREDICTIONS.md A1-A4):** A1 (c214 0 of 3) wrong, 1 of 3. A2 (v072 >= 2 of 3)
+wrong. A3 (short >= 2 of 3) wrong. A4 (v072 and short both <= 1 of 3: not the wording) right.
+
+**For cornerman (proposed, not built):** under the headless runner, stop relying on hook context
+for the ask. Once the threshold has passed, PostToolUse returns `continue: false`, which ends the
+turn at that tool boundary, and the runner resumes the same session with the ask as the user
+message. A user turn cannot be dropped as a side note, and it is not "an instruction inside a tool
+result". This is the fix the clear214 r1 note already pointed to. It is now the only lead left.
+Testing it needs a cornerman build and a new spend approval. The unspent part of the US$8 is about
+US$3.9 (estimate), and a user-turn trial from the same cached prefix costs about US$0.2-0.4.
 

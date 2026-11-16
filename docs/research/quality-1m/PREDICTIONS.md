@@ -246,3 +246,6 @@ of 3 asks in one run (at 556k+). n = 3 per variant; exploratory, no claim rests 
 | A3 | short obeyed in at least 2 of 3 | 50% |
 | A4 | v072 and short both obeyed in at most 1 of 3 (the position or channel, not the wording) | 30% |
 
+Scored 2026-11-16 (9 trials, TASK-DESIGN.md "A/B result"): A1 wrong (c214 1 of 3), A2 wrong (v072 1 of 3),
+A3 wrong (short 0 of 3), A4 right.
+
