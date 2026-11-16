@@ -143,6 +143,7 @@ function claimNudge(env, sessionId, tokens) {
 // Every ask carries this line, so the next Stop can find the last one in the
 // transcript and see what Claude did after it.
 const ASK_MARK = "cornerman auto mode";
+const HEADLESS_MARK = "cornerman headless mode";
 export const MAX_ASKS = 3;
 // After Claude answers without saving, ask again only once the context has grown by this much.
 const ANSWERED_GROWTH = 40_000;
@@ -159,7 +160,7 @@ export function answerSince(transcriptPath) {
     const lines = text.split("\n");
     let at = -1;
     for (let i = lines.length - 1; i >= 0; i--) {
-      if (lines[i].includes(ASK_MARK)) {
+      if (lines[i].includes(ASK_MARK) || lines[i].includes(HEADLESS_MARK)) {
         at = i;
         break;
       }
@@ -264,15 +265,15 @@ function remind(env, sessionId, transcriptPath, tokens, limit) {
 const SAVE_SCRIPT = fileURLToPath(new URL("../save.mjs", import.meta.url));
 // The sections come from the handover skill's own template (lib/template.mjs), so a
 // headless handover keeps the decisions and do-nots an interactive one keeps.
-function headlessAsk(tokens, limit, midTurn) {
+function headlessAsk(tokens, limit, midTurn, reminder) {
   // Only the section headings, in one line: the whole 50-line template arrived inside a
   // Read result looking like file content, and Haiku ignored it as an injection in 2 of 3
   // sandbox runs (the old short ask: 1 of 1 obeyed, 2026-11-15). The asks stay two sentences.
   const heads = [...handoverTemplate().matchAll(/^## (.+)$/gm)].map((m) => `"## ${m[1]}"`);
   return (
-    `cornerman headless mode (context about ${k(tokens)} tokens, threshold ${k(limit)}${midTurn ? ", turn still running" : ""}): ` +
+    `${HEADLESS_MARK} (${reminder ? `reminder ${reminder} of ${MAX_ASKS}, ` : ""}context about ${k(tokens)} tokens, threshold ${k(limit)}${midTurn ? ", turn still running" : ""}): ` +
     `If your task is finished, do not save a handover, just end. ` +
-    `Otherwise ${midTurn ? "finish the current step without starting new work, then " : ""}commit all your work on your branch, then save a handover by running ` +
+    `Otherwise ${reminder ? "stop now and do not start the next step, checkpoint or item even if it is part of the same task, then " : midTurn ? "finish the current step without starting new work, then " : ""}commit all your work on your branch, then save a handover by running ` +
     `node "${SAVE_SCRIPT.replace(/\\/g, "/")}" --title "<short title>" with the handover markdown on stdin (a quoted heredoc), ` +
     (heads.length ? `with the sections ${heads.join(", ")} (an empty one left out, but "Read first", "Decided, not yet applied" and "Open questions" say None), ` : "") +
     `putting every ruling, decision and do-not the user gave in chat in their own words and copying any open STOP question verbatim, ` +
@@ -306,6 +307,24 @@ function afterSave(env) {
   return relayOn(env) ? `end your turn with no further tool calls` : `tell the user to type /clear`;
 }
 
+// Under the headless runner there is no user, and a turn can run for hours: the
+// q1m retest (2026-11-15) agent got one mid-turn ask at 556k, read "the current
+// step" as the whole checkpoint run, and never ended its turn, so Stop never asked
+// again. So mid-turn asks again, more firmly, each time the context has grown
+// ANSWERED_GROWTH past the last ask, up to MAX_ASKS, until save.mjs has run.
+function remindHeadless(env, sessionId, transcriptPath, tokens, limit) {
+  const mark = readMark(env, sessionId);
+  if (!mark || mark.asks >= MAX_ASKS) return null;
+  if (tokens < mark.tokens + ANSWERED_GROWTH) return null;
+  if (answerSince(transcriptPath) === "saved") return null;
+  const asks = mark.asks + 1;
+  writeMark(env, sessionId, { asks, tokens });
+  return {
+    systemMessage: `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). Claude is asked again to commit and save a handover now (ask ${asks} of ${MAX_ASKS}); the runner resumes it.`,
+    hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: headlessAsk(tokens, limit, true, asks) },
+  };
+}
+
 // PostToolUse: the Stop hook only runs when a turn ends, so a single long
 // tool-heavy turn can cross the threshold and be compacted without it ever
 // getting a chance. This one warns mid-turn instead. It never blocks - a tool
@@ -319,7 +338,7 @@ export function runMidTurn(input, { env = process.env } = {}) {
   const tokens = lastContextTokens(input.transcript_path);
   const limit = threshold(env, sessionId);
   if (tokens == null || tokens < limit) return null;
-  if (!claimNudge(env, sessionId, tokens)) return null;
+  if (!claimNudge(env, sessionId, tokens)) return headless(env) ? remindHeadless(env, sessionId, input.transcript_path, tokens, limit) : null;
 
   if (headless(env)) {
     return {

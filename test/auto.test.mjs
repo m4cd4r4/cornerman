@@ -342,6 +342,53 @@ describe("mid-turn nudge", () => {
     expect(runStop(input(), { env: env() })).toBeNull();
   });
 
+  // q1m clear-arm retest (2026-11-15): a headless agent ignored the one mid-turn ask at 556k and
+  // kept one turn going for 37 checkpoints, so Stop never ran and auto-compaction did the clear.
+  describe("headless re-ask while the turn keeps running", () => {
+    const henv = () => ({ ...env(), CORNERMAN_HEADLESS: "1" });
+    const headlessAskLine = () =>
+      JSON.stringify({ type: "attachment", text: "cornerman headless mode (context about 185k tokens, threshold 180k, turn still running): ..." });
+
+    it("asks again once the context grows 40k past the last ask, up to three asks in all", () => {
+      write(call(185_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() })).not.toBeNull();
+      write(call(224_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() })).toBeNull(); // grown 39k: not yet
+      write(call(226_000), headlessAskLine());
+      const second = runMidTurn(input(), { env: henv() });
+      expect(second.hookSpecificOutput.additionalContext).toMatch(/reminder 2 of 3/);
+      expect(second.hookSpecificOutput.additionalContext).toMatch(/do not start the next/i);
+      expect(second.systemMessage).toMatch(/ask 2 of 3/);
+      write(call(250_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() })).toBeNull(); // 24k past ask 2
+      write(call(270_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() }).hookSpecificOutput.additionalContext).toMatch(/reminder 3 of 3/);
+      write(call(400_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() })).toBeNull(); // three asks made
+    });
+
+    it("stops asking once save.mjs ran after the last ask", () => {
+      write(call(185_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() })).not.toBeNull();
+      write(call(300_000), headlessAskLine(), saveCall("Bash", { command: 'node "x/save.mjs" --title t' }));
+      expect(runMidTurn(input(), { env: henv() })).toBeNull();
+    });
+
+    it("re-asks mid-turn after a headless Stop ask too, since the turn went on", () => {
+      write(call(185_000));
+      expect(runStop(input(), { env: henv() })).not.toBeNull();
+      write(call(230_000), headlessAskLine());
+      expect(runMidTurn(input(), { env: henv() }).hookSpecificOutput.additionalContext).toMatch(/reminder 2 of 3/);
+    });
+
+    it("leaves interactive mode alone: one mid-turn ask, reminders only at Stop", () => {
+      write(call(185_000), askLine());
+      expect(runMidTurn(input(), { env: env() })).not.toBeNull();
+      write(call(300_000), askLine());
+      expect(runMidTurn(input(), { env: env() })).toBeNull();
+    });
+  });
+
   it("a Stop nudge first also silences the mid-turn one", () => {
     write(call(185_000));
     expect(runStop(input(), { env: env() })).not.toBeNull();
@@ -382,7 +429,12 @@ describe("what each nudge asks", () => {
       if (!extra.CORNERMAN_HEADLESS) asks.push(runStop({ session_id: id, transcript_path: transcript }, { env })); // the reminder
       asks.push(runMidTurn({ session_id: `v${n++}`, transcript_path: transcript }, { env }));
     }
-    expect(asks).toHaveLength(8);
+    // The headless mid-turn reminder, 40k past the first ask.
+    const henv = { CORNERMAN_AUTO: "1", CORNERMAN_HOME: root, CORNERMAN_NUDGE_AT: "180000", CORNERMAN_HEADLESS: "1" };
+    asks.push(runMidTurn({ session_id: "vr", transcript_path: transcript }, { env: henv }));
+    write(call(230_000));
+    asks.push(runMidTurn({ session_id: "vr", transcript_path: transcript }, { env: henv }));
+    expect(asks).toHaveLength(10);
     for (const out of asks) {
       const text = out.hookSpecificOutput.additionalContext;
       const head = text.match(/^cornerman (auto|headless) mode \([^)]*\): /);
