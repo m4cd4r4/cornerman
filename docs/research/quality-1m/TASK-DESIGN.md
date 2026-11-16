@@ -1307,3 +1307,35 @@ fix needs a dry check with a stub that ignores the first ask and never ends its 
 Macdara stopped the retest here (card, 2026-11-16 AWST): no rerun, no further spend. T1-T3 stay
 not tested. The headless re-ask fix went to cornerman as PR m4cd4r4/cornerman#214 (unit-tested;
 no end-to-end dry check was built, since no rerun follows).
+
+## Clear-arm rerun on the fixed build (2026-11-16)
+
+**Approval:** Macdara, card 2026-11-16 AWST: "Dry check, then rerun up to US$32", replacing the
+"Closed" entry above. The run goes ahead only if the dry check passes. Cap: US$15 per fork
+(`Q1M_CAP_USD=15`), US$30 for r1 + r2, inside the US$32.
+
+**What changes from the retest:** arm `clear214`, same base (base211-sonnet), same 12 rulings, same
+fork point. Cornerman pinned to 36b12c9 (#214: under the headless runner the mid-turn ask repeats,
+more firmly, every 40k past the last ask, up to 3 asks, until save.mjs runs).
+
+**Hard cap:** fork.mjs kills a claude process once the run's estimated spend reaches
+`Q1M_CAP_USD` and marks the run `CAPPED`. Every 5 s it prices every message in the run's
+transcripts that the base does not hold, at Claude Code 2.1.316's own claude-sonnet-5-5 prices
+(probed against a stub: US$2 input, 2.50 cache write, 0.10 cache read, 10 output per million),
+times 1.10. On the clear211 forks that prices to US$15.40 and 14.79 before the margin, against
+16.37 and 15.79 reported. The retest's US$10.23 overrun came from one-segment runs that a
+between-segment check could not stop.
+
+Two estimates were tried and dropped, both too low:
+- A rate fitted to r1 and r2. Their transcripts also hold the base's messages, so the fit was
+  wrong, and it underpriced uncached input about 8x.
+- The stream-json usage. It keeps only each message's opening output count, and it put r1 at
+  US$12.43.
+
+**Dry check additions (retest-dry.mjs):** D, a stub agent that ignores the first ask and never
+ends its turn (context +5k per request, a 600k ceiling standing in for compaction), must get a
+second ask, save a handover with all 12 rulings before the ceiling, and clear into segment 2. E,
+a stub that never answers an ask or ends its turn, under a US$5 cap: the watchdog must kill
+segment 1 mid-turn and mark the run CAPPED.
+
+**Predictions:** T1-T3 as frozen in PREDICTIONS.md (last re-freeze), now on clear214.

@@ -72,22 +72,23 @@ renameSync(BASE, PARK);
 
 // --- B and C. forks -------------------------------------------------------------------------
 const forkEnv = { Q1M_BASE: PARK, Q1M_FORK_LIVE: BASE, Q1M_FORK_PARK: FORKS };
-async function fork(r, ctx, segments) {
-  const name = `fork-clear211-sonnet-r${r}`;
+async function fork(r, ctx, segments, { arm = "clear211", stubArgs = [], env = {} } = {}) {
+  const name = `fork-${arm}-sonnet-r${r}`;
   const st = node("fork.mjs", ["setup", name, "--stub", "http://127.0.0.1:9"], forkEnv);
   check(`${name} setup`, st.code === 0);
   const save = join(BASE, "home", ".claude", "plugins", "cache", "cornerman", "cornerman", "0.7.3", "scripts", "save.mjs");
-  const sv = await stub(`fork-r${r}`, ctx, ["--save", save]);
+  const sv = await stub(`fork-${arm}-r${r}`, ctx, ["--save", save, ...stubArgs]);
   const v = node("fork.mjs", ["verify", name, "--stub", sv.url], forkEnv);
   check(`${name} verify`, v.code === 0, (/(\d+\/\d+) checks pass/.exec(v.out) || [])[1]);
-  const rn = node("fork.mjs", ["run", name, "--stub", sv.url], { ...forkEnv, Q1M_DRY_MAX_SEGMENTS: String(segments) });
+  const rn = node("fork.mjs", ["run", name, "--stub", sv.url], { ...forkEnv, Q1M_DRY_MAX_SEGMENTS: String(segments), ...env });
   check(`${name} run`, rn.code === 0);
+  const capped = existsSync(join(BASE, "out", "CAPPED"));
   sv.stop();
   const f = JSON.parse(readFileSync(join(BASE, "out", "fork.json"), "utf8"));
   const store = join(BASE, "cm-store");
   const pk = node("fork.mjs", ["park", name, "--stub", sv.url], forkEnv);
   check(`${name} park`, pk.code === 0);
-  return { name, reqs: requests(sv.log), f, events: rn.out, store: join(FORKS, name, "cm-store") , live: store };
+  return { name, reqs: requests(sv.log), f, events: rn.out, store: join(FORKS, name, "cm-store") , live: store, capped };
 }
 
 console.log("B. fork r1 (stub context 240k, nudge at 250k)");
@@ -110,6 +111,35 @@ check("the handover's \"Rulings from the user\" holds every ruling", /## Rulings
 const fresh = c.reqs.filter((q) => (q.body.messages || []).length && /cornerman: this is segment 2/.test(JSON.stringify(q.body.messages[0])));
 const carried = RULINGS.filter((r) => fresh.some((q) => JSON.stringify(q.body.messages[0]).includes(JSON.stringify(flat(r.text)).slice(1, 60))));
 check("segment 2 (fresh session) opens with the handover, all rulings in it", fresh.length > 0 && carried.length === RULINGS.length, `${carried.length}/${RULINGS.length}`);
+
+// --- D. the fixed build (#214) against the agent the real forks met ---------------------------
+// It ignores the first headless ask and never ends its turn. 260k + 5k per request: ask 1 at the
+// first call past 250k, ask 2 once 40k more has gone by. Ceiling 600k stands in for compaction.
+console.log("D. fork clear214 r3 (stub ignores the first ask, never ends its turn)");
+const d = await fork(3, 260000, 2, { arm: "clear214", stubArgs: ["--ignore-asks", "1", "--never-end", "--grow", "5000", "--ceiling", "600000"] });
+const askHeads = (q) => (JSON.stringify(q.body.messages || []).match(/cornerman headless mode \(/g) || []).length;
+const maxAsks = Math.max(0, ...d.reqs.map(askHeads));
+check("cornerman asks again after the first ask is ignored", maxAsks >= 2, `${maxAsks} asks in the longest request`);
+check("the second ask says it is a reminder", d.reqs.some((q) => /cornerman headless mode \(reminder 2 of 3/.test(JSON.stringify(q.body.messages || []))));
+const dSaved = walk(join(d.store, "handovers")).filter((f) => f.endsWith(".json"));
+// The ceiling is (600k - 260k) / 5k = 68 requests in: the save must come well before it, and the
+// runner's next segment must be a clear from that handover, not a no-handover done-check clear.
+const saveAt = d.reqs.findIndex((q) => JSON.stringify(q.body.messages || []).includes("stub-saved-handover"));
+check("a handover was saved before the stand-in compaction", dSaved.length > 0 && saveAt > 0 && saveAt < 60 && /clear: handover /.test(d.events), `${dSaved.length} record(s), save seen at request ${saveAt}`);
+const dBodies = dSaved.map((f) => JSON.parse(readFileSync(f, "utf8")).body || "").join("\n");
+check("that handover holds every ruling", RULINGS.every((r) => dBodies.includes(flat(r.text))), `${RULINGS.filter((r) => dBodies.includes(flat(r.text))).length}/${RULINGS.length}`);
+const dFresh = d.reqs.filter((q) => (q.body.messages || []).length && /cornerman: this is segment 2/.test(JSON.stringify(q.body.messages[0])));
+check("segment 2 starts fresh from that handover", dFresh.length > 0);
+
+// --- E. the spend cap kills a segment mid-run ----------------------------------------------------
+// Stub usage is 260k+ uncached input per request, about US$0.57 each with the margin, and the stub
+// never answers an ask or ends its turn, so only the watchdog can stop segment 1: US$5 is about 9
+// requests, and the kill must land inside segment 1, not at its end.
+console.log("E. fork clear214 r4 (cap US$5)");
+const e = await fork(4, 260000, 2, { arm: "clear214", stubArgs: ["--ignore-asks", "9", "--never-end", "--grow", "5000", "--ceiling", "900000"], env: { Q1M_CAP_USD: "5" } });
+const capLine = e.events.indexOf("CAP: estimated"), seg1End = e.events.indexOf("segment 1 exit");
+check("the cap killed segment 1 mid-turn and marked the run CAPPED", e.capped && capLine >= 0 && (seg1End === -1 || capLine < seg1End) && /STOP: spend cap US\$5 reached/.test(e.events), `${e.reqs.length} requests`);
+check("the cap stopped it before the stub's ceiling", e.reqs.length < 120, `${e.reqs.length} requests`);
 
 const bad = results.filter((r) => !r.pass).length;
 writeFileSync(join(DIR, "dry-result.json"), JSON.stringify(results, null, 2));

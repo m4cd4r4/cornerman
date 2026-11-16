@@ -226,3 +226,10 @@ task back for a retune before Stage 3, never a published comparison. The earlier
   | T1 | Mean ruling pass rate of clear211 r1-r2 above 7/14 (50%), the old clear's best | 70% |
   | T2 | Both runs pass at least 9 of 12 rulings | 45% |
   | T3 | Old-14 chat group (tool-delivered plants, never logged) stays at or below 7/14 in both runs | 65% |
+
+### Re-freeze 2026-11-16: T1-T3 carried to clear214, unchanged and not blind
+
+T1-T3 apply as written to the clear214 rerun (cornerman 36b12c9), read with "clear211" as
+"clear214". They are kept, not revised, and are no longer blind: the clear211 forks never cleared,
+and their compacted scores (new 12/12 twice, old 13/14 and 12/14) were seen before this entry. T3
+in particular is now expected to be tested against a clear, not a compaction.

@@ -40,13 +40,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TASK = resolve(HERE, "..");
 const CPS = join(TASK, "checkpoints");
 const [cmd, name] = process.argv.slice(2);
-const m = /^fork-(natural|compact|clear211|clear|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
-if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|fillNNN>-sonnet-r<n>");
+const m = /^fork-(natural|compact|clear211|clear214|clear|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
+if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|clear214|fillNNN>-sonnet-r<n>");
 const arm = m[1], fillTo = m[2] ? Number(m[2]) * 1000 : null;
 // clear211 (TASK-DESIGN.md, "Clear-arm retest build"): the clear arm from the retest's own base
 // (base.mjs), cornerman pinned to d7c1445 (#211, the rulings log). Everything below that names
 // pilot 3 is read from that base's out/base.json instead.
-const C211 = arm === "clear211";
+// clear214 (TASK-DESIGN.md, "Clear-arm rerun on the fixed build"): the same base and rulings,
+// cornerman pinned to 36b12c9 (#214, the headless mid-turn re-ask). Same as clear211 otherwise.
+const C214 = arm === "clear214";
+const C211 = arm === "clear211" || C214;
 const CLEARS = arm === "clear" || C211;
 // --stub <url> (dry check only, retest-dry.mjs): no model call. Q1M_BASE / Q1M_FORK_LIVE /
 // Q1M_FORK_PARK move the folders out of I:/Scratch/_q1m for the same check.
@@ -55,7 +58,21 @@ const BASE_DIR = process.env.Q1M_BASE || "I:/Scratch/_q1m-pilot/base211-sonnet";
 const BASE = C211 ? JSON.parse(readFileSync(join(BASE_DIR, "out", "base.json"), "utf8")) : null;
 if (BASE && BASE.dry !== !!STUB) throw new Error(`base.json is ${BASE.dry ? "a dry" : "a real"} base; this run is ${STUB ? "dry" : "real"}`);
 // clear arm: cornerman pinned exactly as arm.mjs pins it; clear211: as base.mjs pins it.
-const CM_TAG = C211 ? "d7c1445" : "v0.7.2", CM_SHA = C211 ? "d7c14458534ddf202d74f6555bdb9d7e5d753c11" : "a8c36539063ae3871745a41d46be376d873e84fd";
+const CM_TAG = C214 ? "36b12c9" : C211 ? "d7c1445" : "v0.7.2";
+const CM_SHA = C214 ? "36b12c940cce2027189a90a52771be375877cf03" : C211 ? "d7c14458534ddf202d74f6555bdb9d7e5d753c11" : "a8c36539063ae3871745a41d46be376d873e84fd";
+// Hard spend cap per run (clear214, real runs): Q1M_CAP_USD. The 2026-11-15 forks ran one segment
+// each, so a between-segment check could not stop them (US$10.23 over the approval). claudeOnce
+// polls runEstimate() and kills the process at the cap. runEstimate() prices every message in this
+// run's transcripts that is not in the base's, at Claude Code 2.1.316's own claude-sonnet-5-5
+// prices, read back from total_cost_usd against a stub reporting 1M of one field at a time
+// (2026-11-16): US$2 input, 2.50 cache write, 0.10 cache read, 10 output per million. On the
+// clear211 forks that gives 15.40 and 14.79 against 16.37 and 15.79 reported (the rest is likely
+// the compaction call), so it is scaled by 1.10 to run slightly high. Not the stream: its usage
+// keeps only the opening output count, and it estimated r1 at 12.43.
+// A dry check may set the cap too, to see the kill fire against the stub's usage.
+const CAP = process.env.Q1M_CAP_USD ? Number(process.env.Q1M_CAP_USD) : Infinity;
+if (C214 && !STUB && cmd === "run" && !(CAP > 0)) throw new Error("clear214 needs Q1M_CAP_USD, the approved spend for this run");
+const PRICE = { input: 2 / 1e6, write: 2.5 / 1e6, read: 0.1 / 1e6, output: 10 / 1e6 }, MARGIN = 1.1;
 const CM_VERSION = C211 ? "0.7.3" : "0.7.2";
 const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}`;
 const CM_NUDGE = 250000;
@@ -308,13 +325,44 @@ const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms));
 // the context size of the last assistant message (the top-up check reads it) and compact the
 // last compact_boundary's metadata. `forked`: the session descends from pilot 3, so its
 // total_cost_usd carries pilot 3's cost; a fresh clear-arm session's does not.
+// The run's spend so far, from its transcripts (see CAP): message id -> final usage, every session
+// file in the project folder, less the messages the fork inherited from the base.
+let baseIds = null;
+const usageIds = (file) => {
+  const m = new Map();
+  for (const l of readFileSync(file, "utf8").split("\n")) {
+    if (!l.includes('"usage"')) continue;
+    try { const x = JSON.parse(l).message; if (x?.usage && x.id) m.set(x.id, x.usage); } catch {}
+  }
+  return m;
+};
+function runEstimate() {
+  if (CAP === Infinity) return 0;
+  baseIds ??= new Set(usageIds(join(PARENT, "home", ".claude", "projects", PROJECT_KEY, `${PARENT_SID}.jsonl`)).keys());
+  const all = new Map();
+  for (const f of readdirSync(TRANSCRIPTS).filter((f) => f.endsWith(".jsonl"))) for (const [id, u] of usageIds(join(TRANSCRIPTS, f))) if (!baseIds.has(id)) all.set(id, u);
+  let c = 0;
+  for (const u of all.values()) c += PRICE.input * (u.input_tokens || 0) + PRICE.write * (u.cache_creation_input_tokens || 0) + PRICE.read * (u.cache_read_input_tokens || 0) + PRICE.output * (u.output_tokens || 0);
+  return c * MARGIN;
+}
+
+// A process is killed once runEstimate() reaches CAP (`capped`).
 function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
   return new Promise((done) => {
     const out = join(OUT, `stream-${String(n).padStart(2, "0")}.jsonl`);
     const child = spawn(CLAUDE, args, { cwd: REPO, env: { ...env(), ...extraEnv }, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
     // ctx keeps the last NON-ZERO context: a usage-limit result carries an assistant message with
     // all-zero usage, which in r2 read as "the fork never took" and caused a second fork at cp48.
-    let tail = "", buf = "", session = null, ctx = null, compact = null;
+    let tail = "", buf = "", session = null, ctx = null, compact = null, capped = false;
+    const watch = CAP === Infinity ? null : setInterval(() => {
+      const est = runEstimate();
+      if (capped || est < CAP) return;
+      capped = true;
+      events(`CAP: estimated US$${est.toFixed(2)} reached the cap US$${CAP}, killing segment ${n}`);
+      // The whole tree: child.kill() leaves claude's hook and tool processes holding the run's
+      // folders open (the dry check's park then failed with EPERM).
+      spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true });
+    }, 5000);
     child.stdout.on("data", (b) => {
       appendFileSync(out, b);
       tail = (tail + b.toString()).slice(-20000);
@@ -340,7 +388,8 @@ function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
       // pilot 3's US$23.74 on top), so the parent's cost is taken off. It is cumulative over the
       // session, so run() keeps the last figure per session and sums sessions.
       try { const j = JSON.parse(res); cost = j.total_cost_usd == null ? null : Math.max(0, j.total_cost_usd - (forked ? PARENT_COST : 0)); isError = !!j.is_error; limited = isError && LIMIT.test(String(j.result || "")); } catch { isError = true; limited = LIMIT.test(tail.slice(-3000)); }
-      done({ code, limited, isError, cost, session, ctx, compact });
+      if (watch) clearInterval(watch);
+      done({ code, limited: capped ? false : limited, isError, cost, session, ctx, compact, capped });
     });
   });
 }
@@ -375,6 +424,7 @@ async function run() {
       events(`segment ${n} start (fork of ${PARENT_SID} at ${FORK_MSG}, ${arm === "compact" ? "/compact" : fillTo ? "top-up turn" : "continue"}) at cp ${gateStatus().current}`);
       r = await claudeOnce(n, forkArgs, first, { extraEnv: cm ? cm.env(chain) : {} });
       if (r.session && r.cost != null) costs.set(r.session, r.cost);
+      if (r.capped || runEstimate() >= CAP) { writeFileSync(join(OUT, "CAPPED"), `${new Date().toISOString()} spend cap US$${CAP} reached in segment ${n}\n`); events(`STOP: spend cap US$${CAP} reached`); return; }
       events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} session ${r.session} context ${r.ctx}${r.compact ? ` compact ${r.compact.trigger} ${r.compact.pre_tokens}->${r.compact.post_tokens}` : ""} cp ${gateStatus().current}`);
       // The fork took once a model call ran (a context, a compaction, or the gate moved). Before
       // that a limit means fork again after the wait; after it, wait and resume THIS session.
@@ -440,6 +490,7 @@ async function run() {
       events(`segment ${n} start (${how}) at cp ${gateStatus().current}`);
       r = await claudeOnce(n, args, input, { extraEnv: cm ? cm.env(chain) : {}, forked: cur.forked });
       if (r.cost != null) costs.set(cur.sid, r.cost);
+      if (r.capped || runEstimate() >= CAP || total() >= CAP) { writeFileSync(join(OUT, "CAPPED"), `${new Date().toISOString()} spend cap US$${CAP} reached in segment ${n}, estimate ${runEstimate().toFixed(2)}, reported ${total().toFixed(2)}\n`); events(`STOP: spend cap US$${CAP} reached, estimate ${runEstimate().toFixed(2)}, reported ${total().toFixed(2)}`); break; }
       if (r.ctx) cur.first = null;
       const now = gateStatus().current;
       events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} error ${r.isError} context ${r.ctx}${r.compact ? ` compacted ${r.compact.trigger} ${r.compact.pre_tokens}->${r.compact.post_tokens}` : ""} cp ${now}`);
@@ -453,8 +504,10 @@ async function run() {
     rmSync(LOCK, { recursive: true, force: true });
     gate.kill();
     const s = gateStatus();
-    writeFileSync(join(OUT, "ended.txt"), `${new Date().toISOString()} cp ${s.current} finished ${!!s.finished} cost ${total().toFixed(2)}\n`);
-    events(`run ${name}: ended at cp ${s.current}, finished ${!!s.finished}, cost ${total().toFixed(2)} (${costs.size} sessions)`);
+    // A killed (capped) process reports no cost, so the transcript estimate rides along.
+    const est = CAP === Infinity ? "" : `, estimate ${runEstimate().toFixed(2)}`;
+    writeFileSync(join(OUT, "ended.txt"), `${new Date().toISOString()} cp ${s.current} finished ${!!s.finished} cost ${total().toFixed(2)}${est}\n`);
+    events(`run ${name}: ended at cp ${s.current}, finished ${!!s.finished}, cost ${total().toFixed(2)} (${costs.size} sessions)${est}`);
   }
 }
 
@@ -510,7 +563,14 @@ function park() {
   // transcript first left r2 half-parked.
   mkdirSync(FORK_PARK, { recursive: true });
   const to = join(FORK_PARK, name);
-  renameSync(LIVE, to);
+  // A capped run's killed tool processes can hold the folder for a moment after the kill (the dry
+  // check's park failed with EPERM, and the same park passed by hand a minute later): retry 60 s.
+  for (let i = 0; ; i++) {
+    try { renameSync(LIVE, to); break; } catch (e) {
+      if (!/EPERM|EBUSY/.test(e.code) || i >= 30) throw e;
+      execFileSync(process.execPath, ["-e", "setTimeout(()=>{},2000)"]);
+    }
+  }
   const tr = join(to, "home", ".claude", "projects", PROJECT_KEY);
   mkdirSync(join(to, "out", "parent-transcript"), { recursive: true });
   renameSync(join(tr, `${PARENT_SID}.jsonl`), join(to, "out", "parent-transcript", `${PARENT_SID}.jsonl`));

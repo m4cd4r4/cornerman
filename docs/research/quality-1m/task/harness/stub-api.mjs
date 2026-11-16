@@ -12,6 +12,14 @@ import { appendFileSync } from "node:fs";
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i === -1 ? d : process.argv[i + 1]; };
 const LOG = arg("--log"), CTX = Number(arg("--ctx", "1000")), TOOL = arg("--tool", null);
 let n = 0;
+// The agent the 2026-11-15 forks met (TASK-DESIGN.md, "Why it never cleared"), for the #214 dry
+// check: --ignore-asks <k> leaves the first k headless asks unanswered, --never-end keeps calling
+// the tool instead of ending the turn (until it has saved, or the context passes --ceiling, where
+// it ends the turn as an auto-compaction would end that stretch), and --grow <tokens> adds that
+// much context per request, so cornerman's 40k re-ask step can be reached.
+const IGNORE = Number(arg("--ignore-asks", "0")), NEVER_END = process.argv.includes("--never-end");
+const GROW = Number(arg("--grow", "0")), CEILING = Number(arg("--ceiling", "Infinity"));
+let ctxNow = CTX;
 
 function sse(res, events) {
   res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache" });
@@ -33,12 +41,21 @@ function reply(body) {
   const tail = msgs.slice(msgs.findLastIndex((m) => m.role === "assistant") + 1);
   const last = { content: tail.map((m) => m.content) };
   const answered = tail.some((m) => Array.isArray(m.content) && m.content.some((c) => c.type === "tool_result"));
-  const usage = { input_tokens: CTX, output_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
-  const id = `msg_stub_${++n}`;
+  const all = JSON.stringify(body.messages);
+  const savedAlready = /stub-saved-handover/.test(all);
+  // Context grows only within one conversation: a fresh session (no assistant turn yet) starts over.
+  if (!msgs.some((m) => m.role === "assistant")) ctxNow = CTX; else if (!savedAlready) ctxNow += GROW;
+  const usage = { input_tokens: ctxNow, output_tokens: 5, cache_read_input_tokens: 0, cache_creation_input_tokens: 0 };
+  // Ids unique across stub processes, as real message ids are: fork.mjs's spend estimate tells a
+  // fork's messages from the base's by id.
+  const id = `msg_stub_${process.pid}_${++n}`;
   const start = ["message_start", { message: { id, type: "message", role: "assistant", model: body.model, content: [], stop_reason: null, stop_sequence: null, usage } }];
-  const asked = SAVE && /cornerman headless mode/.test(JSON.stringify(last?.content ?? "")) && !/stub-saved-handover/.test(JSON.stringify(body.messages));
+  // Each ask stays in the history once made, so the count of ask heads is the count of asks so far.
+  const asksSoFar = (all.match(/cornerman headless mode \(/g) || []).length;
+  const asked = SAVE && /cornerman headless mode/.test(JSON.stringify(last?.content ?? "")) && !savedAlready && asksSoFar > IGNORE;
   const command = asked ? `node "${SAVE.replace(/\\/g, "/")}" --title "stub-saved-handover" <<'EOF'\n${HANDOVER}EOF` : TOOL;
-  if (command && (!answered || asked)) {
+  const keepGoing = NEVER_END && !savedAlready && ctxNow < CEILING;
+  if (command && (!answered || asked || keepGoing)) {
     const input = JSON.stringify({ command, description: "stub tool call" });
     return [start,
       ["content_block_start", { index: 0, content_block: { type: "tool_use", id: `toolu_stub_${n}`, name: "Bash", input: {} } }],
