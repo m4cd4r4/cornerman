@@ -1362,5 +1362,5 @@ this: its stub obeys any ask it does not ignore by flag.
 **For cornerman:** a headless mid-turn ask has to arrive as a user turn, not as hook context. In
 headless mode the runner could end the process once the threshold has passed, at the next tool
 boundary, and resume the same session with the ask as the user message. The headless Stop path
-already gets a turn end from Claude Code, which Sonnet follows (dry check C, and the clear arm's
-earlier runs).
+already reaches Claude at a turn end; whether Sonnet follows it there is to be checked in the clear arm's
+0.7.2 transcripts.
