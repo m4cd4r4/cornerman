@@ -65,6 +65,12 @@ runner sets per segment (phase 2: from the window's state).
 | headless | if the task is finished, do NOT save a handover, just end. Otherwise commit all work, save a handover with `save.mjs` (next action, plus any open STOP question verbatim), and end the turn. The runner resumes you. |
 | interactive auto-continue | same as headless, and the extension continues in a new tab |
 
+**How the headless mid-turn ask arrives:** not as hook context. Past the threshold the
+PostToolUse hook ends the turn (`continue: false`) and leaves the ask in `<store>/.ask/<session>.json`;
+the runner resumes the same session (`--resume`, same segment) with the ask as the next user
+message. In the q1m trials at 556k (2026-11-16), Sonnet 5.5 obeyed the hook-context ask 2 of 9
+times, dropping it without a word, and the user-turn ask 9 of 9. The Stop ask is still hook context.
+
 The "if finished, don't save" clause matters: the Stop hook fires on the final turn end
 too, and a finished worker that saves a handover would be resumed into a done task.
 
