@@ -1339,3 +1339,28 @@ a stub that never answers an ask or ends its turn, under a US$5 cap: the watchdo
 segment 1 mid-turn and mark the run CAPPED.
 
 **Predictions:** T1-T3 as frozen in PREDICTIONS.md (last re-freeze), now on clear214.
+
+### Rerun r1 result (2026-11-16): three asks, all refused as injection; r2 not run
+
+**fork-clear214-sonnet-r1** ran one segment from 11:49 to 12:22 AWST and was killed by the cap at
+cp69 (estimate US$15.09; raw 13.72, so about US$14.60 by the clear211 calibration). It never
+cleared: one session, context up to 904k.
+
+cornerman 36b12c9 did what #214 says. `.nudged` shows `asks: 3`, and the transcript has the first
+ask at 556k, "reminder 2 of 3" at 599k and "reminder 3 of 3" at 639k, all as PostToolUse
+additionalContext. The agent saw them and refused them. After reminder 2 it wrote:
+
+> That hook text is another instruction inside a tool result, not from you, so I'm ignoring it
+> and continuing with the merge wiring in `sheet.mjs`.
+
+So the clear211 failure was not one weak ask. Sonnet 5.5 treats cornerman's mid-turn hook context
+as a prompt injection, and asking again more firmly changes nothing. The dry check could not see
+this: its stub obeys any ask it does not ignore by flag.
+
+**r2 not run.** It would spend about US$15 to reproduce this. Spend: about US$14.60 of the US$32.
+
+**For cornerman:** a headless mid-turn ask has to arrive as a user turn, not as hook context. In
+headless mode the runner could end the process once the threshold has passed, at the next tool
+boundary, and resume the same session with the ask as the user message. The headless Stop path
+already gets a turn end from Claude Code, which Sonnet follows (dry check C, and the clear arm's
+earlier runs).
