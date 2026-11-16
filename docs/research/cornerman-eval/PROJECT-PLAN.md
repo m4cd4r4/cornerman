@@ -103,6 +103,15 @@ Open: release 0.7.4 held (Macdara 17:20 AWST) until the next change.
   correction ("3 spaces" and "2 spaces"), unmarked. The agent still used the latest.
 - **The smoke does not separate the arms:** one compaction on this little context loses nothing.
   The batch needs 2-3 clears/compactions and more reading per segment, or C1 shows no difference.
-- Confound to decide: Claude Code auto-memory wrote notes during plants (e.g. an
-  export-header-row memory) that survive a clear, in every arm. Acted-on is then cornerman +
-  auto-memory, not cornerman alone.
+- Auto-memory confound: round 3 transcripts show memory files written by cm 15, compact 11,
+  full 1; they survive a clear. **Macdara 2026-11-16 21:48 AWST: auto-memory off in all arms**
+  (b247bf4: `autoMemoryEnabled:false` + `CLAUDE_CODE_DISABLE_AUTO_MEMORY=1`; result.json
+  `memoryFiles` must be []).
+- **Round 4 (memory off): cm 7/8, full 8/8, compact 8/8; memoryFiles [] and 0 memory writes in
+  every arm.** cm miss = ruling (reject negatives), written in every handover but not acted on:
+  the handover writer glossed it as "a note, not a task. Ask before implementing", then "applied
+  only in src/refunds.js; NOT in applyFee. Ask before extending"; after the clear the agent
+  followed the gloss over the verbatim ruling quoted below it. Partly induced by the brief ("don't
+  change any code until I give you a task"), reworded after round 4 to "standing rules and facts
+  for every later task". Cornerman lead (n=1, confirm in the batch): the handover must not attach
+  its own conditions to a user ruling.

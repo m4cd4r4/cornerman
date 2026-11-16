@@ -161,7 +161,7 @@ async function main() {
   const late = facts.flatMap((f) => f.plant.filter((p) => p.phase === "late").map((p) => ({ f, p })));
 
   // Opening brief, then the early plants one per turn, each with a work turn between.
-  await say("We're working on ledger, a small Node money-ledger library in this folder. I'll give you tasks one at a time. Between tasks I'll pass on notes about the project: take note of them, but don't change any code until I give you a task. Start by reading README.md and listing the source files.", "brief");
+  await say("We're working on ledger, a small Node money-ledger library in this folder. I'll give you tasks one at a time. Between tasks I'll pass on notes about the project. Treat them as standing rules and facts for every later task, but don't start work from a note on its own: wait for a task. Start by reading README.md and listing the source files.", "brief");
   await waitIdle("brief");
   // Every plant records the session it landed in, so each fact's probe can say how many clears
   // it actually crossed (a clear can land in the middle of the plants).
