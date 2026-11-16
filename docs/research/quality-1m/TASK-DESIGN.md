@@ -1546,3 +1546,5 @@ save call <= 3) right: median call 2.
 **For cornerman:** ship 747d005 (headless PostToolUse ask as a user turn). Not tested here: the Stop
 ask (unchanged), Haiku, and a full chain run through run.mjs on a real model (the trials reproduce
 run.mjs's resume in fork.mjs; run.mjs itself is covered by the fake-claude tests).
+
+**Shipped:** cornerman PR #215 merged 2026-11-16 17:18 AWST (squash 8d96c43), Macdara approved by card. Not released: 0.7.4 is a separate step.
