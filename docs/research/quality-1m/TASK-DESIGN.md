@@ -1477,3 +1477,41 @@ ends the turn; the runner resumes the same session with the ask as the user mess
 it on the stub (US$0), then run trials from the same cached base211 fork point with the A/B's
 outcome rule (save.mjs within 6 tool calls of the resumed turn), each capped at what is left of
 the US$20.
+
+### Mechanism probe (2026-11-16 15:15 AWST, stub, US$0)
+
+Claude Code 2.1.316, print mode, stream-json, isolated config, a PostToolUse hook that prints
+`{"continue":false,"stopReason":"..."}` once, the stub calling Bash once per turn. Probe script kept
+in the session scratchpad only (not committed; it is 70 lines and the dry check below supersedes it).
+
+- **The turn ends at that tool boundary.** One API request, the tool ran, no request after it. The
+  `result` event is `success` with `stop_reason: "tool_use"` (a normal end is `end_turn`), and the
+  transcript gets an attachment `{type: "hook_stopped_continuation", message: <stopReason>,
+  toolUseID}`. The stopReason does not appear in the stream.
+- **`--resume <sid>` continues the same session**, same id, full history.
+- **The next user message reaches the API as a user turn.** On resume the CLI inserts an assistant
+  `"No response requested."` after the tool result, and the model sees a system line
+  `PostToolUse:Bash hook stopped continuation: <stopReason>` before it. So the stopReason is model-
+  visible and must read as neutral, not as an instruction.
+
+### User-turn build (2026-11-16, US$0)
+
+- **cornerman 747d005** (branch feat/headless-user-turn-ask, from origin/main bda589d): under the
+  headless runner the PostToolUse nudge, first ask and re-asks, returns `continue: false` with a
+  neutral stopReason and writes the ask to `<store>/.ask/<session>.json`; run.mjs resumes the same
+  session (`--resume`, same segment) with the ask on stdin, until the ask cap. The Stop ask is
+  unchanged. Ask head now says "your turn was stopped after a tool call". npm test 704, 3 skipped.
+- **fork.mjs `-askut`**: clones 747d005 to `I:/Scratch/_q1m-cornerman-ut-747d005`; a trial is
+  segment 1 (the fork, stopped by the hook) then segment 2 (`--resume` with the ask, read from the
+  fork's cm-store and removed); obeyed if a Bash save.mjs call is among segment 2's first 6 calls.
+  Outcomes besides obeyed / ignored / ended (no-pause, ended-without-pause) are harness faults.
+- **Batch:** `trial-batch.mjs --set ut --budget 20`, 10 trials, ledger `I:/Scratch/_q1m-fork/ut-ledger.json`,
+  same stop rules as the A/B.
+- **Dry check I-J (`Q1M_DRY_ONLY=ut`), 25/25:** I: segment 1 stopped after call 1 with the ask in
+  the store, no ask in hook context, the ask reached the model once as a user message in the same
+  session, the model saw "hook stopped continuation: cornerman: context threshold reached; the next
+  message says what to do.", obeyed at the resumed turn's call 1. J: an ignoring stub scores ignored
+  after 6, killed at 7 requests.
+- **Park retry raised to 5 min:** the first dry run's park failed with EPERM after 60 s with no
+  harness process left; the fork folder itself was held (every subfolder renamed) and freed a few
+  minutes later. Likely a repo scan of the new repo under I:/.

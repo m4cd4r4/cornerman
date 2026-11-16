@@ -91,7 +91,8 @@ async function fork(r, ctx, segments, { arm = "clear211", stubArgs = [], env = {
   return { name, reqs: requests(sv.log), f, events: rn.out, store: join(FORKS, name, "cm-store") , live: store, capped };
 }
 
-if (process.env.Q1M_DRY_ONLY !== "trials") {
+const ONLY = process.env.Q1M_DRY_ONLY;
+if (ONLY !== "trials" && ONLY !== "ut") {
 console.log("B. fork r1 (stub context 240k, nudge at 250k)");
 const b = await fork(1, 240000, 1);
 const first = b.reqs[0];
@@ -142,7 +143,7 @@ const capLine = e.events.indexOf("CAP: estimated"), seg1End = e.events.indexOf("
 check("the cap killed segment 1 mid-turn and marked the run CAPPED", e.capped && capLine >= 0 && (seg1End === -1 || capLine < seg1End) && /STOP: spend cap US\$5 reached/.test(e.events), `${e.reqs.length} requests`);
 check("the cap stopped it before the stub's ceiling", e.reqs.length < 120, `${e.reqs.length} requests`);
 
-} // Q1M_DRY_ONLY=trials skips B-E (A still builds the base the trials fork from)
+} // Q1M_DRY_ONLY=trials skips B-E, =ut skips B-H (A still builds the base the trials fork from)
 
 // --- F-H. ask-wording A/B trial mode (TASK-DESIGN.md, "Ask-wording A/B") -------------------------
 // --grow 5000 in every trial: the context must rise past the fork for call 1's PostToolUse to ask, as
@@ -158,6 +159,7 @@ const trial = async (r, ask, stubArgs) => {
   return { ...t, rec: existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null };
 };
 const askIn = (reqs) => { for (const q of reqs) { const m = /cornerman headless mode \(context[^"\\]*(?:\\.[^"\\]*)*/.exec(JSON.stringify(q.body.messages || [])); if (m) return JSON.parse(`"${m[0]}"`); } return ""; };
+if (ONLY !== "ut") {
 console.log("F. trial clear214-askshort r5 (stub obeys)");
 const tf = await trial(5, "short", ["--never-end", "--grow", "5000", "--ceiling", "900000"]);
 check("F: outcome obeyed at the save call, ask on call 1", tf.rec?.outcome === "obeyed" && tf.rec.askOnCall === 1 && tf.rec.callsAfterAsk === 1 && /save\.mjs/.test(tf.rec.callsAfterAskList[0]?.command || ""), JSON.stringify(tf.rec && { o: tf.rec.outcome, a: tf.rec.askOnCall, n: tf.rec.callsAfterAsk }));
@@ -172,6 +174,25 @@ console.log("H. trial clear214-askc214 r7 (control, stub obeys)");
 const th = await trial(7, "c214", ["--never-end", "--grow", "5000", "--ceiling", "900000"]);
 check("H: control obeyed, and the model saw 36b12c9's wording", th.rec?.outcome === "obeyed" && /with the sections .*in their own words/.test(askIn(th.reqs)), th.rec?.outcome);
 check("H: control ran the unpatched clone", JSON.parse(readFileSync(join(FORKS, th.name, "out", "fork.json"), "utf8")).cornermanDir === "I:/Scratch/_q1m-cornerman-36b12c9");
+}
+
+// --- I-J. user-turn ask (TASK-DESIGN.md, "User-turn ask test") -----------------------------------
+// The hook must stop segment 1 after call 1 with no ask in hook context, and segment 2 must resume
+// the same session with the ask as a user message. Same stub flags as F-H.
+const userAsk = (reqs) => reqs.flatMap((q) => (q.body.messages || []).filter((m) => m.role === "user" && typeof m.content === "string" && /^cornerman headless mode \(/.test(m.content)).map((m) => m.content));
+const seg1Reqs = (reqs) => reqs.filter((q) => !userAsk([q]).length);
+console.log("I. trial clear214-askut r8 (stub obeys the user-turn ask)");
+const ti = await trial(8, "ut", ["--never-end", "--grow", "5000", "--ceiling", "900000"]);
+check("I: segment 1 stopped by the hook after call 1, the ask left in the store", ti.rec?.segment1?.calls.length === 1 && ti.rec.segment1.pendingAsk === true, JSON.stringify(ti.rec?.segment1 && { calls: ti.rec.segment1.calls.length, pending: ti.rec.segment1.pendingAsk }));
+check("I: no ask reached the model as hook context", !seg1Reqs(ti.reqs).some((q) => /cornerman headless mode/.test(JSON.stringify(q.body.messages || []))), `${seg1Reqs(ti.reqs).length} requests before the ask`);
+check("I: the ask reached the model once, as a user message, in the same session", new Set(userAsk(ti.reqs)).size === 1 && /your turn was stopped after a tool call/.test(userAsk(ti.reqs)[0] || "") && /segment 2 start \(ask ut: resume /.test(ti.events), (userAsk(ti.reqs)[0] || "").slice(0, 120));
+check("I: the model saw the stop as a neutral line", ti.reqs.some((q) => /hook stopped continuation: cornerman: context threshold reached; the next message says what to do\./.test(JSON.stringify(q.body.messages || []))));
+check("I: outcome obeyed at the resumed turn's first call", ti.rec?.outcome === "obeyed" && ti.rec.callsAfterAsk === 1 && /save\.mjs/.test(ti.rec.callsAfterAskList[0]?.command || ""), JSON.stringify(ti.rec && { o: ti.rec.outcome, n: ti.rec.callsAfterAsk }));
+check("I: ran the user-turn build, not the A/B clone", /_q1m-cornerman-ut-/.test(JSON.parse(readFileSync(join(FORKS, ti.name, "out", "fork.json"), "utf8")).cornermanDir));
+console.log("J. trial clear214-askut r9 (stub ignores the user-turn ask, never ends its turn)");
+const tj = await trial(9, "ut", ["--ignore-asks", "9", "--never-end", "--grow", "5000", "--ceiling", "900000"]);
+check("J: outcome ignored after 6 calls of the resumed turn", tj.rec?.outcome === "ignored" && tj.rec.callsAfterAsk === 6 && tj.rec.segment1.pendingAsk === true, JSON.stringify(tj.rec && { o: tj.rec.outcome, n: tj.rec.callsAfterAsk }));
+check("J: killed mid-turn, well before the stub's ceiling", tj.reqs.length <= 10, `${tj.reqs.length} requests`);
 
 const bad = results.filter((r) => !r.pass).length;
 writeFileSync(join(DIR, "dry-result.json"), JSON.stringify(results, null, 2));

@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // trial-batch.mjs: the ask-wording A/B batch (TASK-DESIGN.md, "Ask-wording A/B"). REAL spend.
-//   node trial-batch.mjs --budget 8
+//   node trial-batch.mjs --budget 8              the A/B (US$8 cap)
+//   node trial-batch.mjs --set ut --budget 20    the user-turn ask test (TASK-DESIGN.md, "User-turn
+//                                                ask test", US$20 cap): 10 trials of -askut, ledger ut-ledger.json
 // Runs up to 9 trials, round-robin v072, c214, short (so a batch cut short stays balanced), each
 // one fork.mjs setup / verify / run / park. Every run gets Q1M_CAP_USD = what is left of the budget,
 // so fork.mjs's watchdog kills a trial that would pass it. The ledger is I:/Scratch/_q1m-fork/ab-ledger.json
@@ -18,10 +20,15 @@ import { fileURLToPath } from "node:url";
 const HERE = dirname(fileURLToPath(import.meta.url));
 const i = process.argv.indexOf("--budget");
 const BUDGET = i === -1 ? NaN : Number(process.argv[i + 1]);
-if (!(BUDGET > 0 && BUDGET <= 8)) throw new Error("--budget <US$, at most 8> (the approved A/B cap)");
-const PARK = "I:/Scratch/_q1m-fork", LEDGER = join(PARK, "ab-ledger.json");
+const SET = process.argv.includes("--set") ? process.argv[process.argv.indexOf("--set") + 1] : "ab";
+if (!["ab", "ut"].includes(SET)) throw new Error("--set ab|ut");
+const MAX = SET === "ut" ? 20 : 8;
+if (!(BUDGET > 0 && BUDGET <= MAX)) throw new Error(`--budget <US$, at most ${MAX}> (the approved ${SET} cap)`);
+const PARK = "I:/Scratch/_q1m-fork", LEDGER = join(PARK, `${SET}-ledger.json`);
 const MIN_LEFT = 0.75, CACHE_MISS = 1.0;
-const ORDER = [1, 2, 3].flatMap((r) => ["v072", "c214", "short"].map((v) => `fork-clear214-ask${v}-sonnet-r${r}`));
+const ORDER = SET === "ut"
+  ? Array.from({ length: 10 }, (_, k) => `fork-clear214-askut-sonnet-r${k + 1}`)
+  : [1, 2, 3].flatMap((r) => ["v072", "c214", "short"].map((v) => `fork-clear214-ask${v}-sonnet-r${r}`));
 
 const ledger = existsSync(LEDGER) ? JSON.parse(readFileSync(LEDGER, "utf8")) : { budget: BUDGET, trials: [] };
 const spent = () => ledger.trials.reduce((a, t) => a + (t.estimateUsd || 0), 0);
@@ -51,4 +58,4 @@ for (const name of ORDER) {
 }
 const by = {};
 for (const t of ledger.trials) (by[t.variant] ??= []).push(t.outcome);
-console.log(`\nA/B so far: ${JSON.stringify(by)}; spent US$${spent().toFixed(2)} of ${BUDGET}`);
+console.log(`\n${SET} so far: ${JSON.stringify(by)}; spent US$${spent().toFixed(2)} of ${BUDGET}`);

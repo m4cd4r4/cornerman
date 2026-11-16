@@ -41,8 +41,8 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const TASK = resolve(HERE, "..");
 const CPS = join(TASK, "checkpoints");
 const [cmd, name] = process.argv.slice(2);
-const m = /^fork-(natural|compact|clear211|clear214|clear|fill(\d+))(?:-ask(v072|c214|short))?-(sonnet)-r(\d+)$/.exec(name || "");
-if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|clear214|fillNNN>[-ask<v072|c214|short>]-sonnet-r<n>");
+const m = /^fork-(natural|compact|clear211|clear214|clear|fill(\d+))(?:-ask(v072|c214|short|ut))?-(sonnet)-r(\d+)$/.exec(name || "");
+if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|clear214|fillNNN>[-ask<v072|c214|short|ut>]-sonnet-r<n>");
 const arm = m[1], fillTo = m[2] ? Number(m[2]) * 1000 : null;
 // Ask-wording A/B (TASK-DESIGN.md, "Ask-wording A/B"): fork-clear214-ask<variant>-sonnet-r<n> is a
 // TRIAL. The variant is in the name, not an env var, so a parked trial always says what it ran.
@@ -50,6 +50,13 @@ const arm = m[1], fillTo = m[2] ? Number(m[2]) * 1000 : null;
 // segment and stops at the outcome: "obeyed" if a Bash save.mjs call comes within TRIAL_CALLS tool
 // calls after the call whose PostToolUse carried the first ask, else "ignored"; out/TRIAL.json.
 const ASK = m[3] || null, TRIAL = !!ASK, TRIAL_CALLS = 6;
+// User-turn ask test (TASK-DESIGN.md, "User-turn ask test"): -askut installs the cornerman branch
+// feat/headless-user-turn-ask, where the headless PostToolUse nudge ends the turn (continue: false)
+// and leaves its ask in <store>/.ask/<session>.json. A trial is then two segments, as run.mjs runs
+// them: segment 1 the fork, stopped by the hook; segment 2 `--resume` of the same session with the
+// ask as the user message. Obeyed if a Bash save.mjs call is among segment 2's first TRIAL_CALLS.
+const UT = ASK === "ut";
+const UT_SHA = "747d005426fd47c10a4e2ade1377377dc119422b";
 if (ASK && arm !== "clear214") throw new Error("an ask variant runs only on clear214");
 // clear211 (TASK-DESIGN.md, "Clear-arm retest build"): the clear arm from the retest's own base
 // (base.mjs), cornerman pinned to d7c1445 (#211, the rulings log). Everything below that names
@@ -66,8 +73,8 @@ const BASE_DIR = process.env.Q1M_BASE || "I:/Scratch/_q1m-pilot/base211-sonnet";
 const BASE = C211 ? JSON.parse(readFileSync(join(BASE_DIR, "out", "base.json"), "utf8")) : null;
 if (BASE && BASE.dry !== !!STUB) throw new Error(`base.json is ${BASE.dry ? "a dry" : "a real"} base; this run is ${STUB ? "dry" : "real"}`);
 // clear arm: cornerman pinned exactly as arm.mjs pins it; clear211: as base.mjs pins it.
-const CM_TAG = C214 ? "36b12c9" : C211 ? "d7c1445" : "v0.7.2";
-const CM_SHA = C214 ? "36b12c940cce2027189a90a52771be375877cf03" : C211 ? "d7c14458534ddf202d74f6555bdb9d7e5d753c11" : "a8c36539063ae3871745a41d46be376d873e84fd";
+const CM_TAG = UT ? `ut-${UT_SHA.slice(0, 7)}` : C214 ? "36b12c9" : C211 ? "d7c1445" : "v0.7.2";
+const CM_SHA = UT ? UT_SHA : C214 ? "36b12c940cce2027189a90a52771be375877cf03" : C211 ? "d7c14458534ddf202d74f6555bdb9d7e5d753c11" : "a8c36539063ae3871745a41d46be376d873e84fd";
 // Hard spend cap per run (clear214, real runs): Q1M_CAP_USD. The 2026-11-15 forks ran one segment
 // each, so a between-segment check could not stop them (US$10.23 over the approval). claudeOnce
 // polls runEstimate() and kills the process at the cap. runEstimate() prices every message in this
@@ -83,7 +90,8 @@ if (C214 && !STUB && cmd === "run" && !(CAP > 0)) throw new Error("clear214 need
 const PRICE = { input: 2 / 1e6, write: 2.5 / 1e6, read: 0.1 / 1e6, output: 10 / 1e6 }, MARGIN = 1.1;
 const CM_VERSION = C211 ? "0.7.3" : "0.7.2";
 // A variant other than the control gets its own clone, patched (ask-variants.mjs says why).
-const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}${ASK && ASK !== "c214" ? `-ask-${ASK}` : ""}`;
+const PATCHED = !!ASK && ASK !== "c214" && !UT;
+const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}${PATCHED ? `-ask-${ASK}` : ""}`;
 const NUDGE_REL = "plugin/scripts/lib/nudge.mjs";
 const CM_NUDGE = 250000;
 const MODEL_ID = "claude-sonnet-5-5";
@@ -211,7 +219,8 @@ function setup() {
       if (r.status !== 0) throw new Error(`claude ${a.join(" ")} -> exit ${r.status}: ${r.stderr}`);
     }
     Object.assign(info, { cornerman: pluginVersion(), cornermanTag: CM_TAG, cornermanSha: CM_SHA, nudgeAt: CM_NUDGE });
-    if (ASK) Object.assign(info, { askVariant: ASK, cornermanDir: CM_DIR, askFunctionSha: sha(askWant()), trialCalls: TRIAL_CALLS });
+    if (ASK) Object.assign(info, { askVariant: ASK, cornermanDir: CM_DIR, trialCalls: TRIAL_CALLS,
+      ...(UT ? { askChannel: "user turn (continue:false, then --resume)" } : { askFunctionSha: sha(askWant()) }) });
   }
   if (C211) {
     // --fork-session gives the fork a new session id, and the rulings log is kept per session id.
@@ -233,7 +242,7 @@ function pinnedCornerman() {
     g("clone", "--quiet", "https://github.com/m4cd4r4/cornerman", CM_DIR);
     g("-C", CM_DIR, "-c", "advice.detachedHead=false", "checkout", "--quiet", CM_SHA);
   }
-  const patched = ASK && ASK !== "c214";
+  const patched = PATCHED;
   if (patched) {
     // The patch is rebuilt from the pinned original every time, so a stale or hand-edited clone fails.
     const orig = g("-C", CM_DIR, "show", `${CM_SHA}:${NUDGE_REL}`) + "\n";
@@ -331,7 +340,12 @@ function verify() {
       ok("the fork's rulings log is the base's, unchanged", sha(readFileSync(join(store, "rulings", `${f.forkSession}.jsonl`))) === f.rulingsLogSha);
       ok("cornerman has the rulings log code", existsSync(join(pluginDir(), "scripts", "lib", "rulings.mjs")));
     }
-    if (ASK) {
+    if (UT) {
+      const src = readFileSync(join(pluginDir(), "scripts", "lib", "nudge.mjs"), "utf8"), runner = readFileSync(join(pluginDir(), "scripts", "lib", "run.mjs"), "utf8");
+      ok("ask ut: the installed nudge stops the turn and leaves the ask", /function pauseForAsk\(/.test(src) && /continue: false/.test(src) && /export function takePendingAsk\(/.test(src));
+      ok("ask ut: the installed runner resumes the session with the ask", /takePendingAsk\(segEnv, sessionId\)/.test(runner));
+      ok("ask ut: recorded in fork.json", JSON.parse(readFileSync(join(OUT, "fork.json"), "utf8")).askVariant === "ut");
+    } else if (ASK) {
       const want = askWant();
       ok(`ask variant ${ASK}: the source clone's headlessAsk is the variant`, askNow(join(CM_DIR, "plugin")) === want, CM_DIR);
       ok(`ask variant ${ASK}: the installed copy's headlessAsk is the variant`, askNow(pluginDir()) === want);
@@ -376,7 +390,8 @@ function runEstimate() {
 }
 
 // A process is killed once runEstimate() reaches CAP (`capped`).
-function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
+// trialAsk: the ask was this process's user message (ask ut, segment 2), so every call is after it.
+function claudeOnce(n, args, input, { extraEnv = {}, forked = true, trialAsk = null } = {}) {
   return new Promise((done) => {
     const out = join(OUT, `stream-${String(n).padStart(2, "0")}.jsonl`);
     const child = spawn(CLAUDE, args, { cwd: REPO, env: { ...env(), ...extraEnv }, stdio: ["pipe", "pipe", "pipe"], windowsHide: true });
@@ -386,7 +401,7 @@ function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
     // Trial mode: top-level tool calls in stream order, the agent's text, and which call's
     // PostToolUse carried the first headless ask (read from the transcript, where the hook's
     // additionalContext lands as a hook_additional_context attachment naming its toolUseID).
-    const trial = TRIAL ? { calls: [], texts: [], askIdx: null, askText: null, outcome: null } : null;
+    const trial = TRIAL ? { calls: [], texts: [], askIdx: trialAsk == null ? null : -1, askText: trialAsk, outcome: null } : null;
     const findAsk = () => {
       for (const f of readdirSync(TRANSCRIPTS).filter((f) => f.endsWith(".jsonl") && f !== `${PARENT_SID}.jsonl`)) {
         for (const l of readFileSync(join(TRANSCRIPTS, f), "utf8").split("\n")) {
@@ -494,6 +509,7 @@ async function run() {
       events(`segment ${n} start (fork of ${PARENT_SID} at ${FORK_MSG}, ${arm === "compact" ? "/compact" : fillTo ? "top-up turn" : "continue"}) at cp ${gateStatus().current}`);
       r = await claudeOnce(n, forkArgs, first, { extraEnv: cm ? cm.env(chain) : {} });
       if (r.session && r.cost != null) costs.set(r.session, r.cost);
+      if (UT) return await utTrial(n, r);
       if (TRIAL) {
         // One segment, whatever happened. A turn that ended before an outcome is "ended"; a limit or
         // error is kept as such, so a batch can tell a result from a run that never got there.
@@ -597,6 +613,31 @@ async function run() {
 
 // The clear arm's relay pieces, from the installed plugin (store) and copied verbatim from
 // scripts/lib/run.mjs at v0.7.2 (prompts, savedSince, the archive calls), max segments unlimited.
+// Ask ut: segment 1 (the fork) must have been stopped by the hook with an ask left in the store;
+// segment 2 resumes that session with the ask on stdin, as run.mjs does, and is judged like the A/B.
+async function utTrial(n1, r1) {
+  const t1 = r1.trial, sid = r1.session;
+  const pending = sid ? join(ROOT, "cm-store", ".ask", `${sid}.json`) : null;
+  const rec = { name, variant: ASK, session: sid, segment1: { exit: r1.code, calls: t1.calls.map((c) => ({ name: c.name, command: c.command?.slice(0, 400) ?? null, file: c.file })),
+    texts: t1.texts.map((x) => x.text), context: r1.ctx, pendingAsk: !!pending && existsSync(pending) } };
+  const write = (outcome, extra = {}) => {
+    Object.assign(rec, { outcome, ...extra, estimateUsd: Number(runEstimate().toFixed(4)), capUsd: CAP, at: new Date().toISOString() });
+    writeFileSync(join(OUT, "TRIAL.json"), JSON.stringify(rec, null, 2));
+    events(`trial ${name}: ${outcome}${rec.callsAfterAsk != null ? `, ${rec.callsAfterAsk} calls after the ask` : ""}, estimate US$${rec.estimateUsd}`);
+  };
+  if (r1.capped) { writeFileSync(join(OUT, "CAPPED"), `${new Date().toISOString()} spend cap US$${CAP} reached in segment ${n1}\n`); return write("capped"); }
+  if (!rec.segment1.pendingAsk) return write(r1.limited ? "limited" : r1.isError ? "error" : t1.outcome === "no-ask" ? "no-pause" : "ended-without-pause");
+  const ask = JSON.parse(readFileSync(pending, "utf8")).ask;
+  rmSync(pending); // as takePendingAsk does: the ask is sent once
+  const n = n1 + 1;
+  events(`segment ${n} start (ask ut: resume ${sid} with the ask as the user message, paused after call ${t1.calls.length}) at cp ${gateStatus().current}`);
+  const r = await claudeOnce(n, [...CLAUDE_ARGS, "--resume", sid], ask, { extraEnv: (await clearKit()).env(1), trialAsk: ask });
+  const t = r.trial, outcome = t.outcome || (r.capped ? "capped" : r.limited ? "limited" : r.isError && !t.calls.length ? "error" : "ended");
+  if (r.capped) writeFileSync(join(OUT, "CAPPED"), `${new Date().toISOString()} spend cap US$${CAP} reached in segment ${n}\n`);
+  write(outcome, { askText: ask, callsAfterAsk: t.calls.length, callsAfterAskList: t.calls.map((c) => ({ name: c.name, command: c.command?.slice(0, 400) ?? null, file: c.file })),
+    textAfterAsk: t.texts.map((x) => x.text), contextAtEnd: r.ctx, exit: r.code, pendingAgain: existsSync(pending) });
+}
+
 async function clearKit() {
   const D = pluginDir();
   if (pluginVersion() !== CM_VERSION) throw new Error(`cornerman ${pluginVersion()} installed, expected ${CM_VERSION}`);
@@ -648,10 +689,13 @@ function park() {
   mkdirSync(FORK_PARK, { recursive: true });
   const to = join(FORK_PARK, name);
   // A capped run's killed tool processes can hold the folder for a moment after the kill (the dry
-  // check's park failed with EPERM, and the same park passed by hand a minute later): retry 60 s.
+  // check's park failed with EPERM, and the same park passed by hand a minute later): retry.
+  // 5 min since 2026-11-16: the ut dry check's park failed after 60 s with no harness process left,
+  // the fork folder itself held (every subfolder renamed), and passed a few minutes later. Likely a
+  // repo scan (~/.claude/scripts/repo-scanner.py, VS Code git) of the new repo under I:/.
   for (let i = 0; ; i++) {
     try { renameSync(LIVE, to); break; } catch (e) {
-      if (!/EPERM|EBUSY/.test(e.code) || i >= 30) throw e;
+      if (!/EPERM|EBUSY/.test(e.code) || i >= 150) throw e;
       execFileSync(process.execPath, ["-e", "setTimeout(()=>{},2000)"]);
     }
   }
