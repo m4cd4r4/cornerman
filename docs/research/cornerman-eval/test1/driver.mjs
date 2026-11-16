@@ -37,6 +37,12 @@ function transcripts() {
 const newest = () => transcripts().at(-1);
 const sessions = () => transcripts().length;
 
+// Turn ends come from a Stop hook the driver installs (one line per Stop in STOPS): the screen
+// alone misread a long thinking pause as idle (smoke 2026-11-16, probes typed into a busy turn).
+const STOPS = "/tmp/stops";
+const stopCount = () => (existsSync(STOPS) ? readFileSync(STOPS, "utf8").split("\n").filter(Boolean).length : 0);
+let stopsAtSay = 0;
+
 async function waitIdle(label) {
   const start = Date.now();
   let quietSince = null, lastSig = "";
@@ -44,8 +50,8 @@ async function waitIdle(label) {
     await sleep(2000);
     const screen = tmux("capture-pane", "-p", "-t", "t");
     const n = newest();
-    const sig = `${n?.p}:${n?.s}`;
-    const busy = /esc to interrupt/i.test(screen) || sig !== lastSig;
+    const sig = `${n?.p}:${n?.s}:${stopCount()}`;
+    const busy = stopCount() <= stopsAtSay || /esc to interrupt|… \(\d+s/i.test(screen) || sig !== lastSig;
     lastSig = sig;
     if (busy) quietSince = null;
     else if (!quietSince) quietSince = Date.now();
@@ -56,6 +62,7 @@ async function waitIdle(label) {
 }
 
 async function say(text, label) {
+  stopsAtSay = stopCount();
   writeFileSync("/tmp/say.txt", text);
   tmux("load-buffer", "/tmp/say.txt");
   tmux("paste-buffer", "-t", "t");
@@ -113,9 +120,11 @@ async function main() {
   sh("git", ["config", "--global", "user.email", "dev@example.com"]);
   sh("git", ["config", "--global", "user.name", "Dev"]);
 
+  mkdirSync(join(homedir(), ".claude"), { recursive: true });
   const S = join(homedir(), ".claude", "settings.json");
   const settings = existsSync(S) ? JSON.parse(readFileSync(S, "utf8")) : {};
   settings.permissions = { ...(settings.permissions ?? {}), allow: ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "Skill"] };
+  settings.hooks = { ...(settings.hooks ?? {}), Stop: [...(settings.hooks?.Stop ?? []), { hooks: [{ type: "command", command: `date +%s%N >> ${STOPS}` }] }] };
   writeFileSync(S, JSON.stringify(settings, null, 1));
 
   writeFileSync("/tmp/run-claude.sh", `export CORNERMAN_NUDGE_AT=${NUDGE}\ncd ${WORK}\nclaude --model ${MODEL}\necho CLAUDE-EXITED $?\nsleep 3600\n`);
@@ -124,33 +133,35 @@ async function main() {
 
   const early = facts.flatMap((f) => f.plant.filter((p) => p.phase === "early").map((p) => ({ f, p })));
   const late = facts.flatMap((f) => f.plant.filter((p) => p.phase === "late").map((p) => ({ f, p })));
-  const events = [];
 
   // Opening brief, then the early plants one per turn, each with a work turn between.
   await say("We're working on ledger, a small Node money-ledger library in this folder. I'll give you tasks one at a time. Start by reading README.md and listing the source files.", "brief");
   await waitIdle("brief");
-  let w = 0;
-  for (const { f, p } of early) {
-    await say(p.text, `plant:${f.type}`); events.push({ at: sessions(), plant: f.id });
-    await waitIdle(`plant ${f.id}`);
-  }
-  // Work until the clear count is reached (cm), or the same work for the control arms.
-  const target = CLEARS + 1;
-  let lateDone = false, compacts = 0;
+  // Every plant records the session it landed in, so each fact's probe can say how many clears
+  // it actually crossed (a clear can land in the middle of the plants).
+  const plantedIn = {};
+  const plant = async ({ f, p }, tag) => {
+    await say(p.text, `${tag}:${f.type}`);
+    await waitIdle(`${tag} ${f.id}`);
+    plantedIn[f.id] = sessions();
+  };
+  let w = 0, compacts = 0;
+  for (const x of early) await plant(x, "plant");
+  // One work turn between the early plants and the late corrections, then the late ones.
+  const t0 = workTurn(w++); await say(t0, "work:0"); await waitIdle("work 0");
+  for (const x of late) await plant(x, "plant-late");
+  // Work until every fact has crossed CLEARS clears (cm), or the same work for the control arms.
+  const lastPlant = () => Math.max(...Object.values(plantedIn));
   while (w < MAX_WORK) {
-    if (ARM === "cm" && sessions() >= target) break;
+    if (ARM === "cm" && sessions() >= lastPlant() + CLEARS) break;
     if (ARM === "compact" && compacts >= CLEARS) break;
-    if (ARM === "full" && w >= Number(arg("--full-work", String(3 * CLEARS)))) break;
+    if (ARM === "full" && w >= Number(arg("--full-work", String(1 + 3 * CLEARS)))) break;
     const t = workTurn(w); if (!t) break;
     await say(t, `work:${w}`); w++;
     await waitIdle(`work ${w}`);
-    if (!lateDone && w >= 2) {
-      for (const { f, p } of late) { await say(p.text, `plant-late:${f.type}`); await waitIdle(`late ${f.id}`); }
-      lateDone = true;
-    }
     if (ARM === "compact" && w % COMPACT_EVERY === 0) { await say("/compact", "compact"); compacts++; await waitIdle("compact"); }
   }
-  if (!lateDone) for (const { f, p } of late) { await say(p.text, `plant-late:${f.type}`); await waitIdle(`late ${f.id}`); }
+  const sessionsAtProbes = sessions();
   const hs = handovers();
   log(`work turns ${w}, sessions ${sessions()}, handovers ${hs.length}, compacts ${compacts}`);
 
@@ -163,7 +174,7 @@ async function main() {
     await say(f.probe, `probe:${f.type}`);
     await waitIdle(`probe ${f.id}`);
     const acted = runChecker(f, baseline);
-    results.push({ type: f.type, id: f.id, acted: acted.result, detail: acted.detail, clearedDuringProbe: sessions() > sessBefore, written: ARM === "cm" ? writtenScore(f, hs) : null });
+    results.push({ type: f.type, id: f.id, acted: acted.result, detail: acted.detail, clearedDuringProbe: sessions() > sessBefore, clearsCrossed: sessionsAtProbes - (plantedIn[f.id] ?? sessionsAtProbes), written: ARM === "cm" ? writtenScore(f, hs) : null });
     log(`PROBE ${f.type} ${acted.result} ${acted.detail ?? ""}`);
   }
 
