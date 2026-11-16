@@ -1301,3 +1301,9 @@ A single mid-turn ask is not enough in headless mode. Options: re-ask mid-turn e
 above the threshold, or make the headless mid-turn ask firmer than "when this step is done"
 (here the agent read "this step" as cp43 and treated the next checkpoint as more of the task). Any
 fix needs a dry check with a stub that ignores the first ask and never ends its turn.
+
+### Closed (2026-11-16)
+
+Macdara stopped the retest here (card, 2026-11-16 AWST): no rerun, no further spend. T1-T3 stay
+not tested. The headless re-ask fix went to cornerman as PR m4cd4r4/cornerman#214 (unit-tested;
+no end-to-end dry check was built, since no rerun follows).
