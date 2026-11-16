@@ -1,0 +1,10 @@
+{
+    "name": "ledger",
+    "version": "0.3.0",
+    "private": true,
+    "type": "module",
+    "description": "Small bookkeeping library: entries, balances, reports, CSV export.",
+    "scripts": {
+        "test": "node --test"
+    }
+}
