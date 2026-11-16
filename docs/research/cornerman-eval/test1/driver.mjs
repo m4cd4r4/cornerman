@@ -35,6 +35,11 @@ function transcripts() {
     .map((p) => ({ p, t: statSync(p).mtimeMs, s: statSync(p).size })).sort((a, b) => a.t - b.t);
 }
 const newest = () => transcripts().at(-1);
+// Any auto-memory file written during the trial (should be none: see autoMemoryEnabled below).
+const memoryFiles = () => (existsSync(PROJ) ? readdirSync(PROJ).flatMap((d) => {
+  const m = join(PROJ, d, "memory");
+  return existsSync(m) ? readdirSync(m).map((f) => join(d, "memory", f)) : [];
+}) : []);
 const sessions = () => transcripts().length;
 
 // Turn ends come from a Stop hook the driver installs (one line per Stop in STOPS): the screen
@@ -143,9 +148,12 @@ async function main() {
   const settings = existsSync(S) ? JSON.parse(readFileSync(S, "utf8")) : {};
   settings.permissions = { ...(settings.permissions ?? {}), allow: ["Bash", "Read", "Edit", "Write", "Glob", "Grep", "Skill"] };
   settings.hooks = { ...(settings.hooks ?? {}), Stop: [...(settings.hooks?.Stop ?? []), { hooks: [{ type: "command", command: `date +%s%N >> ${STOPS}` }] }] };
+  // Auto-memory off in every arm (Macdara 2026-11-16 21:48 AWST): its notes survive a clear, so
+  // acted-on would measure cornerman + auto-memory. Both switches; memoryFiles in result.json proves it.
+  settings.autoMemoryEnabled = false;
   writeFileSync(S, JSON.stringify(settings, null, 1));
 
-  writeFileSync("/tmp/run-claude.sh", `export CORNERMAN_NUDGE_AT=${NUDGE}\ncd ${WORK}\nclaude --model ${MODEL}\necho CLAUDE-EXITED $?\nsleep 3600\n`);
+  writeFileSync("/tmp/run-claude.sh", `export CORNERMAN_NUDGE_AT=${NUDGE} CLAUDE_CODE_DISABLE_AUTO_MEMORY=1\ncd ${WORK}\nclaude --model ${MODEL}\necho CLAUDE-EXITED $?\nsleep 3600\n`);
   tmux("new-session", "-d", "-s", "t", "-x", "200", "-y", "50", "bash /tmp/run-claude.sh");
   await sleep(10_000);
 
@@ -198,7 +206,7 @@ async function main() {
     log(`PROBE ${f.type} ${acted.result} ${acted.detail ?? ""}`);
   }
 
-  writeFileSync(join(OUT, "result.json"), JSON.stringify({ arm: ARM, seed: SEED, clears: CLEARS, model: MODEL, nudge: NUDGE, workTurns: w, sessions: sessions(), handovers: hs.length, compacts, results }, null, 1));
+  writeFileSync(join(OUT, "result.json"), JSON.stringify({ arm: ARM, seed: SEED, clears: CLEARS, model: MODEL, nudge: NUDGE, workTurns: w, sessions: sessions(), handovers: hs.length, compacts, memoryFiles: memoryFiles(), results }, null, 1));
   mkdirSync(join(OUT, "transcripts"), { recursive: true });
   for (const t of transcripts()) cpSync(t.p, join(OUT, "transcripts", t.p.split("/").at(-1)), { recursive: true });
   if (existsSync(join(homedir(), ".cornerman"))) cpSync(join(homedir(), ".cornerman"), join(OUT, "cm"), { recursive: true });
