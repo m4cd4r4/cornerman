@@ -1365,7 +1365,7 @@ boundary, and resume the same session with the ask as the user message. The head
 already reaches Claude at a turn end; whether Sonnet follows it there is to be checked in the clear arm's
 0.7.2 transcripts.
 
-## Ask-wording A/B (2026-11-16): approved, not yet built
+## Ask-wording A/B (2026-11-16): approved, built and dry-checked, not yet run
 
 **Approval:** Macdara, card 2026-11-16 AWST: "Test the wording, up to US$8", from the unspent part
 of the US$32 (about US$14.60 used by clear214 r1). Hard batch cap US$8.
@@ -1393,3 +1393,36 @@ first trial most input should be cache reads.
 
 **If v072 is also refused at 556k:** the wording is not the cause, and the ask's position (first
 ask far above the threshold, mid-fork) or the channel is.
+
+### A/B build (2026-11-16, US$0)
+
+- **Hooks run from the source clone, not the plugin cache.** A plugin installed from a local
+  marketplace folder runs from that folder: r1's ask named
+  `I:/Scratch/_q1m-cornerman-36b12c9/plugin/scripts/save.mjs`, which nudge.mjs builds from its own
+  `import.meta.url`. Swapping headlessAsk in the cache (the plan) would have changed nothing. So each
+  non-control variant gets its own clone, `I:/Scratch/_q1m-cornerman-36b12c9-ask-<variant>`, with
+  nudge.mjs patched before install. fork.mjs rebuilds the patch from the pinned blob each setup and
+  refuses any other local change. The control `c214` uses the unpatched clone.
+- **The variant is in the fork name**, not an env var: `fork-clear214-ask<v072|c214|short>-sonnet-r<n>`,
+  so a parked trial always says what it ran. Variant texts: `task/harness/ask-variants.mjs`.
+- **Outcome**, from the stream's top-level tool calls: the call whose PostToolUse carried the first
+  ask is found in the transcript (`hook_additional_context` attachment, by toolUseID); **obeyed** if
+  a Bash save.mjs call is among the next 6 calls, **ignored** if 6 pass without one. The tree is
+  killed at either. Judged again at process close, because the transcript can be flushed after the
+  stream shows the next call. `out/TRIAL.json` keeps the calls after the ask and the agent's text.
+- **Batch:** `task/harness/trial-batch.mjs --budget 8`, round-robin v072, c214, short (a batch cut
+  short stays balanced), each run capped at what is left of the US$8. Ledger
+  `I:/Scratch/_q1m-fork/ab-ledger.json`. It stops when under US$0.75 is left, on any outcome other
+  than obeyed / ignored / ended, and if a trial after the first costs over US$1.00.
+- **Cost expectation:** the first trial writes the 556k prefix to cache (about US$1.5 with the
+  margin) plus a few cache reads; later trials should read it (about US$0.06 a request) if the
+  prefix stays byte-identical and setup + verify take under the cache lifetime. If not, each trial
+  costs about US$1.9 and the budget buys 4, so the batch stops after trial 2 and asks.
+- **Dry check F-H (retest-dry.mjs, `Q1M_DRY_ONLY=trials` skips B-E):** F short + obeying stub ->
+  obeyed at the save call, ask on call 1, no second segment; G v072 + a stub that ignores every
+  ask -> ignored after 6, killed at 7 requests; H c214 -> obeyed, unpatched clone. Each check also
+  reads the ask text out of the stub's request log. The stubs run with `--never-end --grow 5000`:
+  the fork point follows a tool result, so a plain stub ends its turn at once and gets only the
+  Stop ask, and a flat context gets no PostToolUse ask. Result 29/29 (A + F-H); A-E 39/39 on the
+  same build before the trial-only fix.
+

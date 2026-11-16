@@ -233,3 +233,16 @@ T1-T3 apply as written to the clear214 rerun (cornerman 36b12c9), read with "cle
 "clear214". They are kept, not revised, and are no longer blind: the clear211 forks never cleared,
 and their compacted scores (new 12/12 twice, old 13/14 and 12/14) were seen before this entry. T3
 in particular is now expected to be tested against a clear, not a compaction.
+
+### Ask-wording A/B predictions (2026-11-16, before any trial; Claude's, not Macdara's)
+
+Seen before writing these: 0.7.2's ask obeyed in both old clear runs (at 252k), 36b12c9's refused 3
+of 3 asks in one run (at 556k+). n = 3 per variant; exploratory, no claim rests on one trial.
+
+| # | A/B prediction | My confidence |
+|:--|:--|:--|
+| A1 | c214 (control) obeyed in 0 of 3 | 65% |
+| A2 | v072 obeyed in at least 2 of 3 | 45% |
+| A3 | short obeyed in at least 2 of 3 | 50% |
+| A4 | v072 and short both obeyed in at most 1 of 3 (the position or channel, not the wording) | 30% |
+

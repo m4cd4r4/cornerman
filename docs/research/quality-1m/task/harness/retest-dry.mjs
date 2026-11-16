@@ -91,6 +91,7 @@ async function fork(r, ctx, segments, { arm = "clear211", stubArgs = [], env = {
   return { name, reqs: requests(sv.log), f, events: rn.out, store: join(FORKS, name, "cm-store") , live: store, capped };
 }
 
+if (process.env.Q1M_DRY_ONLY !== "trials") {
 console.log("B. fork r1 (stub context 240k, nudge at 250k)");
 const b = await fork(1, 240000, 1);
 const first = b.reqs[0];
@@ -140,6 +141,37 @@ const e = await fork(4, 260000, 2, { arm: "clear214", stubArgs: ["--ignore-asks"
 const capLine = e.events.indexOf("CAP: estimated"), seg1End = e.events.indexOf("segment 1 exit");
 check("the cap killed segment 1 mid-turn and marked the run CAPPED", e.capped && capLine >= 0 && (seg1End === -1 || capLine < seg1End) && /STOP: spend cap US\$5 reached/.test(e.events), `${e.reqs.length} requests`);
 check("the cap stopped it before the stub's ceiling", e.reqs.length < 120, `${e.reqs.length} requests`);
+
+} // Q1M_DRY_ONLY=trials skips B-E (A still builds the base the trials fork from)
+
+// --- F-H. ask-wording A/B trial mode (TASK-DESIGN.md, "Ask-wording A/B") -------------------------
+// --grow 5000 in every trial: the context must rise past the fork for call 1's PostToolUse to ask, as
+// in the real forks (556k on call 1); without it the stub's flat context gets only the Stop ask.
+// --never-end too: the fork point follows a tool result, so a plain stub ends the turn at once and
+// again gets only the Stop ask. With it, the stub calls tools until an ask arrives, then saves.
+// Each trial is one segment that stops at its outcome. The stub cannot tell wordings apart, so this
+// checks the plumbing: the variant's text is what reaches the model, the ask is found on call 1,
+// an obeying agent scores "obeyed" at its save call, and one that ignores scores "ignored" after 6.
+const trial = async (r, ask, stubArgs) => {
+  const t = await fork(r, 260000, 1, { arm: `clear214-ask${ask}`, stubArgs });
+  const f = join(FORKS, t.name, "out", "TRIAL.json");
+  return { ...t, rec: existsSync(f) ? JSON.parse(readFileSync(f, "utf8")) : null };
+};
+const askIn = (reqs) => { for (const q of reqs) { const m = /cornerman headless mode \(context[^"\\]*(?:\\.[^"\\]*)*/.exec(JSON.stringify(q.body.messages || [])); if (m) return JSON.parse(`"${m[0]}"`); } return ""; };
+console.log("F. trial clear214-askshort r5 (stub obeys)");
+const tf = await trial(5, "short", ["--never-end", "--grow", "5000", "--ceiling", "900000"]);
+check("F: outcome obeyed at the save call, ask on call 1", tf.rec?.outcome === "obeyed" && tf.rec.askOnCall === 1 && tf.rec.callsAfterAsk === 1 && /save\.mjs/.test(tf.rec.callsAfterAskList[0]?.command || ""), JSON.stringify(tf.rec && { o: tf.rec.outcome, a: tf.rec.askOnCall, n: tf.rec.callsAfterAsk }));
+check("F: the model saw the short wording (no section list, no chat clause)", /commit your work, then save a handover/.test(askIn(tf.reqs)) && !/with the sections|in their own words|naming the single next action/.test(askIn(tf.reqs)), askIn(tf.reqs).slice(0, 120));
+check("F: the segment was stopped there (no second segment, no clear)", !/segment 2 start/.test(tf.events) && /trial fork-clear214-askshort-sonnet-r5: obeyed/.test(tf.events));
+console.log("G. trial clear214-askv072 r6 (stub ignores every ask, never ends its turn)");
+const tg = await trial(6, "v072", ["--ignore-asks", "9", "--never-end", "--grow", "5000", "--ceiling", "900000"]);
+check("G: outcome ignored after 6 calls past the ask", tg.rec?.outcome === "ignored" && tg.rec.askOnCall === 1 && tg.rec.callsAfterAsk === 6, JSON.stringify(tg.rec && { o: tg.rec.outcome, a: tg.rec.askOnCall, n: tg.rec.callsAfterAsk }));
+check("G: the model saw 0.7.2's wording", /naming the single next action/.test(askIn(tg.reqs)) && !/with the sections/.test(askIn(tg.reqs)), askIn(tg.reqs).slice(0, 120));
+check("G: killed mid-turn, well before the stub's ceiling", tg.reqs.length <= 10, `${tg.reqs.length} requests`);
+console.log("H. trial clear214-askc214 r7 (control, stub obeys)");
+const th = await trial(7, "c214", ["--never-end", "--grow", "5000", "--ceiling", "900000"]);
+check("H: control obeyed, and the model saw 36b12c9's wording", th.rec?.outcome === "obeyed" && /with the sections .*in their own words/.test(askIn(th.reqs)), th.rec?.outcome);
+check("H: control ran the unpatched clone", JSON.parse(readFileSync(join(FORKS, th.name, "out", "fork.json"), "utf8")).cornermanDir === "I:/Scratch/_q1m-cornerman-36b12c9");
 
 const bad = results.filter((r) => !r.pass).length;
 writeFileSync(join(DIR, "dry-result.json"), JSON.stringify(results, null, 2));

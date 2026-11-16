@@ -35,14 +35,22 @@ import { join, dirname, resolve, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
+import * as AV from "./ask-variants.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const TASK = resolve(HERE, "..");
 const CPS = join(TASK, "checkpoints");
 const [cmd, name] = process.argv.slice(2);
-const m = /^fork-(natural|compact|clear211|clear214|clear|fill(\d+))-(sonnet)-r(\d+)$/.exec(name || "");
-if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|clear214|fillNNN>-sonnet-r<n>");
+const m = /^fork-(natural|compact|clear211|clear214|clear|fill(\d+))(?:-ask(v072|c214|short))?-(sonnet)-r(\d+)$/.exec(name || "");
+if (!m) throw new Error("name must be fork-<natural|compact|clear|clear211|clear214|fillNNN>[-ask<v072|c214|short>]-sonnet-r<n>");
 const arm = m[1], fillTo = m[2] ? Number(m[2]) * 1000 : null;
+// Ask-wording A/B (TASK-DESIGN.md, "Ask-wording A/B"): fork-clear214-ask<variant>-sonnet-r<n> is a
+// TRIAL. The variant is in the name, not an env var, so a parked trial always says what it ran.
+// Setup installs cornerman 36b12c9 with headlessAsk swapped (ask-variants.mjs); run makes one
+// segment and stops at the outcome: "obeyed" if a Bash save.mjs call comes within TRIAL_CALLS tool
+// calls after the call whose PostToolUse carried the first ask, else "ignored"; out/TRIAL.json.
+const ASK = m[3] || null, TRIAL = !!ASK, TRIAL_CALLS = 6;
+if (ASK && arm !== "clear214") throw new Error("an ask variant runs only on clear214");
 // clear211 (TASK-DESIGN.md, "Clear-arm retest build"): the clear arm from the retest's own base
 // (base.mjs), cornerman pinned to d7c1445 (#211, the rulings log). Everything below that names
 // pilot 3 is read from that base's out/base.json instead.
@@ -74,7 +82,9 @@ const CAP = process.env.Q1M_CAP_USD ? Number(process.env.Q1M_CAP_USD) : Infinity
 if (C214 && !STUB && cmd === "run" && !(CAP > 0)) throw new Error("clear214 needs Q1M_CAP_USD, the approved spend for this run");
 const PRICE = { input: 2 / 1e6, write: 2.5 / 1e6, read: 0.1 / 1e6, output: 10 / 1e6 }, MARGIN = 1.1;
 const CM_VERSION = C211 ? "0.7.3" : "0.7.2";
-const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}`;
+// A variant other than the control gets its own clone, patched (ask-variants.mjs says why).
+const CM_DIR = `I:/Scratch/_q1m-cornerman-${CM_TAG}${ASK && ASK !== "c214" ? `-ask-${ASK}` : ""}`;
+const NUDGE_REL = "plugin/scripts/lib/nudge.mjs";
 const CM_NUDGE = 250000;
 const MODEL_ID = "claude-sonnet-5-5";
 
@@ -201,6 +211,7 @@ function setup() {
       if (r.status !== 0) throw new Error(`claude ${a.join(" ")} -> exit ${r.status}: ${r.stderr}`);
     }
     Object.assign(info, { cornerman: pluginVersion(), cornermanTag: CM_TAG, cornermanSha: CM_SHA, nudgeAt: CM_NUDGE });
+    if (ASK) Object.assign(info, { askVariant: ASK, cornermanDir: CM_DIR, askFunctionSha: sha(askWant()), trialCalls: TRIAL_CALLS });
   }
   if (C211) {
     // --fork-session gives the fork a new session id, and the rulings log is kept per session id.
@@ -222,10 +233,22 @@ function pinnedCornerman() {
     g("clone", "--quiet", "https://github.com/m4cd4r4/cornerman", CM_DIR);
     g("-C", CM_DIR, "-c", "advice.detachedHead=false", "checkout", "--quiet", CM_SHA);
   }
+  const patched = ASK && ASK !== "c214";
+  if (patched) {
+    // The patch is rebuilt from the pinned original every time, so a stale or hand-edited clone fails.
+    const orig = g("-C", CM_DIR, "show", `${CM_SHA}:${NUDGE_REL}`) + "\n";
+    const want = AV.patchNudge(orig.replace(/\n+$/, "\n"), ASK);
+    const f = join(CM_DIR, NUDGE_REL);
+    if (readFileSync(f, "utf8").replace(/\r\n/g, "\n") !== want) writeFileSync(f, want);
+  }
   const head = g("-C", CM_DIR, "rev-parse", "HEAD"), dirty = g("-C", CM_DIR, "status", "--porcelain");
-  if (head !== CM_SHA || dirty) throw new Error(`${CM_DIR} is at ${head}${dirty ? " with local changes" : ""}, expected clean ${CM_SHA}`);
+  const okDirty = patched ? dirty === `M ${NUDGE_REL}` : !dirty;
+  if (head !== CM_SHA || !okDirty) throw new Error(`${CM_DIR} is at ${head}${dirty ? ` with local changes (${dirty})` : ""}, expected ${CM_SHA}${patched ? ` with only ${NUDGE_REL} patched` : " clean"}`);
   return CM_DIR;
 }
+// The headlessAsk function the running plugin holds, and the one this trial's variant should be.
+const askNow = (dir) => AV.askFunction(readFileSync(join(dir, "scripts", "lib", "nudge.mjs"), "utf8").replace(/\r\n/g, "\n"));
+const askWant = () => AV.variantFunction(ASK, execFileSync("git", ["-C", CM_DIR, "show", `${CM_SHA}:${NUDGE_REL}`], { encoding: "utf8" }));
 const pluginBase = () => join(CONFIG, "plugins", "cache", "cornerman", "cornerman");
 const pluginVersion = () => readdirSync(pluginBase()).sort().pop();
 const pluginDir = () => join(pluginBase(), pluginVersion());
@@ -308,6 +331,12 @@ function verify() {
       ok("the fork's rulings log is the base's, unchanged", sha(readFileSync(join(store, "rulings", `${f.forkSession}.jsonl`))) === f.rulingsLogSha);
       ok("cornerman has the rulings log code", existsSync(join(pluginDir(), "scripts", "lib", "rulings.mjs")));
     }
+    if (ASK) {
+      const want = askWant();
+      ok(`ask variant ${ASK}: the source clone's headlessAsk is the variant`, askNow(join(CM_DIR, "plugin")) === want, CM_DIR);
+      ok(`ask variant ${ASK}: the installed copy's headlessAsk is the variant`, askNow(pluginDir()) === want);
+      ok(`ask variant ${ASK}: recorded in fork.json`, (() => { const f = JSON.parse(readFileSync(join(OUT, "fork.json"), "utf8")); return f.askVariant === ASK && f.askFunctionSha === sha(want); })());
+    }
   } else {
     ok("no cornerman plugin in the config", !existsSync(join(CONFIG, "plugins")));
   }
@@ -354,6 +383,37 @@ function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
     // ctx keeps the last NON-ZERO context: a usage-limit result carries an assistant message with
     // all-zero usage, which in r2 read as "the fork never took" and caused a second fork at cp48.
     let tail = "", buf = "", session = null, ctx = null, compact = null, capped = false;
+    // Trial mode: top-level tool calls in stream order, the agent's text, and which call's
+    // PostToolUse carried the first headless ask (read from the transcript, where the hook's
+    // additionalContext lands as a hook_additional_context attachment naming its toolUseID).
+    const trial = TRIAL ? { calls: [], texts: [], askIdx: null, askText: null, outcome: null } : null;
+    const findAsk = () => {
+      for (const f of readdirSync(TRANSCRIPTS).filter((f) => f.endsWith(".jsonl") && f !== `${PARENT_SID}.jsonl`)) {
+        for (const l of readFileSync(join(TRANSCRIPTS, f), "utf8").split("\n")) {
+          if (!l.includes("hook_additional_context") || !l.includes("cornerman headless mode")) continue;
+          try {
+            const a = JSON.parse(l).attachment, i = trial.calls.findIndex((c) => c.id === a.toolUseID);
+            if (i !== -1) return { i, text: [].concat(a.content).join("\n") };
+          } catch {}
+        }
+      }
+      return null;
+    };
+    // The outcome from the calls alone, so it is the same live and at close: the transcript can be
+    // flushed after the stream shows the next call (dry check F), so the ask may only be found late.
+    const judge = () => {
+      if (trial.askIdx == null) { const a = findAsk(); if (a) { trial.askIdx = a.i; trial.askText = a.text; } }
+      if (trial.askIdx == null) return trial.calls.length >= 3 * TRIAL_CALLS ? "no-ask" : null;
+      const after = trial.calls.slice(trial.askIdx + 1, trial.askIdx + 1 + TRIAL_CALLS);
+      if (after.some((c) => c.name === "Bash" && /save\.mjs/.test(c.command || ""))) return "obeyed";
+      return after.length >= TRIAL_CALLS ? "ignored" : null;
+    };
+    const decide = () => {
+      trial.outcome = judge();
+      if (!trial.outcome) return;
+      events(`TRIAL ${ASK}: ${trial.outcome} at tool call ${trial.calls.length} (ask on call ${trial.askIdx == null ? "none" : trial.askIdx + 1}), killing segment ${n}`);
+      spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { windowsHide: true });
+    };
     const watch = CAP === Infinity ? null : setInterval(() => {
       const est = runEstimate();
       if (capped || est < CAP) return;
@@ -376,6 +436,15 @@ function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
           const u = j.type === "assistant" && j.message?.usage;
           const c = u ? u.input_tokens + (u.cache_read_input_tokens || 0) + (u.cache_creation_input_tokens || 0) : 0;
           if (c > 0) ctx = c;
+          if (trial && !trial.outcome && j.type === "assistant" && !j.parent_tool_use_id) {
+            for (const b of j.message?.content || []) {
+              if (b.type === "text" && b.text?.trim()) trial.texts.push({ afterCall: trial.calls.length, text: b.text });
+              if (b.type === "tool_use" && !trial.calls.some((x) => x.id === b.id)) {
+                trial.calls.push({ id: b.id, name: b.name, command: b.input?.command ?? null, file: b.input?.file_path ?? null });
+                decide();
+              }
+            }
+          }
         } catch {}
       }
     });
@@ -389,7 +458,8 @@ function claudeOnce(n, args, input, { extraEnv = {}, forked = true } = {}) {
       // session, so run() keeps the last figure per session and sums sessions.
       try { const j = JSON.parse(res); cost = j.total_cost_usd == null ? null : Math.max(0, j.total_cost_usd - (forked ? PARENT_COST : 0)); isError = !!j.is_error; limited = isError && LIMIT.test(String(j.result || "")); } catch { isError = true; limited = LIMIT.test(tail.slice(-3000)); }
       if (watch) clearInterval(watch);
-      done({ code, limited: capped ? false : limited, isError, cost, session, ctx, compact, capped });
+      if (trial && !trial.outcome) trial.outcome = judge();
+      done({ code, limited: capped ? false : limited, isError, cost, session, ctx, compact, capped, trial });
     });
   });
 }
@@ -424,6 +494,20 @@ async function run() {
       events(`segment ${n} start (fork of ${PARENT_SID} at ${FORK_MSG}, ${arm === "compact" ? "/compact" : fillTo ? "top-up turn" : "continue"}) at cp ${gateStatus().current}`);
       r = await claudeOnce(n, forkArgs, first, { extraEnv: cm ? cm.env(chain) : {} });
       if (r.session && r.cost != null) costs.set(r.session, r.cost);
+      if (TRIAL) {
+        // One segment, whatever happened. A turn that ended before an outcome is "ended"; a limit or
+        // error is kept as such, so a batch can tell a result from a run that never got there.
+        const t = r.trial, outcome = t.outcome || (r.capped ? "capped" : r.limited ? "limited" : r.isError && !t.calls.length ? "error" : "ended");
+        const after = t.askIdx == null ? [] : t.calls.slice(t.askIdx + 1);
+        const rec = { name, variant: ASK, outcome, askOnCall: t.askIdx == null ? null : t.askIdx + 1, callsAfterAsk: after.length,
+          callsAfterAskList: after.map((c) => ({ name: c.name, command: c.command?.slice(0, 400) ?? null, file: c.file })),
+          textAfterAsk: t.askIdx == null ? [] : t.texts.filter((x) => x.afterCall > t.askIdx).map((x) => x.text),
+          askText: t.askText, contextAtEnd: r.ctx, estimateUsd: Number(runEstimate().toFixed(4)), capUsd: CAP, exit: r.code, at: new Date().toISOString() };
+        writeFileSync(join(OUT, "TRIAL.json"), JSON.stringify(rec, null, 2));
+        if (r.capped) writeFileSync(join(OUT, "CAPPED"), `${new Date().toISOString()} spend cap US$${CAP} reached in trial segment ${n}\n`);
+        events(`trial ${name}: ${outcome}, ask on call ${rec.askOnCall}, ${rec.callsAfterAsk} calls after it, estimate US$${rec.estimateUsd}`);
+        return;
+      }
       if (r.capped || runEstimate() >= CAP) { writeFileSync(join(OUT, "CAPPED"), `${new Date().toISOString()} spend cap US$${CAP} reached in segment ${n}\n`); events(`STOP: spend cap US$${CAP} reached`); return; }
       events(`segment ${n} exit ${r.code} cost ${r.cost} limited ${r.limited} session ${r.session} context ${r.ctx}${r.compact ? ` compact ${r.compact.trigger} ${r.compact.pre_tokens}->${r.compact.post_tokens}` : ""} cp ${gateStatus().current}`);
       // The fork took once a model call ran (a context, a compaction, or the gate moved). Before
