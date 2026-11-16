@@ -89,3 +89,20 @@ Open: release 0.7.4 held (Macdara 17:20 AWST) until the next change.
   lines over 4 sessions, 0 lines breaking either rule, progress continuous (14, 22, 28; no repeats).
   Trial setup notes: bypass mode shows a warning config cannot skip, so trials allow tools by rule;
   a stub key needs customApiKeyResponses pre-approved.
+
+## Test 1 smoke (2026-11-16, Sonnet, seed 1, K=1, nudge 35k)
+
+- Rounds 1-2 found rig faults, not cornerman faults (fixed a9491dc, 24cae38, 6130606): probe
+  baselines committed in the agent's repo (leaked into a handover); a probe that named the gated
+  change read as the OK; plants acted on at plant time; in-flight plant contradicted the fixture;
+  question cards and `/compact` never fire Stop (driver waited out TURN_MAX); written scored on
+  handovers older than the plant.
+- **Round 3: cm 8/8, full 8/8, compact 8/8 acted on; cm written 15/15 on handovers filed after each
+  plant** (7 facts crossed 2 clears, the late correction 1). No timeouts or driver errors.
+- Real cornerman finding (minor): the rulings log keeps a superseded ruling verbatim next to its
+  correction ("3 spaces" and "2 spaces"), unmarked. The agent still used the latest.
+- **The smoke does not separate the arms:** one compaction on this little context loses nothing.
+  The batch needs 2-3 clears/compactions and more reading per segment, or C1 shows no difference.
+- Confound to decide: Claude Code auto-memory wrote notes during plants (e.g. an
+  export-header-row memory) that survive a clear, in every arm. Acted-on is then cornerman +
+  auto-memory, not cornerman alone.
