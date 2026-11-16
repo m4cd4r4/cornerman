@@ -1364,3 +1364,32 @@ headless mode the runner could end the process once the threshold has passed, at
 boundary, and resume the same session with the ask as the user message. The headless Stop path
 already reaches Claude at a turn end; whether Sonnet follows it there is to be checked in the clear arm's
 0.7.2 transcripts.
+
+## Ask-wording A/B (2026-11-16): approved, not yet built
+
+**Approval:** Macdara, card 2026-11-16 AWST: "Test the wording, up to US$8", from the unspent part
+of the US$32 (about US$14.60 used by clear214 r1). Hard batch cap US$8.
+
+**Why:** cornerman 0.7.2's headless PostToolUse ask was obeyed by Sonnet in both old clear runs
+(handover within 30 s). 36b12c9's ask, same channel, was refused 3 times as an injection. The asks
+differ in wording: 36b12c9 lists 11 section names and says to put "every ruling, decision and
+do-not the user gave in chat in their own words" into the file. They also differ in when the
+first ask comes: 252k in the 0.7.2 runs, 556k here. Hypothesis: the #211 wording reads as
+exfiltration.
+
+**Design:** fork from base211 at the usual point, so the first PostToolUse delivers the ask at
+556k for every trial and only the wording varies. Variants: `v072` (0.7.2's headlessAsk text, its
+own save path swapped for the installed one), `c214` (36b12c9 as is, the control), and `short`
+(finish the step, commit, save via save.mjs, end the turn; no section list and no chat-copy
+clause, since the rulings log adds the rulings itself). 3 trials each. Outcome per trial:
+**obeyed** if a Bash save.mjs call comes within 6 tool calls after the ask, otherwise **ignored**.
+The process is killed at either. Any text the agent writes about the ask is kept.
+
+**Build plan:** fork.mjs gets `Q1M_ASK_VARIANT` (setup swaps headlessAsk in the fork's installed
+nudge.mjs) and `Q1M_TRIAL=1` (run makes one segment and stops at the outcome, writing
+out/TRIAL.json). A batch script runs the 9 trials, each with `Q1M_CAP_USD` set to what is left of
+the US$8. First a stub dry check of trial mode (US$0). The 556k prefix is shared, so after the
+first trial most input should be cache reads.
+
+**If v072 is also refused at 556k:** the wording is not the cause, and the ask's position (first
+ask far above the threshold, mid-fork) or the channel is.
