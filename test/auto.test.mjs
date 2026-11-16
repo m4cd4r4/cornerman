@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { run } from "../plugin/scripts/lib/hook.mjs";
-import { lastContextTokens, runMidTurn, runStop, threshold } from "../plugin/scripts/lib/nudge.mjs";
+import { lastContextTokens, runMidTurn, runStop, takePendingAsk, threshold } from "../plugin/scripts/lib/nudge.mjs";
 import { saveHandover } from "../plugin/scripts/lib/store.mjs";
 import { ownerId, startHookClock } from "../plugin/scripts/lib/owner.mjs";
 
@@ -308,11 +308,19 @@ describe("mid-turn nudge", () => {
     expect(runMidTurn(input(), { env: env() })).toBeNull();
   });
 
-  it("under the headless runner, asks to finish the step, commit and save, never a /clear", () => {
+  // q1m ask-wording A/B (2026-11-16): an ask in hook context was dropped in 7 of 9 trials, so
+  // under the runner the hook stops the turn and leaves the ask for run.mjs to send as a user turn.
+  it("under the headless runner, stops the turn and leaves the ask for the runner, never a /clear", () => {
     write(call(200_000));
-    const out = runMidTurn(input(), { env: { ...env(), CORNERMAN_HEADLESS: "1" } });
-    const text = out.hookSpecificOutput.additionalContext;
-    expect(out.hookSpecificOutput.hookEventName).toBe("PostToolUse");
+    const henv = { ...env(), CORNERMAN_HEADLESS: "1" };
+    const out = runMidTurn(input(), { env: henv });
+    expect(out.continue).toBe(false);
+    expect(out.hookSpecificOutput).toBeUndefined();
+    expect(out.stopReason).toMatch(/^cornerman: .*next message/);
+    expect(out.stopReason).not.toMatch(/save|handover|commit/i); // the model sees it: no instruction in it
+    const text = takePendingAsk(henv, "s1");
+    expect(takePendingAsk(henv, "s1")).toBeNull(); // sent once
+    expect(text).toMatch(/turn was stopped after a tool call/);
     expect(text).toMatch(/finish the current step/i);
     expect(text).toMatch(/save\.mjs" --title/);
     expect(text).not.toMatch(/\/clear(?!-)/);
@@ -356,13 +364,16 @@ describe("mid-turn nudge", () => {
       expect(runMidTurn(input(), { env: henv() })).toBeNull(); // grown 39k: not yet
       write(call(226_000), headlessAskLine());
       const second = runMidTurn(input(), { env: henv() });
-      expect(second.hookSpecificOutput.additionalContext).toMatch(/reminder 2 of 3/);
-      expect(second.hookSpecificOutput.additionalContext).toMatch(/do not start the next/i);
+      expect(second.continue).toBe(false);
+      const ask2 = takePendingAsk(henv(), "s1");
+      expect(ask2).toMatch(/reminder 2 of 3/);
+      expect(ask2).toMatch(/do not start the next/i);
       expect(second.systemMessage).toMatch(/ask 2 of 3/);
       write(call(250_000), headlessAskLine());
       expect(runMidTurn(input(), { env: henv() })).toBeNull(); // 24k past ask 2
       write(call(270_000), headlessAskLine());
-      expect(runMidTurn(input(), { env: henv() }).hookSpecificOutput.additionalContext).toMatch(/reminder 3 of 3/);
+      expect(runMidTurn(input(), { env: henv() }).continue).toBe(false);
+      expect(takePendingAsk(henv(), "s1")).toMatch(/reminder 3 of 3/);
       write(call(400_000), headlessAskLine());
       expect(runMidTurn(input(), { env: henv() })).toBeNull(); // three asks made
     });
@@ -378,7 +389,8 @@ describe("mid-turn nudge", () => {
       write(call(185_000));
       expect(runStop(input(), { env: henv() })).not.toBeNull();
       write(call(230_000), headlessAskLine());
-      expect(runMidTurn(input(), { env: henv() }).hookSpecificOutput.additionalContext).toMatch(/reminder 2 of 3/);
+      expect(runMidTurn(input(), { env: henv() }).continue).toBe(false);
+      expect(takePendingAsk(henv(), "s1")).toMatch(/reminder 2 of 3/);
     });
 
     it("leaves interactive mode alone: one mid-turn ask, reminders only at Stop", () => {
@@ -418,6 +430,8 @@ describe("mid-turn nudge", () => {
 // Claude needs the instruction, not the mechanism (docs/CLAUDE-TODO.md item 4): every ask is a
 // "cornerman ... mode (...)" head and at most two sentences, with no dashes or ellipses.
 describe("what each nudge asks", () => {
+  // A headless mid-turn ask is left for the runner, not returned as hook context.
+  const askOf = (out, env, id) => (out.continue === false ? { hookSpecificOutput: { additionalContext: takePendingAsk(env, id) } } : out);
   it("is at most two sentences, in every mode and on every trigger", () => {
     write(call(185_000), askLine());
     const asks = [];
@@ -427,13 +441,14 @@ describe("what each nudge asks", () => {
       const id = `v${n++}`;
       asks.push(runStop({ session_id: id, transcript_path: transcript }, { env }));
       if (!extra.CORNERMAN_HEADLESS) asks.push(runStop({ session_id: id, transcript_path: transcript }, { env })); // the reminder
-      asks.push(runMidTurn({ session_id: `v${n++}`, transcript_path: transcript }, { env }));
+      const mid = `v${n++}`;
+      asks.push(askOf(runMidTurn({ session_id: mid, transcript_path: transcript }, { env }), env, mid));
     }
     // The headless mid-turn reminder, 40k past the first ask.
     const henv = { CORNERMAN_AUTO: "1", CORNERMAN_HOME: root, CORNERMAN_NUDGE_AT: "180000", CORNERMAN_HEADLESS: "1" };
-    asks.push(runMidTurn({ session_id: "vr", transcript_path: transcript }, { env: henv }));
+    asks.push(askOf(runMidTurn({ session_id: "vr", transcript_path: transcript }, { env: henv }), henv, "vr"));
     write(call(230_000));
-    asks.push(runMidTurn({ session_id: "vr", transcript_path: transcript }, { env: henv }));
+    asks.push(askOf(runMidTurn({ session_id: "vr", transcript_path: transcript }, { env: henv }), henv, "vr"));
     expect(asks).toHaveLength(10);
     for (const out of asks) {
       const text = out.hookSpecificOutput.additionalContext;
