@@ -73,3 +73,19 @@ decisions, vs sessions without a clear.
 5. Write-up with C1, C2, C3 as separate results.
 
 Open: release 0.7.4 held (Macdara 17:20 AWST) until the next change.
+
+## Rig results (2026-11-16)
+
+- **Stub proof (US$0), local Docker Desktop and VPS:** P1-P5 pass on fix/rulings-skip-own-ask. P5 fails
+  on main 8d96c43: the #215 threshold ask was logged as a user ruling. Fixed in cornerman PR #216.
+- **Real call on the VPS (US$0.02):** OAuth token in the VPS env file under /opt/cornerman-eval
+  (mode 600, root; Macdara approved the copy by card 2026-11-16), plugin loaded (init event lists
+  cornerman 0.7.3), apiKeySource none. Side finding: the first-run welcome text is in the model's
+  reply in `claude -p` output.
+- **Interactive relay, real Sonnet 5.5, plain terminal app in tmux (tui-probe.sh REAL=1, nudge 35k):**
+  the relay saved, cleared and carried on 3 times by itself (4 sessions, 3 of 3 clears used, then a
+  fourth handover left waiting as designed). The chat rule (backticks, never the forbidden word) was
+  in every handover's "Decisions already made", "Do not" and "Rulings from the user". NOTES.md: 28
+  lines over 4 sessions, 0 lines breaking either rule, progress continuous (14, 22, 28; no repeats).
+  Trial setup notes: bypass mode shows a warning config cannot skip, so trials allow tools by rule;
+  a stub key needs customApiKeyResponses pre-approved.
