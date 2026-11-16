@@ -1466,3 +1466,14 @@ result". This is the fix the clear214 r1 note already pointed to. It is now the 
 Testing it needs a cornerman build and a new spend approval. The unspent part of the US$8 is about
 US$3.9 (estimate), and a user-turn trial from the same cached prefix costs about US$0.2-0.4.
 
+
+## User-turn ask test (2026-11-16): approved, not yet built
+
+**Approval:** Macdara, card 2026-11-16 14:40 AWST: "Build and test, up to $20" (offered: up to
+US$3). A new approval, separate from the US$32 and the US$8. Hard batch cap US$20.
+
+**Plan:** build the user-turn ask on a cornerman branch (headless PostToolUse past the threshold
+ends the turn; the runner resumes the same session with the ask as the user message), dry-check
+it on the stub (US$0), then run trials from the same cached base211 fork point with the A/B's
+outcome rule (save.mjs within 6 tool calls of the resumed turn), each capped at what is left of
+the US$20.
