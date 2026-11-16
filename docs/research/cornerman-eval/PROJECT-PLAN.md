@@ -115,3 +115,32 @@ Open: release 0.7.4 held (Macdara 17:20 AWST) until the next change.
   change any code until I give you a task"), reworded after round 4 to "standing rules and facts
   for every later task". Cornerman lead (n=1, confirm in the batch): the handover must not attach
   its own conditions to a user ruling.
+- **Round 5 (memory off, reworded brief 58144db): cm 8/8, full 8/8, compact 8/8; memoryFiles [] in
+  every arm.** cm ruling now obeyed after 2 clears (applyFee rejects negatives); written 2/2 on
+  every fact, the reversed fact still has the superseded wording in its handover (stale), latest
+  used. Work turns: cm 2 (4 sessions, 2 handovers), compact 3 (1 compaction), full 4.
+- Rig fault in round 5, fixed 2c3f049: a two-question AskUserQuestion card shows "Tab/Arrow keys
+  to navigate"; the driver matched only the one-question footer, so the full arm's open-question
+  probe waited out TURN_MAX and scored not-attempted (the pending ask reaches the transcript only
+  when the card resolves). That trial was killed (next probe typed into the open card), archived
+  as `_invalid-full-s1-r5-multicard`, and rerun. Fix checked on both footer strings; no real run
+  has shown a multi-question card since.
+
+## Batch pressure (decided 2026-11-16, not built)
+
+The smoke does not separate the arms, and the arms do not do the same work (round 5: 2, 3 and 4
+work turns). Changes before the batch:
+
+1. **Equal work in every arm.** Every arm runs the same W work turns (W = 3K + 1); compact types
+   `/compact` every 3; cm's nudge is calibrated on one pilot so the relay clears at least K times
+   inside W. Probes start only after W, never on "clears reached".
+2. **K = 3.** Plants before clear 1 must hold after clear 3 (the carry.mjs risk in Test 1's design).
+3. **Reading is capped, so it is not the main lever.** The image holds about 640 KB of npm docs
+   (commands 452K, using-npm 120K, configuring-npm 72K; about 160k tokens). At K = 3 that is about
+   50k tokens per segment, which one compaction summarises easily. Use all three folders, 6 files
+   per turn.
+4. **Density is the lever: 3 facts per type (24 per trial).** A summary or handover drops detail
+   when there is more to carry. Needs non-conflicting variants within a pool (two "number" facts
+   must not name the same setting), one probe and checker per fact, and a fresh fairness review.
+5. Then freeze Test 1 PREDICTIONS (margin, n, K, W, facts per type) with sha256, before any scored
+   run.
