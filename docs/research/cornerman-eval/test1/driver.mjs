@@ -181,21 +181,29 @@ async function main() {
   };
   let w = 0, compacts = 0;
   for (const x of early) await plant(x, "plant");
+  const sessionsAfterEarly = sessions();
   // One work turn between the early plants and the late corrections, then the late ones.
   const t0 = workTurn(); w++; await say(t0, "work:0"); await waitIdle("work 0");
   for (const x of late) await plant(x, "plant-late");
   // The same W work turns in every arm; probes start only after W, never on "clears reached".
   // cm clears on its own (nudge calibrated by pilot so it reaches K inside W); compact every 3.
   const sessionsAfterPlants = sessions();
+  const clearAt = []; // work turn after which a cm clear landed (calibration: spread across W)
   while (w < W) {
+    const sBefore = sessions();
     await say(workTurn(), `work:${w}`); w++;
     await waitIdle(`work ${w}`);
+    if (sessions() > sBefore) clearAt.push(w);
     if (ARM === "compact" && w % COMPACT_EVERY === 0) { await say("/compact", "compact"); compacts++; await waitIdle("compact", { noStop: true }); }
   }
   const sessionsAtProbes = sessions();
   // Clears inside W after the last plant (cm). Below K, the trial is under-pressured: kept, flagged.
-  const clearsInWork = sessionsAtProbes - sessionsAfterPlants;
-  if (ARM === "cm" && clearsInWork < CLEARS) log(`UNDER-PRESSURE: ${clearsInWork} clears after the plants, wanted ${CLEARS}`);
+  // Pressure = clears after the early plants (the plan: plants before clear 1 hold after clear 3);
+  // clears after the late plants are recorded too. The relay's default budget is 3 clears a window
+  // (pilot s901 at nudge 35k used all 3 by work turn 2, then one 31k-211k session: too early).
+  const clearsInWork = sessionsAtProbes - sessionsAfterEarly, clearsAfterLate = sessionsAtProbes - sessionsAfterPlants;
+  if (ARM === "cm" && clearsInWork < CLEARS) log(`UNDER-PRESSURE: ${clearsInWork} clears after the early plants, wanted ${CLEARS}`);
+  log(`clears after work turns [${clearAt}], after late plants ${clearsAfterLate}`);
   const hs = handovers();
   // Written is scored only on handovers filed after the fact's last plant (a late correction
   // cannot be in an earlier handover, smoke 2).
@@ -214,7 +222,7 @@ async function main() {
     log(`PROBE ${f.type} ${acted.result} ${acted.detail ?? ""}`);
   }
 
-  writeFileSync(join(OUT, "result.json"), JSON.stringify({ arm: ARM, seed: SEED, clears: CLEARS, model: MODEL, nudge: NUDGE, workTurns: w, W, clearsInWork, sessions: sessions(), handovers: hs.length, compacts, memoryFiles: memoryFiles(), results }, null, 1));
+  writeFileSync(join(OUT, "result.json"), JSON.stringify({ arm: ARM, seed: SEED, clears: CLEARS, model: MODEL, nudge: NUDGE, workTurns: w, W, clearsInWork, clearsAfterLate, clearAt, sessions: sessions(), handovers: hs.length, compacts, memoryFiles: memoryFiles(), results }, null, 1));
   mkdirSync(join(OUT, "transcripts"), { recursive: true });
   for (const t of transcripts()) cpSync(t.p, join(OUT, "transcripts", t.p.split("/").at(-1)), { recursive: true });
   if (existsSync(join(homedir(), ".cornerman"))) cpSync(join(homedir(), ".cornerman"), join(OUT, "cm"), { recursive: true });

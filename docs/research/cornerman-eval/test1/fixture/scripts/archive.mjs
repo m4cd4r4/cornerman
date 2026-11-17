@@ -1,4 +1,4 @@
-// Archive job: moves entries older than a year to cold storage.
+// Archive job: moves entries older than a year into a local gzip archive.
 // Run: node scripts/archive.mjs [--from N]   (N = first step to run, default 1)
 import { existsSync, readFileSync } from 'node:fs';
 
@@ -18,15 +18,15 @@ async function step2(c) {
     throw new Error('step 2 not implemented');
 }
 
-// STEP 3: upload the archive
+// STEP 3: write the manifest
 async function step3(c) {
-    // TODO: upload the gzip file to the cold-storage bucket
+    // TODO: write archive/manifest.json listing the archived entry ids and the gzip file's sha256
     throw new Error('step 3 not implemented');
 }
 
-// STEP 4: verify the upload
+// STEP 4: verify the archive
 async function step4(c) {
-    // TODO: download the uploaded file's checksum and compare it with the local one
+    // TODO: read the gzip file back and check every id in the manifest is in it
     throw new Error('step 4 not implemented');
 }
 

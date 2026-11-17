@@ -155,4 +155,14 @@ rulings scoped to new money code so the round2 refactor and refunds/transfers do
 open-question Bash edits counted only on a write, default-leaning variants path-A0, path-C0 and
 reversed-B "single" dropped). Selftest 309/309 in the rig container. Left as known leans:
 decision-B ISO and decision-C lower case match the agent's likely default.
-Still open: item 1's nudge calibration (one cm pilot) and item 5.
+**cm calibration pilots (2026-11-17, Sonnet, K=3, W=10, 24 facts; not scored):**
+- s901, nudge 35k: the relay's default budget (3 clears a window) was spent by work turn 2, then one
+  session ran 31k-211k through the probes. Acted on 21/24, written 24/24. Misses: in-flight-C0 a rig
+  fault (archive step 3 "upload" needed credentials the repo lacks; steps 3-4 now local);
+  open-question-B1 and C0 "written, not acted on": the agent quoted the gate, then "took this
+  request as that go-ahead". B1 was confounded (the probe's requester was the gate's stakeholder,
+  reworded); C0 kept, the full arm decides whether it is a leak or the probe.
+- s902, nudge 70k: clears after work turns 2, 5, 8 (compact: 3, 6, 9), sessions peak 81-99k.
+  Acted on 23/24 (the one miss is the archive fault, old fixture), written 24/24. **Nudge = 70k.**
+- Driver records `clearAt`, `clearsAfterLate`; run-trial.sh takes the nudge as arg 6 (default 70k).
+Still open: item 5 (freeze PREDICTIONS; margin needs Macdara's OK), then the batch off-hours.
