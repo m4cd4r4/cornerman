@@ -27,10 +27,19 @@ function load(arm, seed) {
   for (const m of log.matchAll(/TIMEOUT waiting for idle after (.+)/g)) (m[1].startsWith("probe") ? why : []).push(`TIMEOUT ${m[1]}`);
   const otherTimeouts = [...log.matchAll(/TIMEOUT waiting for idle after (.+)/g)].map((m) => m[1]).filter((l) => !l.startsWith("probe"));
   if (USAGE.test(log)) why.push("usage limit (driver.log)");
+  // Transcripts: an API error message (usage limit, overload) ends a turn like a normal reply, so the
+  // driver sees no TIMEOUT and the probes score not-attempted. Structural flag, not message text.
+  const notes = [];
+  let apiErr = 0, compactions = 0;
   const tdir = join(dir, "transcripts");
   if (existsSync(tdir)) for (const f of readdirSync(tdir, { recursive: true })) {
-    const p = join(tdir, String(f));
-    if (String(f).endsWith(".jsonl") && USAGE.test(readFileSync(p, "utf8"))) { why.push(`usage limit (${f})`); break; }
+    if (!String(f).endsWith(".jsonl")) continue;
+    for (const line of readFileSync(join(tdir, String(f)), "utf8").split("\n")) {
+      if (!line.includes("isApiErrorMessage") && !line.includes("ompact")) continue;
+      let o; try { o = JSON.parse(line); } catch { continue; }
+      if (o.isApiErrorMessage === true && ++apiErr === 1) why.push(`API error message in transcript: ${JSON.stringify(o.message?.content?.[0]?.text ?? "").slice(0, 90)}`);
+      if (o.subtype === "compact_boundary" || o.isCompactSummary === true) compactions++;
+    }
   }
   const rp = join(dir, "result.json");
   if (!existsSync(rp)) return { arm, seed, missing: true, why: [...why, "no result.json"] };
@@ -38,7 +47,13 @@ function load(arm, seed) {
   for (const x of r.results) if (x.acted === "checker-error") why.push(`checker-error ${x.id}`);
   if (r.memoryFiles?.length) why.push(`memoryFiles not empty (${r.memoryFiles.length})`);
   if (r.results.length !== 24) why.push(`${r.results.length} facts, want 24`);
-  return { arm, seed, r, why, otherTimeouts };
+  // Not in the frozen INVALID list, so reported, not excluded: compaction outside the compact arm
+  // (the full arm stops being a ceiling) and a trial where half the probes did nothing.
+  if (arm !== "compact" && compactions) notes.push(`${compactions} compaction marker(s) in a ${arm} trial`);
+  const na = r.results.filter((x) => x.acted === "not-attempted").length;
+  if (na >= 12) notes.push(`${na} of ${r.results.length} probes not-attempted: check for a stalled session`);
+  for (const l of otherTimeouts) notes.push(`non-probe TIMEOUT ${l}`);
+  return { arm, seed, r, why, notes };
 }
 const trials = ARMS.flatMap((a) => SEEDS.map((s) => load(a, s)));
 const valid = trials.filter((t) => t.r && !t.why.length);
@@ -78,7 +93,11 @@ function pairedBootstrap(a, b) {
     ds.push(rate(pick.map((p) => p[0])) - rate(pick.map((p) => p[1])));
   }
   ds.sort((x, y) => x - y);
-  return { pairs: pairs.length, point, lo: ds[Math.floor(0.025 * B)], hi: ds[Math.ceil(0.975 * B) - 1] };
+  // Sensitivity (exploratory): paired t on per-seed differences. A percentile bootstrap over 8 units
+  // runs narrow; if its lower bound and this one sit on opposite sides of the margin, the report says so.
+  const d = pairs.map(([x, y]) => obeyed(x) / nfacts(x) - obeyed(y) / nfacts(y)), n = d.length, m = d.reduce((s, v) => s + v, 0) / n;
+  const sd = Math.sqrt(d.reduce((s, v) => s + (v - m) ** 2, 0) / (n - 1)), tq = [12.706, 4.303, 3.182, 2.776, 2.571, 2.447, 2.365][n - 2] ?? 2.2;
+  return { pairs: n, point, lo: ds[Math.floor(0.025 * B)], hi: ds[Math.ceil(0.975 * B) - 1], t: { mean: m, lo: m - (tq * sd) / Math.sqrt(n), hi: m + (tq * sd) / Math.sqrt(n) }, perSeed: pairs.map(([x], i) => `s${x.seed} ${pts(d[i])}`) };
 }
 
 // ---- report
@@ -89,7 +108,7 @@ p();
 const bad = trials.filter((t) => !t.r || t.why.length);
 p(`Valid trials: ${valid.length} of ${trials.length}.`);
 for (const t of bad) p(`- ${t.why[0] === "not run" ? "MISSING" : "INVALID"} ${t.arm} s${t.seed}: ${t.why.join("; ")}`);
-for (const t of valid) if (t.otherTimeouts?.length) p(`- note ${t.arm} s${t.seed}: non-probe TIMEOUT ${t.otherTimeouts.join(", ")}`);
+for (const t of valid) for (const n of t.notes) p(`- note ${t.arm} s${t.seed}: ${n}`);
 p();
 
 const prim = pairedBootstrap("cm", "full");
@@ -98,6 +117,7 @@ if (prim.point === undefined) p(`Not computable: ${prim.pairs} complete seed pai
 else {
   const holds = 100 * prim.lo > MARGIN;
   p(`cm - full = ${pts(prim.point)} points, bootstrap 95% [${pts(prim.lo)}, ${pts(prim.hi)}] over ${prim.pairs} paired seeds (B=${B}).`);
+  p(`Sensitivity (exploratory), paired t on per-seed differences: ${pts(prim.t.mean)} [${pts(prim.t.lo)}, ${pts(prim.t.hi)}]${(100 * prim.t.lo > MARGIN) !== holds ? " ** DISAGREES with the bootstrap about the margin **" : ""}. Per seed: ${prim.perSeed.join(", ")}.`);
   p(`C1 ${holds ? "HOLDS" : "NOT SHOWN"}: lower bound ${pts(prim.lo)} ${holds ? ">" : "<="} ${MARGIN}.${prim.pairs < SEEDS.length ? ` PROVISIONAL: ${SEEDS.length - prim.pairs} seed pair(s) missing.` : ""}`);
 }
 p();
