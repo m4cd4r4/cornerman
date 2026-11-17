@@ -211,3 +211,10 @@ Findings, most important first:
 6. Scope: Sonnet, interactive, cornerman main 107ff1f (unreleased), one fixture. The headless arm and
    Haiku/Opus from TEST1-DESIGN.md are not in this batch. reversed-B has one variant left (8 of 8 seeds).
 7. If all three arms land above 95%, say that the test did not separate them; P3 (60%) may well fail.
+
+**Applied 2026-11-17 10:30 AWST (Macdara card):** finding 3's gap is closed in batch.sh by a stall guard
+(stops launches after a trial that finished in under 10 minutes or has 12+ probes not-attempted; 4 cases
+checked), with dated notes in PREDICTIONS.md and a re-freeze on pilot data only (3c029ee). Rig re-synced
+to the VPS, batch.sh and PREDICTIONS.md hashes match the manifest there; driver.mjs and facts.mjs carry
+CRLF on disk, as in the pilots, and match once LF-normalised. Old waiter killed; new waiter pid 2194487,
+same start 14:00 UTC = 22:00 AWST. After a stall: delete the named trial dir, rerun batch.sh.
