@@ -166,3 +166,10 @@ decision-B ISO and decision-C lower case match the agent's likely default.
   Acted on 23/24 (the one miss is the archive fault, old fixture), written 24/24. **Nudge = 70k.**
 - Driver records `clearAt`, `clearsAfterLate`; run-trial.sh takes the nudge as arg 6 (default 70k).
 Still open: item 5 (freeze PREDICTIONS; margin needs Macdara's OK), then the batch off-hours.
+
+**Scorer (2026-11-17, before any scored result):** `test1/score.mjs <out-dir>` implements the frozen
+PREDICTIONS scoring (paired seed bootstrap B=10,000 with a fixed RNG seed, Wilson, Newcombe, leak rule,
+P1-P8) and lists INVALID trials (DRIVER ERROR, probe TIMEOUT, checker-error, usage limit, memory files,
+not 24 facts) for rerun by key. Checked on pilots s901/s902 (21/24, 23/24, written 24/24, as recorded)
+and on a synthetic 24-trial set where each invalid rule fired and the pairing dropped those seeds.
+Not in frozen.sha256.json (written after the freeze; it reads results, it does not run trials).
