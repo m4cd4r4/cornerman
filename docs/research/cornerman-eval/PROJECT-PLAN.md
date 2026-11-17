@@ -173,3 +173,41 @@ P1-P8) and lists INVALID trials (DRIVER ERROR, probe TIMEOUT, checker-error, usa
 not 24 facts) for rerun by key. Checked on pilots s901/s902 (21/24, 23/24, written 24/24, as recorded)
 and on a synthetic 24-trial set where each invalid rule fired and the pairing dropped those seeds.
 Not in frozen.sha256.json (written after the freeze; it reads results, it does not run trials).
+
+## Audit before the batch (2026-11-17 09:50 AWST, Fable 5.2; nothing frozen was changed)
+
+Checked the frozen design against driver.mjs, run-trial.sh, batch.sh, facts.mjs and the two pilots.
+Sound: arms interleaved per seed, same facts per seed in every arm, cornerman installed in the cm arm
+only, auto-memory off, probes scored by hidden checkers, a trial takes about 33 minutes.
+
+Findings, most important first:
+
+1. **No floor, so the margin has no scale.** Nothing shows what an agent that lost everything scores
+   on the 24 probes. If the floor is 70%, cm at full minus 10 has lost a third of what can be lost.
+   **Floor arm approved (Macdara card 2026-11-17 09:50 AWST):** plain `/clear` after work turns 3, 6, 9,
+   no cornerman, seeds 1-8, exploratory, run after tonight's batch so the frozen rig is untouched.
+   Predictions written before any scored data: floor pooled acted-on <= 40% (75%); >= 10% (80%);
+   lowest types number and open-question (60%). Reported with retention =
+   (cm - floor) / (full - floor). If the floor is above 60%, C1 is reported as "low sensitivity".
+2. **The planting is the easy case.** All 24 facts arrive as short standalone notes in one burst before
+   work turn 0 (driver.mjs: no work turn between early plants; the comment there and TEST1-DESIGN.md
+   "spread over typed turns, some mid-turn" say otherwise), after a brief that calls them standing rules.
+   cornerman's rulings log copies such messages verbatim, which fits written 24/24 in both pilots.
+   Not tested: a ruling inside a task message, a fact given between clear 2 and 3, a decision that is
+   "yes, do that" to an option the agent described, a fact given mid-turn. Tonight's result is to be
+   reported as "explicit up-front rules across 3 chained clears", not "everything relevant".
+   **Test 1b (same card): design it after tonight's results.**
+3. **A usage limit ends turns without a driver TIMEOUT**, so a limited trial would have scored 24
+   not-attempted and counted as valid. batch.sh (frozen, already waiting) has no limit check, so a
+   limit mid-batch wastes the rest of the night; score.mjs now marks any transcript with an API error
+   message INVALID and notes any trial with 12+ not-attempted (3cc9002). The `isApiErrorMessage`
+   field name is from memory of the transcript format, not confirmed on a real limited trial: the
+   12+ note is the backstop, read it.
+4. **Percentile bootstrap over 8 seeds runs narrow.** score.mjs prints a paired t interval next to it
+   and says when the two disagree about the margin (synthetic check: bootstrap -18.3 vs t -23.3).
+   The frozen test stays the bootstrap; a disagreement is reported, not hidden.
+5. A pooled pass can hide one weak type: a type at 12/24 costs 6 pooled points. The frozen leak rule
+   (3 or more of 24 below full) covers it; report leaks next to C1, never C1 alone.
+6. Scope: Sonnet, interactive, cornerman main 107ff1f (unreleased), one fixture. The headless arm and
+   Haiku/Opus from TEST1-DESIGN.md are not in this batch. reversed-B has one variant left (8 of 8 seeds).
+7. If all three arms land above 95%, say that the test did not separate them; P3 (60%) may well fail.
