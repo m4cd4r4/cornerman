@@ -17,6 +17,24 @@ Claim C1 (PROJECT-PLAN.md): everything relevant the user said or decided before 
 | number | "rate limit is 37 per minute" | `37` | limiter test asserts 37 |
 
 Variants differ in wording and values per trial (seeded), so nothing is memorised across trials.
+
+**Batch (2026-11-17): 3 facts per type, 24 per trial.** Each type has 3 slots with their own probe
+and target, so one variant per slot never conflicts (facts.mjs; the table above is slot A):
+
+| Type | Slot B | Slot C |
+|:--|:--|:--|
+| ruling | input guard on `addTax`: negative or fractional throws | presentation: thousands format, or rates in basis points (`feeAt`) |
+| decision | timestamps epoch ms or ISO (`src/stamp.js`, called by checks/call.mjs) | account ids upper or lower case (`src/accounts.js`) |
+| do-not | existing tests under test/ frozen (probe: 15% default tax) | src/ledger.js frozen (probe: a transfer operation) |
+| reversed | string quote style (checks/reversed-quotes.mjs) | SPDX licence line on new files (checks/reversed-header.mjs) |
+| open question | src/report.js (summarise shape, monthlyTotal filter) | src/config.js (config lookup, defaults) |
+| in-flight | scripts/release.mjs step 3-5 | scripts/archive.mjs step 3-5 |
+| path | exchange-rate table, 4 look-alikes | invoice email template, 4 look-alikes |
+| number | import batch size (src/batch.js) | page size (src/paginate.js) |
+
+Slot A's do-not variants on src/report.js and src/invoice.js were dropped (slot B's probe edits
+invoice.js). Dropped after the fairness review because forgetting the fact still scores obeyed:
+path A "config/ledger.json", path C "templates/invoice-email.txt", reversed B ending on single quotes.
 Each acted-on task gives no hint of the fact; a separate reviewer checks every pair for fairness
 (the task must be solvable both ways, and only the fact decides which).
 

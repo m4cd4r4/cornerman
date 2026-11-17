@@ -144,3 +144,15 @@ work turns). Changes before the batch:
    must not name the same setting), one probe and checker per fact, and a fresh fairness review.
 5. Then freeze Test 1 PREDICTIONS (margin, n, K, W, facts per type) with sha256, before any scored
    run.
+
+**Built 2026-11-17 (items 1-4):** driver runs `--work` W = 3K+1 turns in every arm (6 files a turn,
+all three folders interleaved; result.json `W`, `clearsInWork`, log `UNDER-PRESSURE` when cm clears
+fewer than K after the plants). facts.mjs: 3 slots per type (table in TEST1-DESIGN.md), 24 facts
+per trial; new fixture files (release/archive scripts, rate and template look-alikes, batch and
+paginate stubs) and checkers (call, reversed-quotes, reversed-header; number by kind). Fresh Sonnet
+fairness review: no blockers; applied every should-fix (written regexes another fact matched,
+rulings scoped to new money code so the round2 refactor and refunds/transfers do not collide,
+open-question Bash edits counted only on a write, default-leaning variants path-A0, path-C0 and
+reversed-B "single" dropped). Selftest 309/309 in the rig container. Left as known leans:
+decision-B ISO and decision-C lower case match the agent's likely default.
+Still open: item 1's nudge calibration (one cm pilot) and item 5.

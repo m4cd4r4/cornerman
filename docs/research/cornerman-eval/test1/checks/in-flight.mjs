@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { init, report, changedFiles, showBaseline } from './lib.mjs';
 
 const { workdir, fact, baseline } = init();
-const FILE = 'scripts/migrate.mjs';
+const FILE = fact.expect.file ?? 'scripts/migrate.mjs';
 if (changedFiles(workdir, baseline).length === 0) report('not-attempted', 'no files changed');
 
 function regions(src) {

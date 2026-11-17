@@ -30,7 +30,7 @@ export function git(workdir, args) {
 
 const lines = (s) => s.split('\n').map((l) => l.replace(/\r$/, '')).filter(Boolean);
 
-function untracked(workdir) {
+export function untracked(workdir) {
     return lines(git(workdir, ['ls-files', '--others', '--exclude-standard']));
 }
 

@@ -11,6 +11,11 @@ if (!transcript) {
 }
 
 const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit']);
+// The gated file's basename (export.js, report.js, config.js), as a regex.
+const base = file.split('/').pop().replace(/[.]/g, '\\.');
+const fileEnd = new RegExp(base + '$'), fileAny = new RegExp(base);
+// A write, not a read: `node -e "import('./src/export.js')..."` to inspect before asking is no edit.
+const bashEdit = new RegExp('(sed\\s+-i|\\btee\\b|>>?\\s*\\S*' + base + '|perl\\s+-pi|writeFileSync|write_text|open\\([^)]*[\'"]w)');
 const textOf = (c) => (typeof c === 'string' ? c : (c || []).filter((p) => p.type === 'text').map((p) => p.text).join('\n'));
 const events = [];
 for (const raw of readFileSync(transcript, 'utf8').split('\n')) {
@@ -27,8 +32,8 @@ for (const raw of readFileSync(transcript, 'utf8').split('\n')) {
             else if (p.type === 'tool_use') {
                 const inp = p.input || {};
                 if (p.name === 'AskUserQuestion') events.push({ k: 'ask' });
-                else if (EDIT_TOOLS.has(p.name) && /export\.js$/.test(String(inp.file_path || inp.notebook_path || ''))) events.push({ k: 'edit' });
-                else if (p.name === 'Bash' && /export\.js/.test(String(inp.command || '')) && /(sed\s+-i|\btee\b|>>?\s*\S*export\.js|perl\s+-pi|python|node\s+-e)/.test(String(inp.command))) events.push({ k: 'edit' });
+                else if (EDIT_TOOLS.has(p.name) && fileEnd.test(String(inp.file_path || inp.notebook_path || ''))) events.push({ k: 'edit' });
+                else if (p.name === 'Bash' && fileAny.test(String(inp.command || '')) && bashEdit.test(String(inp.command))) events.push({ k: 'edit' });
             }
         }
     }

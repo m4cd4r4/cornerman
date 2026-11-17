@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 // Test 1 trial driver: plays the user in the real Claude Code terminal app (tmux), inside the
-// cornerman-eval container. Plants the seed's facts in chat, sends read-heavy work turns until the
-// arm's clear count is reached, then sends each probe and runs its checker. Writes /out/result.json.
-//   node driver.mjs --arm cm|full|compact --seed N --clears K [--model sonnet] [--nudge-at 35000]
+// cornerman-eval container. Plants the seed's facts in chat, sends W = 3K+1 read-heavy work turns
+// (same in every arm), then sends each probe and runs its checker. Writes /out/result.json.
+//   node driver.mjs --arm cm|full|compact --seed N --clears K [--model sonnet] [--nudge-at 35000] [--work W]
 // Arms: cm = cornerman installed, relay clears by itself at the nudge; full = no cornerman, no
 // clear (the ceiling); compact = no cornerman, `/compact` typed after every --compact-every turns.
 // Idle = the screen has not shown "esc to interrupt" and the newest transcript has not grown for
@@ -17,11 +17,13 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i < 0 ? d : process.argv[i + 1]; };
 const ARM = arg("--arm", "cm"), SEED = Number(arg("--seed", "1")), CLEARS = Number(arg("--clears", "1"));
 const MODEL = arg("--model", "sonnet"), NUDGE = Number(arg("--nudge-at", "35000"));
-const COMPACT_EVERY = Number(arg("--compact-every", "3")), MAX_WORK = Number(arg("--max-work", "14"));
+// Equal work in every arm (batch pressure item 1): W work turns, W = 3K + 1, whatever the arm.
+const COMPACT_EVERY = Number(arg("--compact-every", "3")), W = Number(arg("--work", String(3 * CLEARS + 1)));
 const OUT = arg("--out", "/out"), WORK = "/work", IDLE_MS = Number(arg("--idle-ms", "15000"));
 const TURN_MAX_MS = 20 * 60_000;
 const PROJ = join(homedir(), ".claude", "projects");
-const DOCS = "/usr/local/lib/node_modules/npm/docs/content/commands";
+const DOCS = "/usr/local/lib/node_modules/npm/docs/content";
+const DOC_DIRS = ["commands", "using-npm", "configuring-npm"];
 
 const log = (m) => { const l = `${new Date().toISOString()} ${m}`; console.log(l); writeFileSync(join(OUT, "driver.log"), l + "\n", { flag: "a" }); };
 const sh = (cmd, args, opts = {}) => execFileSync(cmd, args, { encoding: "utf8", ...opts });
@@ -88,14 +90,17 @@ async function say(text, label) {
   log(`SAY [${label}] ${text.slice(0, 100).replace(/\n/g, " ")}`);
 }
 
-// Work turns: real reading (npm's own command docs), so context grows on content the agent needs.
-const docFiles = readdirSync(DOCS).filter((f) => f.endsWith(".md")).sort();
+// Work turns: real reading (npm's own docs, all three folders interleaved so every segment mixes
+// them), so context grows on content the agent needs. 83 files in the image, 6 per turn.
+const perDir = DOC_DIRS.map((d) => readdirSync(join(DOCS, d)).filter((f) => f.endsWith(".md")).sort().map((f) => join(DOCS, d, f)));
+const docFiles = [];
+for (let i = 0; perDir.some((l) => i < l.length); i++) for (const l of perDir) if (i < l.length) docFiles.push(l[i]);
 let docAt = 0;
-function workTurn(i) {
+function workTurn() {
   const batch = docFiles.slice(docAt, docAt + 6);
   docAt += 6;
-  if (!batch.length) return null;
-  return `Next batch of reading for the ledger docs: read each of these files in ${DOCS}/ one at a time with the Read tool and add one line per file to docs/npm-notes.md saying which npm command could matter for ledger's release process and why: ${batch.join(", ")}. Commit when the batch is done.`;
+  if (batch.length < 6) throw new Error(`out of doc files at ${docAt} (W too large for ${docFiles.length} files)`);
+  return `Next batch of reading for the ledger docs: read each of these files one at a time with the Read tool and add one line per file to docs/npm-notes.md saying which npm feature could matter for ledger's release process and why: ${batch.join(", ")}. Commit when the batch is done.`;
 }
 
 // Probe baselines live in a shadow repo the agent never sees: commits in /work ("before probe
@@ -177,20 +182,20 @@ async function main() {
   let w = 0, compacts = 0;
   for (const x of early) await plant(x, "plant");
   // One work turn between the early plants and the late corrections, then the late ones.
-  const t0 = workTurn(w++); await say(t0, "work:0"); await waitIdle("work 0");
+  const t0 = workTurn(); w++; await say(t0, "work:0"); await waitIdle("work 0");
   for (const x of late) await plant(x, "plant-late");
-  // Work until every fact has crossed CLEARS clears (cm), or the same work for the control arms.
-  const lastPlant = () => Math.max(...Object.values(plantedIn));
-  while (w < MAX_WORK) {
-    if (ARM === "cm" && sessions() >= lastPlant() + CLEARS) break;
-    if (ARM === "compact" && compacts >= CLEARS) break;
-    if (ARM === "full" && w >= Number(arg("--full-work", String(1 + 3 * CLEARS)))) break;
-    const t = workTurn(w); if (!t) break;
-    await say(t, `work:${w}`); w++;
+  // The same W work turns in every arm; probes start only after W, never on "clears reached".
+  // cm clears on its own (nudge calibrated by pilot so it reaches K inside W); compact every 3.
+  const sessionsAfterPlants = sessions();
+  while (w < W) {
+    await say(workTurn(), `work:${w}`); w++;
     await waitIdle(`work ${w}`);
     if (ARM === "compact" && w % COMPACT_EVERY === 0) { await say("/compact", "compact"); compacts++; await waitIdle("compact", { noStop: true }); }
   }
   const sessionsAtProbes = sessions();
+  // Clears inside W after the last plant (cm). Below K, the trial is under-pressured: kept, flagged.
+  const clearsInWork = sessionsAtProbes - sessionsAfterPlants;
+  if (ARM === "cm" && clearsInWork < CLEARS) log(`UNDER-PRESSURE: ${clearsInWork} clears after the plants, wanted ${CLEARS}`);
   const hs = handovers();
   // Written is scored only on handovers filed after the fact's last plant (a late correction
   // cannot be in an earlier handover, smoke 2).
@@ -209,7 +214,7 @@ async function main() {
     log(`PROBE ${f.type} ${acted.result} ${acted.detail ?? ""}`);
   }
 
-  writeFileSync(join(OUT, "result.json"), JSON.stringify({ arm: ARM, seed: SEED, clears: CLEARS, model: MODEL, nudge: NUDGE, workTurns: w, sessions: sessions(), handovers: hs.length, compacts, memoryFiles: memoryFiles(), results }, null, 1));
+  writeFileSync(join(OUT, "result.json"), JSON.stringify({ arm: ARM, seed: SEED, clears: CLEARS, model: MODEL, nudge: NUDGE, workTurns: w, W, clearsInWork, sessions: sessions(), handovers: hs.length, compacts, memoryFiles: memoryFiles(), results }, null, 1));
   mkdirSync(join(OUT, "transcripts"), { recursive: true });
   for (const t of transcripts()) cpSync(t.p, join(OUT, "transcripts", t.p.split("/").at(-1)), { recursive: true });
   if (existsSync(join(homedir(), ".cornerman"))) cpSync(join(homedir(), ".cornerman"), join(OUT, "cm"), { recursive: true });

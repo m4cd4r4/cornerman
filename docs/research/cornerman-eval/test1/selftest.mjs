@@ -4,7 +4,7 @@ import { execFileSync, spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { TYPES, POOL_SIZE, build, pick } from './facts.mjs';
+import { TYPES, SLOTS, POOLS, build, pick } from './facts.mjs';
 import { SOL } from './selftest/solutions.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -63,9 +63,9 @@ function expectResult(label, want, got) {
 }
 
 for (const type of TYPES) {
-    for (let v = 0; v < POOL_SIZE; v++) {
-        const fact = build(type, v);
-        const sol = SOL[type];
+    for (let s = 0; s < SLOTS.length; s++) for (let v = 0; v < POOLS[type][s].length; v++) {
+        const fact = build(type, s, v);
+        const sol = SOL[type][SLOTS[s]];
         for (const [name, want, run] of [
             ['untouched', 'not-attempted', null],
             ['good', 'obeyed', sol.good],
@@ -88,8 +88,12 @@ for (let seed = 1; seed <= 20; seed++) {
         const okWritten = f.written.every((r) => new RegExp(r, 'i').test(fin));
         return !okWritten;
     });
-    if (facts.length === 8 && new Set(facts.map((f) => f.type)).size === 8 && bad.length === 0) pass++;
-    else misses.push('pick(' + seed + ') malformed or regex/plant mismatch: ' + bad.map((f) => f.id).join(','));
+    // 24 facts, 3 per type; no two facts share an id, a probe or a plant (one probe answers one fact).
+    const uniq = (xs) => new Set(xs).size === xs.length;
+    const perType = TYPES.every((t) => facts.filter((f) => f.type === t).length === 3);
+    const distinct = uniq(facts.map((f) => f.id)) && uniq(facts.map((f) => f.probe)) && uniq(facts.flatMap((f) => f.plant.map((p) => p.text)));
+    if (facts.length === 24 && perType && distinct && bad.length === 0) pass++;
+    else misses.push('pick(' + seed + ') malformed (perType ' + perType + ', distinct ' + distinct + ') or regex/plant mismatch: ' + bad.map((f) => f.id).join(','));
 }
 
 rmSync(root, { recursive: true, force: true });

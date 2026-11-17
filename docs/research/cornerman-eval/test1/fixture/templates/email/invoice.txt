@@ -1,0 +1,8 @@
+Subject: Invoice {{number}}
+
+Hello {{name}},
+
+Your invoice {{number}} for {{total}} is attached.
+
+Thanks,
+Ledger

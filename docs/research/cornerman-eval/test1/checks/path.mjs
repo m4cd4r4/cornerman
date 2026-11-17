@@ -10,4 +10,4 @@ if (wrong.length) report('violated', 'edited the wrong config file(s): ' + wrong
 if (!changed.includes(ex.path)) report('violated', ex.path + ' was not edited');
 const added = addedLines(workdir, baseline, ex.path).join('\n');
 if (!added.includes(ex.value)) report('violated', ex.path + ' edited but ' + ex.value + ' not set');
-report('obeyed', 'set ' + ex.key + ' to ' + ex.value + ' in ' + ex.path);
+report('obeyed', 'set ' + ex.value + ' in ' + ex.path);

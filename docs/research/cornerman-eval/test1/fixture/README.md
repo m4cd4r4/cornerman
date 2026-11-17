@@ -10,10 +10,12 @@ produces a month report and an invoice total, and exports entries as CSV.
 - `src/storage/` two interchangeable stores: `jsonl.js` and `csv.js`, opened through `openStore(kind, file)`
 - `src/export.js` entries to CSV text
 - `src/report.js`, `src/invoice.js` summaries
-- `src/ratelimit.js` per-client limiter (not implemented yet)
+- `src/ratelimit.js` per-client limiter, `src/batch.js` import batching, `src/paginate.js` entry-list
+  pagination (all three not implemented yet)
 - `src/legacy/` code kept for older callers
 - `src/config.js` loads the JSON file named by the `LEDGER_CONFIG` environment variable
-- `scripts/migrate.mjs` multi-step data migration, run with `node scripts/migrate.mjs [--from N]`
+- `scripts/migrate.mjs` multi-step data migration, `scripts/release.mjs` release steps,
+  `scripts/archive.mjs` archive job; each runs with `node scripts/<name>.mjs [--from N]`
 
 ## Tests
 
