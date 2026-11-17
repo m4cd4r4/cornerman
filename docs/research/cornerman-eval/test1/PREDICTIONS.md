@@ -61,4 +61,16 @@ Per type (24 per arm) the half-width is about 15-20 points, so per-type results 
 
 ## Notes
 
-(None yet.)
+**2026-11-17 10:30 AWST, before any scored run (pilot data only); re-frozen. Approved by Macdara
+(card, same time). Nothing above this heading was changed.**
+
+1. batch.sh gained a stall guard: before each launch, a finished trial that took under 10 minutes or
+   has 12 or more probes not-attempted stops new launches (a usage limit ends every turn in seconds
+   with no driver TIMEOUT). Orchestration only: no arm, seed, prompt, checker or fixture changed.
+2. Scope of C1 as tested here: all 24 facts are given as short standalone notes before the first
+   work turn, after a brief that calls them standing rules. The result is to be reported as "explicit
+   up-front rules are carried across 3 chained clears", not "everything relevant is carried forward".
+   Rulings inside task messages, given mid-work, or given as a yes to an agent's proposal are Test 1b.
+3. Exploratory additions, outside the confirmatory test: a floor arm (plain `/clear`, no cornerman,
+   seeds 1-8, run after this batch; predictions in PROJECT-PLAN.md "Audit before the batch") and a
+   paired t interval printed next to the bootstrap by score.mjs. C1 is still decided by the bootstrap.

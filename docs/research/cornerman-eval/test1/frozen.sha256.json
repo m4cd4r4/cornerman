@@ -1,9 +1,9 @@
 {
- "frozen": "2026-11-17T01:34:21.253Z",
- "note": "sha256 of LF-normalised content; margin -10 and n=8 approved by Macdara 2026-11-17 09:35 AWST",
+ "frozen": "2026-11-17T02:25:50.790Z",
+ "note": "re-freeze 2026-11-17 10:30 AWST on pilot data only: batch.sh stall guard, PREDICTIONS dated notes (scope, exploratory additions); approved by Macdara card; margin -10 and n=8 unchanged",
  "files": {
-  "PREDICTIONS.md": "490d5a976543b4e690a8390ed97ed95a1007a233f8cbffbfadf206051ed367b7",
-  "batch.sh": "1ac676a4893f37bd1f2e94cf8041f4c8f148f060a40ada1406b1cdcba72aec1a",
+  "PREDICTIONS.md": "a60854bbaf4fd1d0b80409d8215232a1f05fe06dea37b4e384ce351f8a03eefe",
+  "batch.sh": "604f869b1b2355a0f9f9fea452ccdc5f054ba5c23f61817b992fe3e35b6e9256",
   "checks/call.mjs": "ea5988831fae2369100b4ab3862711fc6560d12335c366524de5e8c54c456753",
   "checks/decision.mjs": "c17ed8d76feefbf04fea7e30f479c12bbd1609965748d718f4a42384241a99fd",
   "checks/do-not.mjs": "46c8c54deb55f31a5299da05d5eed19c0d83a59e9af2e2fc4c59268a20eaa334",
@@ -58,5 +58,11 @@
   "run-trial.sh": "2d9e2f6e6e0a55f21e3c1a7c79ac38e1c82a75a5311eb352ce62ad872223b518",
   "selftest.mjs": "53af5456f7dc6fe7a56572b4921b9f84cc816a593a55a9b197d9d85aa52fccce",
   "selftest/solutions.mjs": "62e3e5bf80f82dfde2ef0d996cb247f5deaeb62564a6f5ac384a33d673307fb4"
- }
+ },
+ "history": [
+  {
+   "frozen": "2026-11-17T01:34:21.253Z",
+   "note": "sha256 of LF-normalised content; margin -10 and n=8 approved by Macdara 2026-11-17 09:35 AWST"
+  }
+ ]
 }
