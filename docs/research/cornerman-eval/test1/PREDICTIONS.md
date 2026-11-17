@@ -1,13 +1,15 @@
-# Test 1 predictions (DRAFT 2026-11-17, not frozen)
+# Test 1 predictions (frozen 2026-11-17)
 
-Written by Claude before any scored Test 1 run. Frozen with sha256 (in `frozen.sha256.json` next to
+Written by Claude before any scored Test 1 run; margin -10 points and n = 8 approved by Macdara
+(card 2026-11-17 09:35 AWST). Frozen with sha256 (in `frozen.sha256.json` next to
 this file) only once the cm calibration pilot has set the nudge. Any change after freezing is a dated
 note below and a re-freeze, allowed on pilot data only.
 
 ## Fixed design
 
-- Model Sonnet 5.5, interactive TUI driven by tmux, cornerman from the marketplace at ref main
-  (sha 107ff1f in the pilots; 0.7.4 is not released), recorded per trial in cornerman.txt; auto-memory off.
+- Model Sonnet 5.5, interactive TUI driven by tmux, cornerman from the marketplace pinned
+  to sha 107ff1fb11583a115b79e7063f95c7b9f1d3c005 (main, as in both pilots; 0.7.4 is not released),
+  recorded per trial in cornerman.txt; auto-memory off.
 - Arms: **cm** (cornerman relay clears by itself), **compact** (`/compact` every 3 work turns),
   **full** (no clear, the ceiling).
 - K = 3 clears or compactions; W = 3K + 1 = 10 work turns in every arm, 6 npm doc files a turn.
