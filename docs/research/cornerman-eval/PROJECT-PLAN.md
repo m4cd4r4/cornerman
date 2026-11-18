@@ -277,7 +277,8 @@ Release 0.7.4 stays on hold: these faults are in the code it would ship.
 Plain `/clear` after work turns 3, 6, 9, no cornerman, seeds 1-8. 8 of 8 valid: clears at [3, 6, 9] in
 every trial, memoryFiles [] everywhere, no driver errors, 1-2 not-attempted per trial (the rest are real
 attempts scored "violated"). Scored with test1/floor-score.mjs; full output in
-test1/results/floor-2026-11-18.md.
+test1/results/floor-2026-11-18.md. floor-score.mjs has no validity checks, so the frozen score.mjs
+rules were applied by hand in the proof-read (below): all 8 pass.
 
 | Arm | Acted-on | Rate (Wilson 95%) |
 |:--|--:|:--|
@@ -285,23 +286,56 @@ test1/results/floor-2026-11-18.md.
 | cm | 159/192 | 82.8% (76.8-87.5) |
 | full | 184/192 | 95.8% (92.0-97.9) |
 
-**Retention (cm - floor) / (full - floor) = 85.5% pooled.** Per type: ruling 83.3, decision 108.3,
-do-not 87.5, reversed 87.5, open-question 95.0, in-flight 66.7, path 83.3, number 83.3.
+**Retention (cm - floor) / (full - floor) = 85.5% pooled, paired seed bootstrap 95% [59.6, 101.8]**
+(B = 10,000, 8 seeds). Per seed: s1 110, s2 96, s3 74, s4 100, s5 96, s6 100, s7 0, s8 105. One seed
+sets the width: without s7 (exploratory only) 97.4. Per type: ruling 83.3, decision 108.3, do-not 87.5,
+reversed 87.5, open-question 95.0, in-flight 66.7, path 83.3, number 83.3.
 
 Floor predictions: pooled <= 40% (75%) YES; pooled >= 10% (80%) NO (5.7%); lowest types number and
-open-question (60%) NO (seven types tie at 0/24).
+open-question (60%) NO on the strict reading (seven types tie at 0/24; both named types are in the tie,
+so the floor cannot rank them).
 
 What it means:
 
-1. **C1 is not "low sensitivity".** The floor is far below 60%: an agent that loses the facts fails
-   almost every probe, so the 24 probes measure carry-forward and nothing else.
-2. **All 11 floor passes are decision facts** (A0, A4, B1, C1), the variants already listed as leaning
-   to the agent's default (decision-B ISO, decision-C lower case). The decision type cannot tell carry
-   from habit; its retention above 100% is that, not a cm gain.
-3. **The margin now has a scale.** Full minus floor is 90 points; cm's 13-point gap is about one
-   seventh of what can be lost. In-flight keeps two thirds, the weakest type, as in the batch.
-4. The confirmatory result does not change: C1 NOT SHOWN.
+1. **C1 is not "low sensitivity".** The floor is far below 60%. The seven non-decision types score
+   0/168 at the floor, so those 21 probes per trial pass only when the fact was carried.
+2. **All 11 floor passes are decision facts, and every decision probe at the floor went the agent's
+   default way:** JSON lines (A0, A4: 5 of 5 pass; CSV variants A1, A3: 0 of 3), ISO (B1: 4 of 4; epoch
+   B0: 0 of 4), lower case (C1: 2 of 2; upper C0: 0 of 6). Only B ISO and C lower case were listed as
+   leans before the batch; **decision-A JSON lines is a third lean, not flagged until now** (5 of the
+   11 passes). The 11 with-default decision probes cannot tell carry from habit. The 13 against-default
+   ones can: floor 0/13, cm 13/13, full 12/13.
+3. Decision retention above 100% is one probe: cm 24/24, full 23/24 (full missed decision-A3 in s8),
+   over a denominator the floor shrinks to 12. Noise, not a cm gain.
+4. **The margin now has a scale.** Full minus floor is 90 points; cm's 13-point gap is about one
+   seventh of what can be lost.
+5. The confirmatory result does not change: C1 NOT SHOWN.
 
-**Decided (Macdara card 2026-11-18 15:15 AWST):** build all 4 fix candidates in one cornerman PR, then
+### Proof-read (2026-11-18 15:50 AWST, Fable 5.2)
+
+Every count above was re-tallied from the result.json files with a separate script; all match. The
+frozen validity rules (DRIVER ERROR, probe TIMEOUT, usage-limit text, API error message in a transcript,
+checker-error, 24 results, memory files) pass for all 8 floor trials; each has 4 transcripts, no
+compaction, the same 24 fact ids as its cm and full trial, and ran 29-30 minutes.
+
+**In-flight "weakest type" needs a caveat: 6 of cm's 10 in-flight misses are one probe variant, and
+the 4 read so far are not lost facts.** In-flight slot A, step 4 "index rebuild" (variants A2, A3,
+drawn by seeds 2, 3, 4, 5, 7, 8): cm 0/6, full 4/6, compact 5/6, all "no files changed". The step-3
+variants (seeds 1, 6): cm 2/2, full 2/2. Slots B and C: cm 12/16, full 15/16. Replies read in 4 of the
+6 cm misses:
+
+- s2, s8: the agent named the fact correctly ("step 4 is next, steps 2 and 3 stay") and declined to
+  write the step because the repo defines no index format; it asked instead. full s3 did the same.
+- s4, s5: the agent read the script (s4 said step 4 was next), then spent the turn on the handover
+  skill and stopped; no clear landed during the probe (`clearedDuringProbe` false).
+- s3, s7: not read (both "not written" in the last handover).
+
+So the step-4 variant is under-specified (full misses it 2 of 6) and scores "knew it, did not act" as
+a miss. Two separate things to settle before in-flight is called a carry-forward leak: (1) why cm asks
+where full writes (0/6 against 4/6 is still a difference), (2) the handover save taking a turn the user
+gave to a task (s4, s5), which is a cornerman behaviour, not a memory loss. Lead (a) from round 4
+(handover adds its own condition) is not what the 4 replies show.
+
+**Decided (Macdara card 2026-11-18, about 15:10 AWST):** build all 4 fix candidates in one cornerman PR, then
 rerun the cm arm on seeds 1-8 and compare with the batch's full and floor arms. 0.7.4 stays held until
 that rerun shows the gap closed. Test 1b design comes after.
