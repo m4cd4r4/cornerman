@@ -271,3 +271,33 @@ reversed, open-question, in-flight, path, number. Note 7 of the audit did not ap
   far fewer, carry the missing ones forward (as "Carried forward" already does for open items).
 
 Release 0.7.4 stays on hold: these faults are in the code it would ship.
+
+## Floor arm results (exploratory; ran 2026-11-18 05:36-07:07 UTC = 13:36-15:07 AWST)
+
+Plain `/clear` after work turns 3, 6, 9, no cornerman, seeds 1-8. 8 of 8 valid: clears at [3, 6, 9] in
+every trial, memoryFiles [] everywhere, no driver errors, 1-2 not-attempted per trial (the rest are real
+attempts scored "violated"). Scored with test1/floor-score.mjs; full output in
+test1/results/floor-2026-11-18.md.
+
+| Arm | Acted-on | Rate (Wilson 95%) |
+|:--|--:|:--|
+| floor | 11/192 | 5.7% (3.2-10.0) |
+| cm | 159/192 | 82.8% (76.8-87.5) |
+| full | 184/192 | 95.8% (92.0-97.9) |
+
+**Retention (cm - floor) / (full - floor) = 85.5% pooled.** Per type: ruling 83.3, decision 108.3,
+do-not 87.5, reversed 87.5, open-question 95.0, in-flight 66.7, path 83.3, number 83.3.
+
+Floor predictions: pooled <= 40% (75%) YES; pooled >= 10% (80%) NO (5.7%); lowest types number and
+open-question (60%) NO (seven types tie at 0/24).
+
+What it means:
+
+1. **C1 is not "low sensitivity".** The floor is far below 60%: an agent that loses the facts fails
+   almost every probe, so the 24 probes measure carry-forward and nothing else.
+2. **All 11 floor passes are decision facts** (A0, A4, B1, C1), the variants already listed as leaning
+   to the agent's default (decision-B ISO, decision-C lower case). The decision type cannot tell carry
+   from habit; its retention above 100% is that, not a cm gain.
+3. **The margin now has a scale.** Full minus floor is 90 points; cm's 13-point gap is about one
+   seventh of what can be lost. In-flight keeps two thirds, the weakest type, as in the batch.
+4. The confirmatory result does not change: C1 NOT SHOWN.
