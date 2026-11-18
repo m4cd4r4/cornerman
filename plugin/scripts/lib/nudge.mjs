@@ -97,6 +97,49 @@ export function windowNudgeAt(env, sessionId) {
   return null;
 }
 
+// How many clears the relay (hooks/relay.ts) has left for the window holding this session, read
+// from its state file relay/<key>.json: Infinity for unlimited, null when no file says. A newer
+// budget waiting in <key>.set.json is taken before the next clear, so it counts. Seed 4 of
+// cornerman-eval Test 1 (2026-11-17) is why the nudge asks: with 3 of 3 used, a mid-turn ask to
+// save and end the turn left the user's task undone, since no clear came.
+export function relayClearsLeft(env, sessionId) {
+  if (!sessionId) return null;
+  try {
+    const dir = join(storeRoot(env), "relay");
+    let best = null;
+    for (const name of readdirSync(dir)) {
+      if (!name.endsWith(".json") || /\.(set|handover|nudge)\.json$/.test(name)) continue;
+      try {
+        const f = JSON.parse(readFileSync(join(dir, name), "utf8"));
+        if (!Array.isArray(f?.sessions) || !f.sessions.includes(sessionId)) continue;
+        if (!best || (Number(f.updatedAt) || 0) > (Number(best.updatedAt) || 0)) best = f;
+      } catch {
+        // half written or not a relay file: look at the next
+      }
+    }
+    if (!best) return null;
+    try {
+      const set = JSON.parse(readFileSync(join(dir, `${best.key}.set.json`), "utf8"));
+      if (Number(set?.at) > (Number(best.applied) || 0)) return clearsOf(set.limit, 0);
+    } catch {
+      // no newer budget waiting
+    }
+    return clearsOf(best.limit, Number(best.used) || 0);
+  } catch {
+    return null;
+  }
+}
+const clearsOf = (limit, used) => {
+  const s = String(limit ?? "").trim().toLowerCase();
+  if (s === "unlimited") return Infinity;
+  const n = Number(s);
+  return Number.isInteger(n) && n >= 0 ? Math.max(0, n - used) : 0;
+};
+
+// Whether a save now makes the relay clear and continue: it is on and has a clear left. Unknown
+// (no state file yet, an older mod) counts as on, as before.
+const relayClears = (env, sessionId) => relayOn(env) && relayClearsLeft(env, sessionId) !== 0;
+
 // The window override wins, then CORNERMAN_NUDGE_AT when it is a usable
 // number, then the plugin option, then the default. A bad value falls through
 // rather than turning the nudge off.
@@ -222,14 +265,14 @@ export function runStop(input, { env = process.env } = {}) {
   // the turn going so Claude can act, with the same stop_hook_active loop guard,
   // but is labelled "Stop hook feedback". systemMessage is the user's own line.
   return {
-    systemMessage: userLine(env, tokens, limit, "Claude is asked to save a handover"),
+    systemMessage: userLine(relayClears(env, sessionId), tokens, limit, "Claude is asked to save a handover"),
     hookSpecificOutput: {
       hookEventName: "Stop",
       additionalContext:
         `${askHead(tokens, limit)}: ` +
-        (relayOn(env)
-          ? `Save by default: write a handover now with the /cornerman:handover skill, then ${afterSave(env)}. ${CHOICES}`
-          : `At a clean stopping point, write a handover now with the /cornerman:handover skill, then ${afterSave(env)}. ` +
+        (relayClears(env, sessionId)
+          ? `Save by default: write a handover now with the /cornerman:handover skill, then ${afterSave(relayClears(env, sessionId))}. ${CHOICES}`
+          : `At a clean stopping point, write a handover now with the /cornerman:handover skill, then ${afterSave(relayClears(env, sessionId))}. ` +
             `If you are mid-task, finish the current step first, or reply "${DEFER_REPLY} <reason>".`),
     },
   };
@@ -248,12 +291,12 @@ function remind(env, sessionId, transcriptPath, tokens, limit) {
   const asks = mark.asks + 1;
   writeMark(env, sessionId, { asks, tokens });
   return {
-    systemMessage: userLine(env, tokens, limit, `Claude is asked again to save a handover (ask ${asks} of ${MAX_ASKS})`),
+    systemMessage: userLine(relayClears(env, sessionId), tokens, limit, `Claude is asked again to save a handover (ask ${asks} of ${MAX_ASKS})`),
     hookSpecificOutput: {
       hookEventName: "Stop",
       additionalContext:
         `${askHead(tokens, limit, `reminder ${asks} of ${MAX_ASKS}`)}: ` +
-        `Write a handover now with the /cornerman:handover skill, then ${afterSave(env)}. ${CHOICES}`,
+        `Write a handover now with the /cornerman:handover skill, then ${afterSave(relayClears(env, sessionId))}. ${CHOICES}`,
     },
   };
 }
@@ -287,8 +330,8 @@ function askHead(tokens, limit, extra) {
 }
 
 // The line the user sees. Plain and calm on purpose: it is a status note, not a fault.
-function userLine(env, tokens, limit, ask) {
-  const then = relayOn(env) ? "and the relay then clears and continues by itself" : "then you can type /clear";
+function userLine(clears, tokens, limit, ask) {
+  const then = clears ? "and the relay then clears and continues by itself" : "then you can type /clear";
   return `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). ${ask}, ${then}.`;
 }
 
@@ -303,8 +346,8 @@ const CHOICES =
 // What Claude does once the handover is saved. With the relay on (hooks/relay.ts)
 // the mod runs /clear when the turn ends, so Claude must end the turn rather than
 // hand the user a /clear to type. The why is left out: Claude needs the step.
-function afterSave(env) {
-  return relayOn(env) ? `end your turn with no further tool calls` : `tell the user to type /clear`;
+function afterSave(clears) {
+  return clears ? `end your turn with no further tool calls` : `tell the user to type /clear`;
 }
 
 // Under the headless runner there is no user, and a turn can run for hours: the
@@ -365,6 +408,10 @@ export function runMidTurn(input, { env = process.env } = {}) {
   const tokens = lastContextTokens(input.transcript_path);
   const limit = threshold(env, sessionId);
   if (tokens == null || tokens < limit) return null;
+  // The relay is on but has no clear left: a save would not clear, so a mid-turn ask only takes
+  // the turn from the user's request (seeds 4 and 5: saved, "Run /clear", task undone). Nothing is
+  // claimed, so the Stop hook asks once the request is answered, telling the user to /clear.
+  if (!headless(env) && relayOn(env) && relayClearsLeft(env, sessionId) === 0) return null;
   if (!claimNudge(env, sessionId, tokens)) return headless(env) ? remindHeadless(env, sessionId, input.transcript_path, tokens, limit) : null;
 
   if (headless(env)) {
@@ -373,14 +420,14 @@ export function runMidTurn(input, { env = process.env } = {}) {
   }
 
   return {
-    systemMessage: userLine(env, tokens, limit, "Claude is asked to save a handover when this step is done"),
+    systemMessage: userLine(relayClears(env, sessionId), tokens, limit, "Claude is asked to save a handover when this step is done"),
     hookSpecificOutput: {
       hookEventName: "PostToolUse",
       additionalContext:
         `${askHead(tokens, limit, "turn still running")}: ` +
-        (relayOn(env)
-          ? `Save by default: finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(env)}. ${CHOICES}`
-          : `Finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(env)}, ` +
+        (relayClears(env, sessionId)
+          ? `Save by default: finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(relayClears(env, sessionId))}. ${CHOICES}`
+          : `Finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(relayClears(env, sessionId))}, ` +
             `or reply "${DEFER_REPLY} <reason>" if the work cannot stop yet.`),
     },
   };
