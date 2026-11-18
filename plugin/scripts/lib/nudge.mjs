@@ -264,15 +264,16 @@ export function runStop(input, { env = process.env } = {}) {
   // error: ...", which reads as a crash. Stop's additionalContext still keeps
   // the turn going so Claude can act, with the same stop_hook_active loop guard,
   // but is labelled "Stop hook feedback". systemMessage is the user's own line.
+  const clears = relayClears(env, sessionId);
   return {
-    systemMessage: userLine(relayClears(env, sessionId), tokens, limit, "Claude is asked to save a handover"),
+    systemMessage: userLine(clears, tokens, limit, "Claude is asked to save a handover"),
     hookSpecificOutput: {
       hookEventName: "Stop",
       additionalContext:
         `${askHead(tokens, limit)}: ` +
-        (relayClears(env, sessionId)
-          ? `Save by default: write a handover now with the /cornerman:handover skill, then ${afterSave(relayClears(env, sessionId))}. ${CHOICES}`
-          : `At a clean stopping point, write a handover now with the /cornerman:handover skill, then ${afterSave(relayClears(env, sessionId))}. ` +
+        (clears
+          ? `Save by default: write a handover now with the /cornerman:handover skill, then ${afterSave(clears)}. ${CHOICES}`
+          : `At a clean stopping point, write a handover now with the /cornerman:handover skill, then ${afterSave(clears)}. ` +
             `If you are mid-task, finish the current step first, or reply "${DEFER_REPLY} <reason>".`),
     },
   };
@@ -290,13 +291,14 @@ function remind(env, sessionId, transcriptPath, tokens, limit) {
   if (answer !== null && tokens < mark.tokens + ANSWERED_GROWTH) return null;
   const asks = mark.asks + 1;
   writeMark(env, sessionId, { asks, tokens });
+  const clears = relayClears(env, sessionId);
   return {
-    systemMessage: userLine(relayClears(env, sessionId), tokens, limit, `Claude is asked again to save a handover (ask ${asks} of ${MAX_ASKS})`),
+    systemMessage: userLine(clears, tokens, limit, `Claude is asked again to save a handover (ask ${asks} of ${MAX_ASKS})`),
     hookSpecificOutput: {
       hookEventName: "Stop",
       additionalContext:
         `${askHead(tokens, limit, `reminder ${asks} of ${MAX_ASKS}`)}: ` +
-        `Write a handover now with the /cornerman:handover skill, then ${afterSave(relayClears(env, sessionId))}. ${CHOICES}`,
+        `Write a handover now with the /cornerman:handover skill, then ${afterSave(clears)}. ${CHOICES}`,
     },
   };
 }
@@ -419,15 +421,16 @@ export function runMidTurn(input, { env = process.env } = {}) {
       `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}). The turn is stopped and the runner asks for a commit and a handover.`);
   }
 
+  const clears = relayClears(env, sessionId);
   return {
-    systemMessage: userLine(relayClears(env, sessionId), tokens, limit, "Claude is asked to save a handover when this step is done"),
+    systemMessage: userLine(clears, tokens, limit, "Claude is asked to save a handover when this step is done"),
     hookSpecificOutput: {
       hookEventName: "PostToolUse",
       additionalContext:
         `${askHead(tokens, limit, "turn still running")}: ` +
-        (relayClears(env, sessionId)
-          ? `Save by default: finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(relayClears(env, sessionId))}. ${CHOICES}`
-          : `Finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(relayClears(env, sessionId))}, ` +
+        (clears
+          ? `Save by default: finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(clears)}. ${CHOICES}`
+          : `Finish the current step without abandoning it, then write a handover with the /cornerman:handover skill and ${afterSave(clears)}, ` +
             `or reply "${DEFER_REPLY} <reason>" if the work cannot stop yet.`),
     },
   };
