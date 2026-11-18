@@ -505,3 +505,23 @@ All 24 reversed facts were still acted on correctly, because the handover body s
 - STRESS-TEST-DESIGN.md class F named "cm fault 5 (nudge takes the turn)". Add faults 6 to 8 to what
   the development set must exercise; fault 6 applies to the hybrid arm too, since it adds context on
   SessionStart in the same way.
+
+## Cap measured for fault 6 (2026-11-19 08:00 AWST)
+
+`rig/spike/captest.mjs`, stub API, no model call, CLI 2.1.316, 79 runs of `claude -p` with SessionStart
+hooks printing an exact number of characters. Result in `rig/spike/result/captest-1.json`. Controls:
+500 characters arrived whole, 40,000 were cut, so the check sees both cases.
+
+| Question | Answer |
+|:--|:--|
+| Where is the cap? | **10,000 arrives whole, 10,001 is cut.** Found by bisection, four times |
+| Bytes or characters? | Characters. 10,000 two-byte characters (20,000 bytes) arrive whole |
+| Plain stdout or JSON `additionalContext`? | The same cap for both; for JSON it counts the context text |
+| Per hook or in total? | **Per hook.** Two hooks of 7,000 each arrive whole, and so do three (21,000 in total) |
+| One hook over, one under? | Only the one over is cut; the other arrives whole |
+
+So the fix has a simple form: cornerman emits its session-start context as separate hook outputs
+(rules and rulings log in one, the handover in another), each held at or under 10,000 characters, with
+a defined order for what shrinks when one part alone is over. Limits of this measurement: headless
+`-p` with source startup. The cut seen in the trials was in the terminal app after `/clear`, with the
+same message, so the cap is taken to be the same there; the fix PR should confirm it in the sandbox.

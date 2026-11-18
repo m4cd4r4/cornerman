@@ -1,0 +1,1359 @@
+{
+ "cases": [
+  {
+   "label": "control small plain",
+   "hooks": [
+    {
+     "n": 500,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "label": "control small json",
+   "hooks": [
+    {
+     "n": 500,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "label": "control large plain",
+   "hooks": [
+    {
+     "n": 40000,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "39.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 2000,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 40000,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "39.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 21000,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "20.5KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 11500,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "11.2KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 6750,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9125,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10312,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "10.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9718,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10015,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9866,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9940,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9977,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9996,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10005,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10000,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10002,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10001,
+     "mode": "plain",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 2000,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 40000,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "39.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 21000,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "20.5KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 11500,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "11.2KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 6750,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9125,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10312,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "10.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9718,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10015,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9866,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9940,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9977,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9996,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10005,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10000,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10002,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10001,
+     "mode": "json",
+     "unit": "a"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 1000,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 40000,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "39.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 20500,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "20KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10750,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "10.5KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 5875,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 8312,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9531,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10140,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.9KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9835,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9987,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10063,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10025,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10006,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9996,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10001,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9998,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9999,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10000,
+     "mode": "plain",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 1000,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 40000,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "39.1KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 20500,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "20KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10750,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "10.5KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 5875,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 8312,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9531,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10140,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.9KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9835,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9987,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10063,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10025,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10006,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9996,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10001,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    false
+   ],
+   "cut": [
+    "9.8KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9998,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 9999,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "hooks": [
+    {
+     "n": 10000,
+     "mode": "json",
+     "unit": "é"
+    }
+   ],
+   "whole": [
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "label": "two json hooks, each 70% of the limit",
+   "hooks": [
+    {
+     "n": 7000,
+     "mode": "json",
+     "unit": "a"
+    },
+    {
+     "n": 7000,
+     "mode": "json",
+     "unit": "b"
+    }
+   ],
+   "whole": [
+    true,
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "label": "two plain hooks, each 70% of the limit",
+   "hooks": [
+    {
+     "n": 7000,
+     "mode": "plain",
+     "unit": "a"
+    },
+    {
+     "n": 7000,
+     "mode": "plain",
+     "unit": "b"
+    }
+   ],
+   "whole": [
+    true,
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "label": "three json hooks, each 70% of the limit",
+   "hooks": [
+    {
+     "n": 7000,
+     "mode": "json",
+     "unit": "a"
+    },
+    {
+     "n": 7000,
+     "mode": "json",
+     "unit": "b"
+    },
+    {
+     "n": 7000,
+     "mode": "json",
+     "unit": "c"
+    }
+   ],
+   "whole": [
+    true,
+    true,
+    true
+   ],
+   "cut": [],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  },
+  {
+   "label": "one over, one under",
+   "hooks": [
+    {
+     "n": 12000,
+     "mode": "json",
+     "unit": "a"
+    },
+    {
+     "n": 500,
+     "mode": "json",
+     "unit": "b"
+    }
+   ],
+   "whole": [
+    false,
+    true
+   ],
+   "cut": [
+    "11.7KB"
+   ],
+   "requests": 1,
+   "exit": 0,
+   "stderr": ""
+  }
+ ],
+ "bisect": {
+  "plainAscii": {
+   "lastWhole": 10000,
+   "firstCut": 10001
+  },
+  "jsonAscii": {
+   "lastWhole": 10000,
+   "firstCut": 10001
+  },
+  "plainTwoByte": {
+   "lastWhole": 10000,
+   "firstCut": 10001
+  },
+  "jsonTwoByte": {
+   "lastWhole": 10000,
+   "firstCut": 10001
+  }
+ }
+}
