@@ -102,4 +102,14 @@ describe("seed 7: the final session's context", () => {
     for (const now of ["Actually make that 3 spaces", "switch to double quotes", "SPDX-License-Identifier: ISC", "23 calls a minute"])
       expect(rulingLine(now)).not.toMatch(/replaced/);
   });
+
+  it("fix 3: the log is framed as standing rules unless replaced, and requests are listed apart", () => {
+    const text = section("Rulings from the user");
+    expect(text).not.toMatch(/may be requests already done/i);
+    expect(text).toMatch(/holds for all later work unless a later one replaces it/i);
+    const lines = text.split("\n");
+    const requests = lines.findIndex((l) => /^Task requests/.test(l));
+    expect(lines.findIndex((l) => l.includes("23 calls a minute"))).toBeLessThan(requests);
+    expect(lines.findIndex((l) => l.includes("Next batch of reading"))).toBeGreaterThan(requests);
+  });
 });

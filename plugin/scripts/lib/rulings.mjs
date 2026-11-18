@@ -184,14 +184,18 @@ export function bound(entries) {
 export function rulingsSection(entries) {
   const { kept, dropped, droppedRules } = bound(entries);
   if (!kept.length) return "";
+  // Two lists, so a rule never reads as a task that may be done. The old single list said "Some
+  // may be requests already done", and seed 7's final session treated its rules that way.
+  const line = (e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"${e.replaced ? ` ${REPLACED}` : ""}`;
+  const rules = kept.filter((e) => !isRequest(e.text));
+  const requests = kept.filter((e) => isRequest(e.text));
   return (
     `## ${RULINGS_HEADING}\n` +
-    `What the user typed in this chain, in their own words, oldest first; saving adds these. A later one overrides an earlier one. ` +
-    `Some may be requests already done: check before acting, and never drop one that still applies.` +
+    `What the user typed in this chain, in their own words, oldest first; saving adds these.` +
     (dropped ? ` ${dropped} older task request${dropped === 1 ? "" : "s"} left out to keep this short.` : "") +
     (droppedRules ? ` ${droppedRules} oldest standing rule${droppedRules === 1 ? "" : "s"} left out for space: restate any that still holds.` : "") +
-    `\n` +
-    kept.map((e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"${e.replaced ? ` ${REPLACED}` : ""}`).join("\n")
+    (rules.length ? `\nStanding rules: each holds for all later work unless a later one replaces it.\n${rules.map(line).join("\n")}` : "") +
+    (requests.length ? `\nTask requests, one-off asks: check whether each is done before acting on it.\n${requests.map(line).join("\n")}` : "")
   );
 }
 
