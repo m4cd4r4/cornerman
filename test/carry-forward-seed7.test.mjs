@@ -112,4 +112,12 @@ describe("seed 7: the final session's context", () => {
     expect(lines.findIndex((l) => l.includes("23 calls a minute"))).toBeLessThan(requests);
     expect(lines.findIndex((l) => l.includes("Next batch of reading"))).toBeGreaterThan(requests);
   });
+
+  it("fix 4: the rules the previous handover restated and this one dropped are carried forward", () => {
+    const carried = section("Carried forward from the previous handover");
+    for (const s of ["API 23 calls per minute per client", "ISO 8601 strings, never epoch", "Do not touch src/legacy/compat.js", "Do not edit existing tests under test/"])
+      expect(carried).toContain(s);
+    // "None. (Standing rules are listed below ...)" is an empty section, not an item to carry.
+    expect(carried).not.toMatch(/\] None\./);
+  });
 });
