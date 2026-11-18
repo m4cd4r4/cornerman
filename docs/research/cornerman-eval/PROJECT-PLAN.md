@@ -395,3 +395,14 @@ result or a file, work state in flight, the agent's own reasoning for a choice, 
 more user messages than the roughly 40 here (the list has to be cut at some point; where is not
 measured). Compaction here was also typed by hand at about 100k tokens of filterable reading, not
 forced at the limit mid-task.
+
+### Stress test with a hybrid arm (design drafted 2026-11-18 16:45 AWST)
+
+Macdara asked (16:33 AWST) whether to build a test that stresses every edge case and optimise against
+it, or pivot to building on compact. Answer: one test decides both. Draft in STRESS-TEST-DESIGN.md:
+ten plant classes hostile to compaction, to the handover, or to full context; five arms (full, native
+compact, hybrid, cm, floor); a development set and a held-out set; a decision rule for keep, pivot or
+thin layer. It is stage B. Spike result: the CLI (2.1.316) has PreCompact (stdout becomes compact
+instructions), PostCompact (receives the summary) and a native early auto-compact window
+(`--autocompact`, 100k minimum), so the hybrid is buildable from hooks and "compact earlier" needs no
+plugin. Read from the binary's strings, not yet run in the rig.
