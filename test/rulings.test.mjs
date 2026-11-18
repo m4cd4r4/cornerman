@@ -189,6 +189,17 @@ describe("the bounds", () => {
     expect(addRulings("# T", { store: root, session: "s" })).not.toContain("replaced by a later one");
   });
 
+  // Reviewer, 2026-11-18: a dropped replaced ruling was counted as a task request in the header.
+  it("counts replaced rulings left out apart from task requests", () => {
+    const at = (i) => new Date(Date.UTC(2026, 0, 1, 0, i));
+    record(root, "s", "Indent with 2 spaces in every file.", at(0));
+    record(root, "s", "Make that 3 spaces.", at(1));
+    for (let i = 0; i < 39; i++) record(root, "s", `The oven for batch ${i} runs at ${100 + i} degrees`, at(i + 2));
+    const out = addRulings("# T", { store: root, session: "s" });
+    expect(out).toMatch(/1 replaced ruling left out/);
+    expect(out).not.toMatch(/task request/);
+  });
+
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
     const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
     record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
