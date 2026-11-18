@@ -157,7 +157,10 @@ function withoutCarried(body) {
  * session dropped by hand is caught, while one it rewrote in place is not
  * repeated. Never throws: a body it cannot read comes back unchanged.
  */
-export function carryForward(body, previous) {
+// `replaced`: rulings a later correction replaced (rulings.mjs replacedRulings). A rule item
+// restating one is not carried: it would sit beside its correction as a live rule, the way seed 7
+// kept "2 spaces" next to "Make that 3 spaces" (reviewer, 2026-11-18).
+export function carryForward(body, previous, { replaced = [] } = {}) {
   try {
     if (!previous?.body) return { body, carried: [] };
     const own = withoutCarried(body);
@@ -166,6 +169,7 @@ export function carryForward(body, previous) {
       const k = `${it.tag}|${it.text.toLowerCase()}`;
       if (seen.has(k)) return false;
       seen.add(k);
+      if ((it.tag === "rule" || it.tag === "do not") && replaced.some((t) => mentioned(it, t))) return false;
       return !mentioned(it, own);
     });
     if (!carried.length) return { body: own, carried };

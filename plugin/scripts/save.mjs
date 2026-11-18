@@ -9,7 +9,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
 import { carryForward, missingSections, previousHandover } from "./lib/carry.mjs";
-import { addRulings } from "./lib/rulings.mjs";
+import { addRulings, replacedRulings } from "./lib/rulings.mjs";
 import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
 import { buildTrail, emptyTrail, trailSection, withTrail } from "./lib/trail.mjs";
@@ -77,7 +77,10 @@ try {
       // Under the runner, segment 2 on continues the handover the runner loaded for it.
       const runner = Boolean(auto) && Number(auto.chain) > 1;
       previous = previousHandover({ own, loaded: listLoaded(storeRoot(), top), owner, sameOwner, runner });
-      if (previous && process.env.CORNERMAN_CARRY !== "0") ({ body, carried } = carryForward(body, { title: previous.meta.title, body: previous.body }));
+      if (previous && process.env.CORNERMAN_CARRY !== "0") {
+        const replaced = replacedRulings({ store: storeRoot(), session: process.env.CLAUDE_CODE_SESSION_ID, previous: previous.body });
+        ({ body, carried } = carryForward(body, { title: previous.meta.title, body: previous.body }, { replaced }));
+      }
     } catch {
       // save as written
     }
