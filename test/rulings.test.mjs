@@ -116,7 +116,7 @@ describe("what counts as the user's words", () => {
 });
 
 describe("the bounds", () => {
-  it("caps the section, dropping plain requests before rulings and the oldest first, and an empty log adds nothing", () => {
+  it("caps the section, dropping task requests before rulings and the oldest first, and an empty log adds nothing", () => {
     expect(addRulings("# T\n\n## Goal\ng", { store: root, session: "none" })).toBe("# T\n\n## Goal\ng");
     const at = (i) => new Date(Date.UTC(2026, 0, 1, 0, i));
     for (let i = 0; i < 80; i++) record(root, "s", i % 2 ? `Never bake batch ${i} above two hundred degrees` : `Look at the batch ${i} oven logs please`, at(i));
@@ -126,7 +126,16 @@ describe("the bounds", () => {
     expect(out.length).toBeLessThanOrEqual(MAX_CHARS + 600);
     expect(entries.every((l) => l.includes("Never bake"))).toBe(true);
     expect(entries.at(-1)).toContain("batch 79 ");
-    expect(out).toMatch(/older or plainer entries left out/);
+    expect(out).toMatch(/older task requests left out/);
+  });
+
+  it("drops a standing rule only when the rules alone pass the cap, and then says how many", () => {
+    const at = (i) => new Date(Date.UTC(2026, 0, 1, 0, i));
+    for (let i = 0; i < 60; i++) record(root, "s", `The oven for batch ${i} runs at ${100 + i} degrees`, at(i));
+    const out = addRulings("# T", { store: root, session: "s" });
+    expect(out).toContain("batch 59 ");
+    expect(out).not.toContain('"The oven for batch 0 ');
+    expect(out).toMatch(/20 oldest standing rules left out for space: restate any that still holds/);
   });
 
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
