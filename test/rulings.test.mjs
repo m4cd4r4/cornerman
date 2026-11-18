@@ -169,6 +169,19 @@ describe("the bounds", () => {
     expect(requests).toContain("applyFee");
   });
 
+  // Reviewer, 2026-11-18: the two lists reorder entries, and markReplaced only marks earlier ones.
+  it("marks the same rules replaced after a save renders and the next save parses them back", () => {
+    const at = (i) => new Date(Date.UTC(2026, 0, 1, 0, i));
+    record(root, "s", "Fix the login redirect please.", at(0));
+    record(root, "s", "Indent with 2 spaces in every file.", at(1));
+    record(root, "s", "Update the changelog for the login fix.", at(2));
+    record(root, "s", "Make that 3 spaces.", at(3));
+    const first = addRulings("# T", { store: root, session: "s" });
+    const again = addRulings("# T", { store: root, session: "none", previous: first });
+    expect(again).toBe(first);
+    expect(first).toMatch(/2 spaces in every file\." \(replaced by a later one\)/);
+  });
+
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
     const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
     record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
