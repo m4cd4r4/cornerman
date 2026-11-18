@@ -124,7 +124,9 @@ export const MAX_CHARS = 6000;
 const TASK =
   /^(?:please\s+|ok,?\s+|now\s+)?(?:add|implement|create|write|build|fix|change|make|refactor|set|update|remove|delete|rename|move|carry on|continue|next batch|read|run|start|finish|look|show|list|open|commit|push|install|deploy|draft|generate|convert|wire|port|review|explain|find|go ahead|try)\b/i;
 const RULE_WORD = /\b(never|always|don'?t|do not|must|rule|from now on|every time|whenever|actually|correction|ask me|check with me)\b/i;
-export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text);
+// A correction ("Make that 3 spaces") opens with a task verb too, but it replaces a rule: listed as
+// a request it was dropped first and the old rule came back unmarked (reviewer, 2026-11-18).
+export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !CORRECTION.test(text);
 
 // A correction of an earlier ruling: "Actually make that 3 spaces.", "Correction on the licence
 // line: ISC, not MIT", "Actually, switch to double quotes". Seed 7 kept MIT, 2 spaces and single
