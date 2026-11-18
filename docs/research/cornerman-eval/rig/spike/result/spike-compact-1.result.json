@@ -1,0 +1,137 @@
+{
+ "model": "sonnet",
+ "window": "100000",
+ "startScreen": "\n ▐▛███▛█   Claude Code v2.1.316\n▝▜██████▀  Sonnet 5.5 · Claude API\n ▝▝   ▝▝   /work\n\n▎ Auto mode is now Claude Code's default permission mode.\n▎ Auto mode lets Claude handle permission prompts automatically. Claude checks each tool call for risky actions and prompt injection before executing, runs the ones it assesses as lower-risk, and\n▎ blocks the rest.\n▎ https://code.claude.com/docs/en/permission-modes\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                                                                                                                                                                                    ◐ medium · /effort\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents\n",
+ "block": {
+  "preCompactCalls": 1,
+  "boundariesAdded": 0,
+  "flagConsumed": true
+ },
+ "manual": {
+  "boundariesAdded": 1,
+  "boundary": {
+   "trigger": "manual",
+   "preTokens": 19977,
+   "postTokens": 4657,
+   "cumulativeDroppedTokens": 15320,
+   "durationMs": 12086,
+   "preservedSegment": {
+    "headUuid": "1d36535d-63d7-419a-a859-8021d6fcedd4",
+    "anchorUuid": "cd004054-6036-4b28-bd54-ebbb417a32c8",
+    "tailUuid": "3e583ba9-8eeb-4481-8faf-4843d19b3f4d"
+   },
+   "preservedMessages": {
+    "anchorUuid": "cd004054-6036-4b28-bd54-ebbb417a32c8",
+    "uuids": [
+     "1d36535d-63d7-419a-a859-8021d6fcedd4",
+     "1922fbaf-c7cf-4622-b202-6b2b5e65acc7",
+     "741e72c2-0de4-48e0-82fd-557b7891af4e",
+     "1f92764a-e6be-4d46-b74f-e5982214842f",
+     "f5ad6f87-07fa-490c-b1c1-19504f3d27d5",
+     "3e583ba9-8eeb-4481-8faf-4843d19b3f4d"
+    ],
+    "allUuids": [
+     "1d36535d-63d7-419a-a859-8021d6fcedd4",
+     "187f06c8-3928-4be2-a7a0-a83a850910b3",
+     "1922fbaf-c7cf-4622-b202-6b2b5e65acc7",
+     "741e72c2-0de4-48e0-82fd-557b7891af4e",
+     "1f92764a-e6be-4d46-b74f-e5982214842f",
+     "f5ad6f87-07fa-490c-b1c1-19504f3d27d5",
+     "3e583ba9-8eeb-4481-8faf-4843d19b3f4d"
+    ]
+   }
+  },
+  "preInputKeys": [
+   "session_id",
+   "transcript_path",
+   "cwd",
+   "prompt_id",
+   "hook_event_name",
+   "trigger",
+   "custom_instructions"
+  ],
+  "preTrigger": "manual",
+  "postCalls": 1,
+  "postInputKeys": [
+   "session_id",
+   "transcript_path",
+   "cwd",
+   "prompt_id",
+   "hook_event_name",
+   "trigger",
+   "compact_summary"
+  ],
+  "postHasSummaryText": true,
+  "postHasMarker": true,
+  "transcriptSummaryHasMarker": true,
+  "transcriptSummaryHasCodeword": true,
+  "sessionStartSources": [
+   "compact"
+  ],
+  "answer": "Staging port: 4417 (from the project note a hook carried in).\nDeploy codeword: HERON (from your earlier message).",
+  "answerHasPort": true,
+  "answerHasCodeword": true
+ },
+ "auto": {
+  "fired": true,
+  "turns": [
+   {
+    "w": 0,
+    "contextAfter": 38480,
+    "boundaries": 0
+   },
+   {
+    "w": 1,
+    "contextAfter": 53562,
+    "boundaries": 0
+   },
+   {
+    "w": 2,
+    "contextAfter": 65593,
+    "boundaries": 0
+   },
+   {
+    "w": 3,
+    "contextAfter": 36520,
+    "boundaries": 1
+   }
+  ],
+  "boundary": [
+   {
+    "trigger": "auto",
+    "preTokens": 68315,
+    "postTokens": 8761,
+    "cumulativeDroppedTokens": 74874,
+    "durationMs": 16591,
+    "preservedSegment": {
+     "headUuid": "fdbbb984-511d-4b34-abed-8818e89cbf2b",
+     "anchorUuid": "696f7cfd-121d-4673-9d17-e89438e5812e",
+     "tailUuid": "59714615-9f0e-4b3e-85e4-038e7912aead"
+    },
+    "preservedMessages": {
+     "anchorUuid": "696f7cfd-121d-4673-9d17-e89438e5812e",
+     "uuids": [
+      "fdbbb984-511d-4b34-abed-8818e89cbf2b",
+      "59714615-9f0e-4b3e-85e4-038e7912aead"
+     ],
+     "allUuids": [
+      "fdbbb984-511d-4b34-abed-8818e89cbf2b",
+      "59714615-9f0e-4b3e-85e4-038e7912aead"
+     ]
+    }
+   }
+  ],
+  "preTriggers": [
+   "auto"
+  ],
+  "postCalls": 1,
+  "postHasMarker": true,
+  "sessionStartSources": [
+   "compact"
+  ],
+  "transcriptFiles": 1,
+  "answer": "Staging port: 4417\nDeploy codeword: HERON",
+  "answerHasPort": true,
+  "answerHasCodeword": true
+ }
+}

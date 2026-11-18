@@ -19,8 +19,10 @@ It is also stage B of the release gate: 0.7.4 waits for the held-out run of this
 
 ## Spike: what a plugin can do around compaction
 
-Read from the strings of the installed CLI (2.1.316, the version the rig runs). **Not yet run in the
-rig**: step 0 of the build confirms each line in a container.
+Read from the strings of the installed CLI (2.1.316, the version the rig runs), then **confirmed in
+the rig on 2026-11-18 21:15 AWST** (one container, Sonnet, no cornerman, three logging hooks;
+`rig/spike/spike-compact.mjs`, result in `rig/spike/result/`). Every line below held. See "Spike
+result" under the table for what the run added.
 
 | Capability | Evidence | Use |
 |:--|:--|:--|
@@ -29,6 +31,33 @@ rig**: step 0 of the build confirms each line in a container.
 | `SessionStart` with matcher `compact` | cornerman's hooks.json already matches `startup\|clear\|compact` | cornerman adds the rulings log and carried-forward items after the compaction |
 | Early auto-compact is a native setting | `--autocompact <auto\|tokens>` (100k to 1M), `CLAUDE_CODE_AUTO_COMPACT_WINDOW`, a settings key | the free competitor: anyone can compact early without a plugin. Floor of 100k |
 | The relay can type `/compact` | it types `/clear` today; the rig driver already types `/compact` | compaction at a threshold below 100k, or between turns only |
+
+### Spike result (one run, n = 1 per check)
+
+| Check | Result |
+|:--|:--|
+| PreCompact exit 2 on a typed `/compact` | Blocked. No compaction; the screen shows "Compaction blocked by PreCompact hook" |
+| PreCompact stdout | Reached the summariser on manual and auto: the marker line it asked for is in both summaries |
+| PreCompact input | `trigger` (manual or auto), `custom_instructions`, `transcript_path`, `session_id`, `cwd` |
+| PostCompact input | `trigger` and `compact_summary` (the whole summary, 4,849 and 6,662 characters) |
+| SessionStart after compaction | Fired with `source: compact` both times. The model then answered with a fact that only the hook supplied |
+| `--autocompact 100000` | Accepted. Compaction fired by itself, mid-turn, with trigger auto |
+
+Four things the run showed that the binary text did not:
+
+1. **A 100k window compacts at about 68k.** The auto compaction fired at 68,315 tokens before and left
+   8,761 after. One data point: whether the gap is a fixed reserve (about 32k) or a share of the window
+   (about 68%) is unknown until a 250k run. Test 1's cm nudge was 70k, so the Test 1 cm arm already
+   cleared at about the point where native compaction at the minimum window fires.
+2. **Auto compaction fires in the middle of a turn** (here after the reads of a work turn, before the
+   turn ended), and the agent carried on and finished the turn. cornerman's mid-turn nudge is the
+   path that dropped the task in Test 1 seeds 4 and 5 (fault 5).
+3. **The user-message list is not always word for word.** After four near-identical task messages the
+   second summary wrote "The same request for <files>" for the later ones. The first message, with the
+   codeword, was still quoted in full. This is the cut class I (volume) is meant to find.
+4. **A fact added by the SessionStart hook was written into the next summary** as a standing note. So
+   context a plugin adds after one compaction can ride through later ones without being added again.
+   It can also be reworded or dropped there; the hybrid should add it every time and not rely on this.
 
 Consequence for the product: "compact earlier" needs no plugin. In-session, cornerman has to add
 something that native early compaction lacks, or step aside there and keep what compaction cannot do
@@ -60,6 +89,12 @@ crosses fewer clears and lets more context build up between them. So the test va
 | 250k | cornerman's shipped default | about 3 |
 | 500k | late clear: little saving, one large summary | 1 |
 
+- **The event counts above are low for 100k (spike, 2026-11-18).** They assumed compaction at the
+  window size. Measured: a 100k window compacts near 68k and restarts near 9k, so each cycle takes
+  about 60k of new context and 800k of work gives about 13 compactions, not 8. The 250k and 500k rows
+  need the same measurement in the first development trial before the table is trusted.
+- The cm arm's nudge is set to the measured compaction point of the window it is compared with (68k
+  for the 100k window), not to the window size.
 - Work per trial is fixed and the same in every arm; the threshold alone sets how many clears or
   compactions happen. One full arm and one floor arm serve all thresholds.
 - The full arm must fit in the 1M window without compacting itself, which caps total work near 800k
@@ -144,7 +179,8 @@ Class J is reported separately: it tests whether full context drops, which is Te
 
 ## Build order
 
-0. Rig spike: confirm the five capabilities above in a container, at 2.1.316.
+0. Rig spike: confirm the five capabilities above in a container, at 2.1.316. **Done 2026-11-18, all
+   five confirmed.**
 1. Hybrid prototype (hooks only).
 2. Plant classes, probes and checkers; floor run of every variant; fresh fairness review by a separate
    reviewer.
