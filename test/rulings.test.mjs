@@ -158,6 +158,17 @@ describe("the bounds", () => {
     expect(requests).not.toContain("3 spaces");
   });
 
+  // Reviewer, 2026-11-18: a standing imperative opens with a task verb too.
+  it("lists a standing imperative as a rule even when it opens with a task verb", () => {
+    record(root, "s", "Run the linter before every commit.");
+    record(root, "s", "Add a retry. Use single quotes only.");
+    record(root, "s", "Add applyFee to src/money.js please.");
+    const [rules, requests = ""] = addRulings("# T", { store: root, session: "s" }).split("Task requests");
+    expect(rules).toContain('"Run the linter before every commit."');
+    expect(rules).toContain('"Add a retry. Use single quotes only."');
+    expect(requests).toContain("applyFee");
+  });
+
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
     const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
     record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
