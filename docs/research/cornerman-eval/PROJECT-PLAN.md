@@ -348,6 +348,33 @@ turns a task the user just gave into "run /clear". Options for the fix session: 
 tell the agent to finish the user's request first and save after; or do not nudge mid-turn at all in
 that state. The fix PR carries five fixes.
 
-**Decided (Macdara card 2026-11-18, about 15:10 AWST):** build all 4 fix candidates in one cornerman PR, then
+### Goal restated and release gate (Macdara, 2026-11-18 16:03 AWST)
+
+"My overarching goal is to produce no reduction in quality while also saving tokens by clearing before
+context gets in the way of claude. This research is designed to both discover improvements and
+demonstrate those goals as achieved." **0.7.4 waits for stage B** (fresh seeds 9-16, all arms, with
+Test 1b), not stage A.
+
+### Token use in the Test 1 trials (exploratory, 2026-11-18; same 32 trials, equal work in every arm)
+
+Summed from the `usage` field of every API call in each trial's transcripts (deduplicated by message
+id), median of 8 seeds. Cost is in input-token equivalents with assumed weights (cache write 1.25,
+cache read 0.1, output 5); trials ran on the subscription, so this is a relative measure only.
+
+| Arm | Input processed | Output | Cost | Cost vs full (per-seed range) | Peak context | Acted on |
+|:--|--:|--:|--:|:--|--:|--:|
+| full | 27.8M | 61k | 3.36M | 100% | 277k | 95.8% |
+| compact | 10.3M | 50k | 1.64M | 49% (43-52) | 106k | 97.4% |
+| cm | 11.3M | 60k | 1.80M | 53% (42-58) | 110k | 82.8% |
+| floor | 8.2M | 49k | 1.37M | 41% (37-44) | 106k | 5.7% |
+
+What it means for the goal: clearing does save about half the tokens against full context on this
+task, and the floor shows the saving that is left to win is small (41% against cm's 53%). **The arm to
+beat is compact, not full:** on this task compact costs slightly less than cm and lost nothing.
+cornerman meets the goal only when it matches compact on quality at equal or lower cost, or wins where
+compaction does lose something. Test 1 does not contain such a case (context peaked at 277k and
+compact kept 97.4%); finding one is Test 2's calibration job.
+
+**Decided (Macdara card 2026-11-18, about 15:10 AWST; release gate superseded above):** build all 4 fix candidates in one cornerman PR, then
 rerun the cm arm on seeds 1-8 and compare with the batch's full and floor arms. 0.7.4 stays held until
 that rerun shows the gap closed. Test 1b design comes after.
