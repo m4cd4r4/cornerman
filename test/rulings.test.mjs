@@ -77,6 +77,19 @@ describe("the rulings log", () => {
     expect(saved("Orders 3").match(/Never email/g)).toHaveLength(1);
   }, GIT_TEST_TIMEOUT);
 
+  // Reviewer, 2026-11-18: a rule the user later corrected was carried forward as a live [rule].
+  it("does not carry forward a rule the user has since replaced", () => {
+    const window = { CLAUDE_PID: "999992" };
+    prompt("seg-1", "Indent with 2 spaces in every file.");
+    save("seg-1", "Orders 1", `${BODY}\n## Decisions already made\n- Indent with 2 spaces in every file.\n- Never email the customer before the baker confirms.\n`, window);
+    archive(root, null, listWaiting(root, repo).find((h) => h.meta.title === "Orders 1").path, { via: "hook", owner: "999992" });
+    prompt("seg-2", "Make that 3 spaces.");
+    save("seg-2", "Orders 2", BODY, window);
+    const body = saved("Orders 2");
+    expect(body).toContain("[rule] Never email the customer");
+    expect(body).not.toContain("[rule] Indent with 2 spaces");
+  }, GIT_TEST_TIMEOUT);
+
   it("carries them down a headless runner chain, where the runner loads each handover itself", () => {
     const seg = (n) => ({ CORNERMAN_AUTO: "1", CORNERMAN_HEADLESS: "1", CORNERMAN_CHAIN: String(n), CORNERMAN_BUDGET: "5", CLAUDE_PID: String(999980 + n) });
     prompt("run-1", "Build the order form. Never store card numbers.");

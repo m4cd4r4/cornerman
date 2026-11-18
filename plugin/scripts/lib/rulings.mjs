@@ -259,6 +259,17 @@ export function merge(...lists) {
   return out;
 }
 
+/** The texts of this chain's rulings a later correction replaced whole, for carry.mjs. Never throws. */
+export function replacedRulings({ store, session, previous }) {
+  try {
+    return markReplaced(merge(sectionEntries(previous), readLog(store, session)))
+      .filter((e) => e.replaced === "whole")
+      .map((e) => e.text);
+  } catch {
+    return [];
+  }
+}
+
 /**
  * The body with a rulings section from the handover it continues (`previous`, its
  * body) and this session's log. Any section the model wrote is replaced: the log is
