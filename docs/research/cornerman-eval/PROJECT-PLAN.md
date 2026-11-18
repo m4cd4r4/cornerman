@@ -378,3 +378,20 @@ compact kept 97.4%); finding one is Test 2's calibration job.
 **Decided (Macdara card 2026-11-18, about 15:10 AWST; release gate superseded above):** build all 4 fix candidates in one cornerman PR, then
 rerun the cm arm on seeds 1-8 and compare with the batch's full and floor arms. 0.7.4 stays held until
 that rerun shows the gap closed. Test 1b design comes after.
+
+### Why compact lost nothing (checked 2026-11-18 16:10 AWST)
+
+The `/compact` summary has a fixed section 6, "All user messages", that quotes every user message
+word for word and is carried from one summary to the next. Checked in seeds 1, 3 and 7: all three
+summaries of each trial quote 24 of 24 planted facts (8-word run of the plant text), in 11k-15k
+characters. Every Test 1 fact is a short standalone user message, so the test plants facts in the one
+place compaction copies verbatim. Test 1 therefore says nothing about what compaction loses; it only
+shows that cornerman's rulings log (same idea, but trimmed and framed as "may be requests already
+done") is less faithful than compact's section 6.
+
+What section 6 cannot carry, and Test 1b / Test 2 should plant: a decision that lives in an assistant
+message (the user's "yes, do that" is quoted, the option it refers to is not), a fact found in a tool
+result or a file, work state in flight, the agent's own reasoning for a choice, and sessions with far
+more user messages than the roughly 40 here (the list has to be cut at some point; where is not
+measured). Compaction here was also typed by hand at about 100k tokens of filterable reading, not
+forced at the limit mid-task.
