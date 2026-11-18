@@ -123,10 +123,12 @@ export const MAX_CHARS = 6000;
 // counts as a rule: listing a request too long costs a line, dropping a rule costs the rule.
 const TASK =
   /^(?:please\s+|ok,?\s+|now\s+)?(?:add|implement|create|write|build|fix|change|make|refactor|set|update|remove|delete|rename|move|carry on|continue|next batch|read|run|start|finish|look|show|list|open|commit|push|install|deploy|draft|generate|convert|wire|port|review|explain|find|go ahead|try)\b/i;
-const RULE_WORD = /\b(never|always|don'?t|do not|must|rule|from now on|every time|whenever|actually|correction|ask me|check with me)\b/i;
+const RULE_WORD = /\b(never|always|don'?t|do not|must|rule|from now on|every|whenever|actually|correction|ask me|check with me)\b/i;
 // A correction ("Make that 3 spaces") opens with a task verb too, but it replaces a rule: listed as
-// a request it was dropped first and the old rule came back unmarked (reviewer, 2026-11-18).
-export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !CORRECTION.test(text);
+// a request it was dropped first and the old rule came back unmarked. So does a standing imperative
+// ("Run the linter before every commit", "Add a retry. Use single quotes only."), hence the CUE
+// words (reviewer, 2026-11-18).
+export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !CUE.test(text) && !CORRECTION.test(text);
 
 // A correction of an earlier ruling: "Actually make that 3 spaces.", "Correction on the licence
 // line: ISC, not MIT", "Actually, switch to double quotes". Seed 7 kept MIT, 2 spaces and single
