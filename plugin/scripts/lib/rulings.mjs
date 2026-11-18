@@ -133,10 +133,15 @@ const CORRECTION = /^(?:actually|correction|scratch that|change of plan|on secon
 // The correction's own words, which say that it corrects, not what.
 const CORRECTION_WORDS = new Set(words("actually correction scratch change plan second thought switch make that instead later"));
 export const REPLACED = "(replaced by a later one)";
+// A prompt can hold several rules, and a correction replaces one of them: "the API limit is 23
+// calls a minute. Use single quotes." stays a rule for its first sentence (plugin sandbox, 2026-11-18).
+export const PART_REPLACED = "(partly replaced by a later one)";
+const sentenceCount = (text) => text.split(/(?<=[.!?])\s+/).filter((s) => words(s).length).length;
 
 /**
- * The entries with `replaced: true` on each ruling a later correction replaces: the earlier rule
+ * The entries with `replaced` set on each ruling a later correction replaces: the earlier rule
  * sharing the most significant words with it (the latest on a tie), none when no word is shared.
+ * `replaced` is "whole" for a one-sentence entry and "part" for one holding more.
  */
 export function markReplaced(entries) {
   const out = entries.map((e) => ({ ...e, replaced: false }));
@@ -149,11 +154,11 @@ export function markReplaced(entries) {
     let most = 0;
     for (let j = 0; j < i; j++) {
       const o = out[j];
-      if (o.replaced || isRequest(o.text)) continue;
+      if (o.replaced === "whole" || isRequest(o.text)) continue;
       const shared = new Set(words(o.text).filter((w) => want.has(w))).size;
       if (shared >= most && shared > 0) [best, most] = [j, shared];
     }
-    if (best > -1) out[best].replaced = true;
+    if (best > -1) out[best].replaced = sentenceCount(out[best].text) > 1 ? "part" : "whole";
   });
   return out;
 }
@@ -171,7 +176,7 @@ export function bound(entries) {
   let droppedRules = 0;
   while (kept.length > MAX_ENTRIES || (chars > MAX_CHARS && kept.length > 1)) {
     let i = kept.findIndex((e) => isRequest(e.text));
-    if (i < 0) i = kept.findIndex((e) => e.replaced);
+    if (i < 0) i = kept.findIndex((e) => e.replaced === "whole");
     const [gone] = kept.splice(Math.max(i, 0), 1);
     chars -= gone.text.length;
     if (i > -1) dropped++;
@@ -186,7 +191,7 @@ export function rulingsSection(entries) {
   if (!kept.length) return "";
   // Two lists, so a rule never reads as a task that may be done. The old single list said "Some
   // may be requests already done", and seed 7's final session treated its rules that way.
-  const line = (e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"${e.replaced ? ` ${REPLACED}` : ""}`;
+  const line = (e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"${e.replaced ? ` ${e.replaced === "part" ? PART_REPLACED : REPLACED}` : ""}`;
   const rules = kept.filter((e) => !isRequest(e.text));
   const requests = kept.filter((e) => isRequest(e.text));
   return (
@@ -223,7 +228,7 @@ export function sectionEntries(body) {
       continue;
     }
     // The replaced mark is worked out again on every save, so it is not part of the text.
-    const m = inside && /^- (?:\[([0-9-]+)\] )?"(.*)"(?: \(replaced by a later one\))?\s*$/.exec(line);
+    const m = inside && /^- (?:\[([0-9-]+)\] )?"(.*)"(?: \((?:partly )?replaced by a later one\))?\s*$/.exec(line);
     if (m) out.push({ at: m[1] ?? "", text: m[2] });
   }
   return out;

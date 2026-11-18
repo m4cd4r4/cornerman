@@ -138,6 +138,15 @@ describe("the bounds", () => {
     expect(out).toMatch(/20 oldest standing rules left out for space: restate any that still holds/);
   });
 
+  // Found in the plugin sandbox (2026-11-18): one prompt held two rules, and a correction of one
+  // marked the whole entry replaced, the API limit with it.
+  it("marks a prompt holding other rules as only partly replaced, and keeps it over a cap", () => {
+    record(root, "s", "We agreed the API limit: 23 calls a minute per client. Use single quotes for strings in new code.");
+    record(root, "s", "Actually, switch to double quotes for strings in new code.");
+    const out = addRulings("# T", { store: root, session: "s" });
+    expect(out).toMatch(/23 calls a minute per client\. Use single quotes for strings in new code\." \(partly replaced by a later one\)/);
+  });
+
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
     const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
     record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
