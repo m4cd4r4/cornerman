@@ -174,27 +174,29 @@ export function markReplaced(entries) {
  * At most MAX_ENTRIES entries and MAX_CHARS of text, in order. Over the cap, task requests go
  * first, then rulings a later one replaced, oldest first. Standing rules go only when the rules
  * alone are over the cap, oldest first, and are counted apart so the section says so: a rule never
- * drops out silently. Returns { kept, dropped, droppedRules }.
+ * drops out silently. Returns { kept, dropped, droppedReplaced, droppedRules }.
  */
 export function bound(entries) {
   const kept = markReplaced(entries);
   let chars = kept.reduce((n, e) => n + e.text.length, 0);
   let dropped = 0;
+  let droppedReplaced = 0;
   let droppedRules = 0;
   while (kept.length > MAX_ENTRIES || (chars > MAX_CHARS && kept.length > 1)) {
-    let i = kept.findIndex((e) => isRequest(e.text));
-    if (i < 0) i = kept.findIndex((e) => e.replaced === "whole");
-    const [gone] = kept.splice(Math.max(i, 0), 1);
+    const req = kept.findIndex((e) => isRequest(e.text));
+    const old = req < 0 ? kept.findIndex((e) => e.replaced === "whole") : -1;
+    const [gone] = kept.splice(Math.max(req, old, 0), 1);
     chars -= gone.text.length;
-    if (i > -1) dropped++;
+    if (req > -1) dropped++;
+    else if (old > -1) droppedReplaced++;
     else droppedRules++;
   }
-  return { kept, dropped, droppedRules };
+  return { kept, dropped, droppedReplaced, droppedRules };
 }
 
 /** The section's markdown, or "" when there is nothing to list. */
 export function rulingsSection(entries) {
-  const { kept, dropped, droppedRules } = bound(entries);
+  const { kept, dropped, droppedReplaced, droppedRules } = bound(entries);
   if (!kept.length) return "";
   // Two lists, so a rule never reads as a task that may be done. The old single list said "Some
   // may be requests already done", and seed 7's final session treated its rules that way.
@@ -205,6 +207,7 @@ export function rulingsSection(entries) {
     `## ${RULINGS_HEADING}\n` +
     `What the user typed in this chain, in their own words, oldest first; saving adds these.` +
     (dropped ? ` ${dropped} older task request${dropped === 1 ? "" : "s"} left out to keep this short.` : "") +
+    (droppedReplaced ? ` ${droppedReplaced} replaced ruling${droppedReplaced === 1 ? "" : "s"} left out.` : "") +
     (droppedRules ? ` ${droppedRules} oldest standing rule${droppedRules === 1 ? "" : "s"} left out for space: restate any that still holds.` : "") +
     (rules.length ? `\nStanding rules: each holds for all later work unless a later one replaces it.\n${rules.map(line).join("\n")}` : "") +
     (requests.length ? `\nTask requests, one-off asks: check whether each is done before acting on it.\n${requests.map(line).join("\n")}` : "")
