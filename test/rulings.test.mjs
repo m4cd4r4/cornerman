@@ -147,6 +147,17 @@ describe("the bounds", () => {
     expect(out).toMatch(/23 calls a minute per client\. Use single quotes for strings in new code\." \(partly replaced by a later one\)/);
   });
 
+  // Reviewer, 2026-11-18: "Make that 3 spaces" opens with a task verb, so it was listed as a task
+  // request, dropped first over a cap, and the 2 spaces rule came back unmarked on the next save.
+  it("lists a correction as a standing rule, never a task request", () => {
+    record(root, "s", "Indent with 2 spaces in every file.");
+    record(root, "s", "Make that 3 spaces.");
+    const out = addRulings("# T", { store: root, session: "s" });
+    const [rules, requests = ""] = out.split("Task requests");
+    expect(rules).toContain('"Make that 3 spaces."');
+    expect(requests).not.toContain("3 spaces");
+  });
+
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
     const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
     record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
