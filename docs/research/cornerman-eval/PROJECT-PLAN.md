@@ -406,3 +406,102 @@ thin layer. It is stage B. Spike result: the CLI (2.1.316) has PreCompact (stdou
 instructions), PostCompact (receives the summary) and a native early auto-compact window
 (`--autocompact`, 100k minimum), so the hybrid is buildable from hooks and "compact earlier" needs no
 plugin. Read from the binary's strings, not yet run in the rig.
+
+## Rig spike of the compaction hooks (2026-11-18 21:15 AWST)
+
+Run in one container: all five capabilities in STRESS-TEST-DESIGN.md hold at CLI 2.1.316. A 100k
+auto-compact window fired at 68,315 tokens, in the middle of a turn. Detail in STRESS-TEST-DESIGN.md,
+"Spike result". This replaces "not yet run in the rig" above.
+
+## Stage A results: cm rerun on seeds 1-8 after the five fixes (ran 2026-11-18 21:20-22:55 AWST)
+
+Predictions were committed before the run (`test1/PREDICTIONS-STAGE-A.md`, commit 85b1313). cornerman
+at 474f66b (main after PR #217). 8 of 8 trials valid. Scorer output:
+`test1/results/stage-a-2026-11-18.md`. Full, compact and floor are the Test 1 trials from 17 and 18
+November, so every comparison below is across days.
+
+**This is a regression check on the seeds the fixes were diagnosed from. It passes. It does not show
+the carry-forward claim; stage B does that.**
+
+| | s1 | s2 | s3 | s4 | s5 | s6 | s7 | s8 | pooled |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| cm, Test 1 (107ff1f) | 24 | 22 | 17 | 23 | 23 | 24 | 3 | 23 | 159/192 (82.8%) |
+| cm, stage A (474f66b) | 24 | 22 | 23 | 24 | 24 | 24 | 22 | 22 | 185/192 (96.4%) |
+| full, Test 1 | 22 | 23 | 22 | 23 | 24 | 24 | 24 | 22 | 184/192 (95.8%) |
+
+- cm - full: +0.5 points, paired seed bootstrap 95% [-3.1, +3.6]. Exploratory: tuned seeds.
+- cm - compact: -1.0 [-4.2, +2.1]. compact was 187/192.
+- Cost: cm median 1.80M input-equivalents per trial, 53% of full, the same as Test 1. compact 49%.
+- By type, of 24: in-flight 18 (was 14), open-question 23 (was 19), every other type 24.
+
+The 7 misses, each read in the transcript:
+
+- 5 are in-flight probes scored not-attempted (s2, s7, s8 migrate step 4; s7, s8 archive). In all five
+  the agent named the right next step, found that the repo does not specify it, and asked. That is the
+  probe fault recorded in the proof-read, now seen on the archive probe too. No fact was lost.
+- s2 in-flight-C0 and s3 open-question-A4 are violated in the cm, compact and full arms alike on the
+  same seeds, so they are not carry losses.
+
+So no stage A miss traces to a fact lost across a clear. On these seeds the remaining gap is the rig.
+
+### Predictions (10 of 12 came true)
+
+| # | Prediction | Result |
+|:--|:--|:--|
+| A1 | pass rule holds | YES |
+| A2 | cm pooled 173 or more | YES, 185 |
+| A3 | seed 7 at 20 or more | YES, 22 |
+| A4 | seed 3 at 20 or more | YES, 23 |
+| A5 | no seed below 18 | YES, lowest 22 |
+| A6 | step-4 probe 2 or more of 6 | YES, 3 of 6 (s3, s4, s5) |
+| A7 | seeds 2 and 8 miss step 4 by asking | YES |
+| A8 | no probe turn ends with a handover and a /clear ask, task undone | NO, by the wording: see fault 7 |
+| A9 | no superseded ruling unmarked in the final session context | NO: 5 of 24, see fault 8 |
+| A10 | cm - full lower bound above -10 | YES, -3.1 |
+| A11 | 3 clears in at least 7 of 8 | YES, 8 of 8 |
+| A12 | cm cost at most 60% of full | YES, 53% |
+
+### Three faults stage A found (none fixed yet)
+
+**Fault 6: the CLI cuts the session-start context to a 2KB preview when it is over about 10KB.**
+`test1/stage-a-context-cut.mjs`. cornerman adds the handover and the rulings log as one hook output.
+Above roughly 10KB, Claude Code saves it to a file and shows the model the first 2KB with the path
+("Output too large"). The first 2KB is the goal and next action. The standing rules and the rulings
+log sit at the end, so they are the part that is cut.
+
+| | loads cut, of 24 | agent opened the full copy |
+|:--|--:|--:|
+| Test 1 cm | 21 | 19 of 21 |
+| Stage A cm | 23 | 20 of 23 |
+
+- In Test 1 the two loads that were cut and not opened are seed 7, sessions 3 and 4. That is the seed
+  that scored 3 of 24. Seed 7 lost its rules at least partly because the agent never saw them, which
+  the proof-read did not find (it blamed the log trim alone).
+- In stage A three loads were not opened (s2, s5, s7, each session 3). All three recovered, because
+  the final session opened its copy and fixes 1 and 4 had kept the rules in it.
+- So carry-forward still depends on the agent choosing to open a file. Stage A passed with that
+  dependency in place. The five fixes made the content right; they did not make it arrive.
+- Candidate fix: keep the hook output under the cap, with the rules and rulings first; or split it
+  over several outputs, each under the cap. Needs a test at the real cap, which is not yet measured
+  exactly (9.9k characters arrived whole, 9.8KB was cut: bytes and characters differ).
+
+**Fault 7: the turn-end nudge still asks for a /clear the relay cannot run.** Fix 5 covers the mid-turn
+ask only. In every stage A trial the final session crossed 70k once more, at a turn end; the agent
+saved a fourth handover and wrote "type /clear". The relay had no clear left, so nothing cleared and
+the session ran on to 94k-104k. No task was dropped by it (in s7 the agent had already stopped to ask
+its question), so it costs a turn and a handover, not a fact. A8 failed on its wording because of it.
+
+**Fault 8: fix 2 marks a replaced ruling for some correction wordings only.** `test1/stage-a-stale.mjs`
+plus reading the lines. The log marks "Use 2 spaces" as "(replaced by a later one)" when the correction
+is "Actually make that 3 spaces", and marks every quotes and licence reversal. It leaves the old
+indent rule unmarked in 5 of 8 trials (s1, s2, s3, s4, s5), where the correction is worded another way.
+All 24 reversed facts were still acted on correctly, because the handover body states the current rule.
+
+### Corrections to earlier text
+
+- PREDICTIONS-STAGE-A.md says the rig files are the frozen ones, unchanged. `driver.mjs` differs from
+  its frozen hash by the floor-arm commit de5cb68 (a floor branch only; the cm path is the same). The
+  other frozen files match once line endings are normalised, which is how the hashes were taken.
+- STRESS-TEST-DESIGN.md class F named "cm fault 5 (nudge takes the turn)". Add faults 6 to 8 to what
+  the development set must exercise; fault 6 applies to the hybrid arm too, since it adds context on
+  SessionStart in the same way.
