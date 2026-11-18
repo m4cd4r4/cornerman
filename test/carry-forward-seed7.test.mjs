@@ -95,4 +95,11 @@ describe("seed 7: the final session's context", () => {
     expect(missing).toEqual([]);
     expect(section("Rulings from the user")).not.toMatch(/standing rules? left out/i);
   });
+
+  it("fix 2: a ruling the user later corrected is marked as replaced; the correction is not", () => {
+    for (const old of ["2 spaces for indentation", "single quotes for strings", "SPDX-License-Identifier: MIT"])
+      expect(rulingLine(old)).toMatch(/\(replaced by a later one\)\s*$/);
+    for (const now of ["Actually make that 3 spaces", "switch to double quotes", "SPDX-License-Identifier: ISC", "23 calls a minute"])
+      expect(rulingLine(now)).not.toMatch(/replaced/);
+  });
 });
