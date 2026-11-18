@@ -328,13 +328,25 @@ variants (seeds 1, 6): cm 2/2, full 2/2. Slots B and C: cm 12/16, full 15/16. Re
   write the step because the repo defines no index format; it asked instead. full s3 did the same.
 - s4, s5: the agent read the script (s4 said step 4 was next), then spent the turn on the handover
   skill and stopped; no clear landed during the probe (`clearedDuringProbe` false).
-- s3, s7: not read (both "not written" in the last handover).
+- s3, s7 (read 15:45 AWST): the fact was lost. Both agents treated steps 2-5 as open stubs and asked
+  how to proceed, as the floor agent does. These two are real carry-forward misses, in the two seeds
+  whose last handover dropped the standing rules.
+- s4, s5 traced (15:45 AWST): the context crossed 70k on the first tool call of the probe turn, the
+  nudge ("finish the current step ... then write a handover ... end your turn") fired, and the agent
+  saved and ended with "Run /clear" after only reading the script. The relay had used its 3 clears, so
+  nothing cleared and the task stayed undone. Contrast s8: a nudge during the reversed-B0 probe with
+  one clear left; the relay cleared, carried on, and the probe scored obeyed.
 
-So the step-4 variant is under-specified (full misses it 2 of 6) and scores "knew it, did not act" as
-a miss. Two separate things to settle before in-flight is called a carry-forward leak: (1) why cm asks
-where full writes (0/6 against 4/6 is still a difference), (2) the handover save taking a turn the user
-gave to a task (s4, s5), which is a cornerman behaviour, not a memory loss. Lead (a) from round 4
-(handover adds its own condition) is not what the 4 replies show.
+So the 6 step-4 misses split 2 lost (s3, s7), 2 knew it and asked for a missing spec (s2, s8), 2 turn
+taken by the nudge with the relay budget spent (s4, s5). The step-4 variant is under-specified (full
+misses it 2 of 6); fix the probe in Test 1b, not before the seeds 1-8 rerun (it would break pairing).
+Lead (a) from round 4 (handover adds its own condition) is not what these replies show.
+
+**Fix candidate 5 (new, scope settled 2026-11-18 15:45 AWST): the nudge must not drop the user's
+task when the relay cannot carry on by itself.** With the clear budget spent, "save and end your turn"
+turns a task the user just gave into "run /clear". Options for the fix session: when no clear is left,
+tell the agent to finish the user's request first and save after; or do not nudge mid-turn at all in
+that state. The fix PR carries five fixes.
 
 **Decided (Macdara card 2026-11-18, about 15:10 AWST):** build all 4 fix candidates in one cornerman PR, then
 rerun the cm arm on seeds 1-8 and compare with the batch's full and floor arms. 0.7.4 stays held until
