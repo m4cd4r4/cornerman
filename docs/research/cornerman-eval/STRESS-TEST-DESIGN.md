@@ -1,7 +1,7 @@
 # Stress test design (Test 1b / stage B): draft 2026-11-18, design only, no trial spend
 
-Status: DRAFT. Nothing here is frozen. Items marked **to confirm** need Macdara's ruling before the
-predictions file is written.
+Status: DRAFT. Nothing here is frozen. Margin, held-out n and the threshold range were ruled on 2026-11-18 16:50 AWST; density per trial is
+still **to confirm**.
 
 ## What it decides
 
@@ -44,10 +44,35 @@ at all (a handover into a new session, another worktree, the next day).
 | cm | cornerman with the five fixes, nudge set so it clears at about the same context as the others compact | the current engine |
 | floor | plain `/clear` at the same points, no plugin | scale |
 
-**To confirm:** compact arm = native auto window (proposed, it is what a user would really get) or
-`/compact` typed between turns as in Test 1 (cleaner pairing, nobody does it).
-
 The hybrid is a thin prototype (hooks only, no new UI). If it wins, it is built properly afterwards.
+Compaction in the compact and hybrid arms is the native auto window, which is what a user really gets.
+
+## Threshold is a factor, not a constant (Macdara, 2026-11-18 16:50 AWST: "Is 100k a bit low? Should we have a range of tests?")
+
+Yes to both. 100k is the lowest window the CLI accepts and the most aggressive setting; Test 1's 70k
+nudge was sized to the rig's small reading set, not to real use. cornerman ships with 250k. The
+threshold is the dial the goal turns on: lower saves more tokens and crosses more clears, higher
+crosses fewer clears and lets more context build up between them. So the test varies it.
+
+| Threshold | Why | Events in one trial (fixed work, full arm ends near 800k) |
+|:--|:--|:--|
+| 100k | native minimum, largest saving, most clears | about 8 |
+| 250k | cornerman's shipped default | about 3 |
+| 500k | late clear: little saving, one large summary | 1 |
+
+- Work per trial is fixed and the same in every arm; the threshold alone sets how many clears or
+  compactions happen. One full arm and one floor arm serve all thresholds.
+- The full arm must fit in the 1M window without compacting itself, which caps total work near 800k
+  tokens. The rig needs about five times its present reading material.
+- Staging keeps the cost bounded. Development set: all three thresholds, 4 seeds each, to see the shape.
+  Held-out set: the two thresholds that the development runs show matter (expected 100k and 250k).
+- Reported per threshold: acted-on, cost, and class J (interference). The three together give quality
+  and cost against context size, which is the evidence for where the default threshold should sit:
+  the lowest threshold with no quality loss.
+- Cost warning: a trial that reaches 800k is several times longer than Test 1's 30 minutes, and the
+  full arm's token use grows roughly with the square of its context. The held-out run becomes several
+  off-hours sessions inside the usage windows; estimate it from the first development trial before
+  scheduling.
 
 ## Plant classes
 
@@ -89,8 +114,8 @@ Optimising against a test we wrote will pass that test whether or not the produc
   and hashed before the first development run and not run until the candidates are frozen.
 - The held-out set is run once. If a candidate fails and is changed, a new held-out set is authored;
   the old one becomes development data.
-- **To confirm:** 16 held-out seeds per arm (80 trials, about 14 hours at 3 in parallel). Test 1's
-  interval at n = 8 was 38 points wide because of one seed.
+- **Confirmed (Macdara card 2026-11-18 16:50 AWST): 16 held-out seeds per arm.** Test 1's interval at
+  n = 8 was 38 points wide because of one seed. Trial count and hours depend on the threshold staging above.
 
 ## Decision rule (to be frozen in a PREDICTIONS file before the held-out run)
 
@@ -104,8 +129,8 @@ Cost: input-token equivalents per trial from `test1/tokens.mjs`.
 | hybrid - compact upper bound below +5 (the plugin adds nothing measurable to compaction) | in-session cornerman becomes a thin layer (settings and PreCompact instructions); the product leads with cross-session handovers |
 | winner - full lower bound above -5 points | the "no reduction in quality" claim is shown for these classes, with the cost saving and the floor next to it |
 
-**To confirm:** the 5-point margin (Test 1 used 10; the floor showed 90 points of range, so 5 is about
-one eighteenth of what can be lost).
+**Confirmed (same card): the margin is 5 points** (Test 1 used 10; the floor showed 90 points of range,
+so 5 is about one eighteenth of what can be lost). The rule is applied per threshold.
 
 Class J is reported separately: it tests whether full context drops, which is Test 2's premise.
 
