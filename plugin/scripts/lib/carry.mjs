@@ -94,7 +94,7 @@ export function openItems(body) {
   return items;
 }
 
-const words = (s) =>
+export const words = (s) =>
   String(s ?? "")
     .toLowerCase()
     .replace(/`/g, "")

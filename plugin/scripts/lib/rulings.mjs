@@ -15,6 +15,7 @@
 // - Bound: each entry, the section and the log file have caps (below).
 import { appendFileSync, existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { words } from "./carry.mjs";
 
 export const RULINGS_HEADING = "Rulings from the user";
 
@@ -125,22 +126,55 @@ const TASK =
 const RULE_WORD = /\b(never|always|don'?t|do not|must|rule|from now on|every time|whenever|actually|correction|ask me|check with me)\b/i;
 export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text);
 
+// A correction of an earlier ruling: "Actually make that 3 spaces.", "Correction on the licence
+// line: ISC, not MIT", "Actually, switch to double quotes". Seed 7 kept MIT, 2 spaces and single
+// quotes unmarked next to these, and all 24 reversed facts of the batch had the old wording in view.
+const CORRECTION = /^(?:actually|correction|scratch that|change of plan|on second thought)\b|\b(?:switch to|make that|change that to)\b/i;
+// The correction's own words, which say that it corrects, not what.
+const CORRECTION_WORDS = new Set(words("actually correction scratch change plan second thought switch make that instead later"));
+export const REPLACED = "(replaced by a later one)";
+
+/**
+ * The entries with `replaced: true` on each ruling a later correction replaces: the earlier rule
+ * sharing the most significant words with it (the latest on a tie), none when no word is shared.
+ */
+export function markReplaced(entries) {
+  const out = entries.map((e) => ({ ...e, replaced: false }));
+  out.forEach((e, i) => {
+    if (!CORRECTION.test(e.text)) return;
+    // A bare number is what a correction changes ("make that 3"), not what it is about: in seed 7
+    // "3 spaces" matched "steps 2 and 3" of the release script on it.
+    const want = new Set(words(e.text).filter((w) => !CORRECTION_WORDS.has(w) && !/^\d+$/.test(w)));
+    let best = -1;
+    let most = 0;
+    for (let j = 0; j < i; j++) {
+      const o = out[j];
+      if (o.replaced || isRequest(o.text)) continue;
+      const shared = new Set(words(o.text).filter((w) => want.has(w))).size;
+      if (shared >= most && shared > 0) [best, most] = [j, shared];
+    }
+    if (best > -1) out[best].replaced = true;
+  });
+  return out;
+}
+
 /**
  * At most MAX_ENTRIES entries and MAX_CHARS of text, in order. Over the cap, task requests go
- * first, oldest first. Standing rules go only when the rules alone are over the cap, oldest first,
- * and are counted apart so the section says so: a rule never drops out silently.
- * Returns { kept, dropped, droppedRules }.
+ * first, then rulings a later one replaced, oldest first. Standing rules go only when the rules
+ * alone are over the cap, oldest first, and are counted apart so the section says so: a rule never
+ * drops out silently. Returns { kept, dropped, droppedRules }.
  */
 export function bound(entries) {
-  const kept = [...entries];
+  const kept = markReplaced(entries);
   let chars = kept.reduce((n, e) => n + e.text.length, 0);
   let dropped = 0;
   let droppedRules = 0;
   while (kept.length > MAX_ENTRIES || (chars > MAX_CHARS && kept.length > 1)) {
-    const request = kept.findIndex((e) => isRequest(e.text));
-    const [gone] = kept.splice(request > -1 ? request : 0, 1);
+    let i = kept.findIndex((e) => isRequest(e.text));
+    if (i < 0) i = kept.findIndex((e) => e.replaced);
+    const [gone] = kept.splice(Math.max(i, 0), 1);
     chars -= gone.text.length;
-    if (request > -1) dropped++;
+    if (i > -1) dropped++;
     else droppedRules++;
   }
   return { kept, dropped, droppedRules };
@@ -157,7 +191,7 @@ export function rulingsSection(entries) {
     (dropped ? ` ${dropped} older task request${dropped === 1 ? "" : "s"} left out to keep this short.` : "") +
     (droppedRules ? ` ${droppedRules} oldest standing rule${droppedRules === 1 ? "" : "s"} left out for space: restate any that still holds.` : "") +
     `\n` +
-    kept.map((e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"`).join("\n")
+    kept.map((e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"${e.replaced ? ` ${REPLACED}` : ""}`).join("\n")
   );
 }
 
@@ -184,7 +218,8 @@ export function sectionEntries(body) {
       inside = new RegExp(`^##\\s+${RULINGS_HEADING}\\s*$`, "i").test(line);
       continue;
     }
-    const m = inside && /^- (?:\[([0-9-]+)\] )?"(.*)"\s*$/.exec(line);
+    // The replaced mark is worked out again on every save, so it is not part of the text.
+    const m = inside && /^- (?:\[([0-9-]+)\] )?"(.*)"(?: \(replaced by a later one\))?\s*$/.exec(line);
     if (m) out.push({ at: m[1] ?? "", text: m[2] });
   }
   return out;
