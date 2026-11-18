@@ -12,7 +12,8 @@
 // sees it whatever the saving session forgot.
 //
 // "Open item" = a line under "Decided, not yet applied", "Open questions",
-// "Progress", or an earlier "Carried forward" section. "Mentioned" = most of the
+// "Progress", "Read first", "Decisions already made", "Do not", or an earlier
+// "Carried forward" section. "Mentioned" = most of the
 // item's significant words appear somewhere in the new body, so an item the new
 // handover restates, marks done or marks dropped in its own words stops carrying.
 
@@ -26,6 +27,12 @@ const OPEN_SECTIONS = [
   // The ERF chain kept repeating mistakes those files already recorded, because a
   // later handover stopped naming them (2026-11-10).
   { match: /^read first/i, tag: "read first" },
+  // Standing rules the previous handover restated. Seed 7 of cornerman-eval Test 1
+  // (2026-11-17): the second handover restated 12 rules under "Decisions already made", the
+  // third, written for a narrow reading task, held only the commit-message rules, and the
+  // final session missed 21 of 24 facts. Seed 3 went from 5 of 11 restated to 0.
+  { match: /^decisions already made/i, tag: "rule", rule: true },
+  { match: /^do not\b/i, tag: "do not", rule: true },
   { match: /^carried forward/i, tag: "" },
 ];
 
@@ -49,7 +56,9 @@ export function sections(body) {
   return out;
 }
 
-const isNone = (s) => /^(none|n\/a|nothing|-)\.?$/i.test(s.trim());
+// "None. (Standing rules are listed below ...)" is None too: seed 7 carried that line twice, and
+// what it pointed to had already dropped out.
+const isNone = (s) => /^(none|n\/a|nothing|-)\.?(\s*\([^)]*\)\.?)?$/i.test(s.trim());
 
 /** The open items a handover holds: [{ tag, text }]. A "None" line is no item. */
 export function openItems(body) {
@@ -74,6 +83,8 @@ export function openItems(body) {
       const bullet = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
       // A line that is only the carried section's own explanation is not an item.
       if (!bullet && kind.tag === "" && /^Open in the previous handover/i.test(line.trim())) continue;
+      // A rules section's lead-in ("Standing rules and facts from the user:") is not a rule.
+      if (!bullet && !cur && kind.rule && /:\s*$/.test(line)) continue;
       if (bullet) {
         flush();
         cur = { tag: kind.tag, text: bullet[1].trim() };
@@ -162,7 +173,11 @@ export function carryForward(body, previous) {
     const section =
       `## ${CARRIED_HEADING}\n` +
       `Open in the previous handover${from} and not mentioned in this one, so saving added them: nothing drops out ` +
-      `silently. Treat each as still open. Apply it, or say in your next handover that it is done or dropped.\n` +
+      `silently. Treat each as still open. Apply it, or say in your next handover that it is done or dropped.` +
+      (carried.some((it) => it.tag === "rule" || it.tag === "do not")
+        ? ` A [rule] or [do not] still holds: restate it under "Decisions already made" or "Do not" next time.`
+        : "") +
+      `\n` +
       carried.map((it) => `- [${it.tag}] ${it.text}`).join("\n");
     return { body: `${own}\n\n${section}`, carried };
   } catch {

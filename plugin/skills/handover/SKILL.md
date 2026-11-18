@@ -110,7 +110,9 @@ Other handovers or records on the same task, and what each still holds open.
 
 ## Decisions already made
 Choices the user settled that the next session must not reopen. One line each,
-with the reason if the decision looks arbitrary without it.
+with the reason if the decision looks arbitrary without it. Restate every standing rule from the
+handover you started from, even when the next action is narrow: saving carries forward any line of
+this section or "Do not" that you drop.
 
 ## Do not
 Traps, approaches already tried and failed, anything off-limits. Say what happened,
