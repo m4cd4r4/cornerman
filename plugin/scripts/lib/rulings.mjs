@@ -133,7 +133,10 @@ export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !
 // A correction of an earlier ruling: "Actually make that 3 spaces.", "Correction on the licence
 // line: ISC, not MIT", "Actually, switch to double quotes". Seed 7 kept MIT, 2 spaces and single
 // quotes unmarked next to these, and all 24 reversed facts of the batch had the old wording in view.
-const CORRECTION = /^(?:actually|correction|scratch that|change of plan|on second thought)\b|\b(?:switch to|make that|change that to)\b/i;
+// "switch to" and the like count only at a sentence start (after an opener such as "Actually,"):
+// "Never switch to yarn" is a rule of its own, and marked "Use pnpm" replaced (reviewer, 2026-11-18).
+const CORRECTION =
+  /^(?:actually|correction|scratch that|change of plan|on second thought)\b|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
 // The correction's own words, which say that it corrects, not what.
 const CORRECTION_WORDS = new Set(words("actually correction scratch change plan second thought switch make that instead later"));
 export const REPLACED = "(replaced by a later one)";
