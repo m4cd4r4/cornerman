@@ -182,6 +182,13 @@ describe("the bounds", () => {
     expect(first).toMatch(/2 spaces in every file\." \(replaced by a later one\)/);
   });
 
+  // Reviewer, 2026-11-18: "switch to" mid-sentence is not a correction.
+  it("does not read a rule that mentions switching as a correction of an earlier one", () => {
+    record(root, "s", "Use pnpm for package installs.");
+    record(root, "s", "Never switch to yarn for package installs.");
+    expect(addRulings("# T", { store: root, session: "s" })).not.toContain("replaced by a later one");
+  });
+
   it("cuts a long prompt to its ruling sentences, in the user's words", () => {
     const noise = "The oven log reads 180 at noon and 175 at one. ".repeat(60);
     record(root, "s", `Here is the log. ${noise}Do not change the proofing times without asking me first. ${noise}Thanks.`);
