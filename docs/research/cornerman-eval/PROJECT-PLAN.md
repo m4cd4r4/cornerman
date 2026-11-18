@@ -218,3 +218,56 @@ checked), with dated notes in PREDICTIONS.md and a re-freeze on pilot data only 
 to the VPS, batch.sh and PREDICTIONS.md hashes match the manifest there; driver.mjs and facts.mjs carry
 CRLF on disk, as in the pilots, and match once LF-normalised. Old waiter killed; new waiter pid 2194487,
 same start 14:00 UTC = 22:00 AWST. After a stall: delete the named trial dir, rerun batch.sh.
+
+## Test 1 batch results (ran 2026-11-17 14:00-18:22 UTC = 22:00-02:22 AWST; scored 2026-11-18 13:40 AWST)
+
+24 of 24 trials valid (no API errors, no stall, no 12+ not-attempted). Scored with test1/score.mjs.
+
+**Confirmatory: C1 NOT SHOWN.** cm - full = -13.0 points, bootstrap 95% [-36.5, +1.6], 8 paired seeds;
+paired t [-39.2, +13.1]. Per seed: s1 +8.3, s2 -4.2, s3 -20.8, s4 0, s5 -4.2, s6 0, s7 -87.5, s8 +4.2.
+
+| Arm | Acted-on | Rate (Wilson 95%) |
+|:--|--:|:--|
+| cm | 159/192 | 82.8% (76.8-87.5) |
+| compact | 187/192 | 97.4% (94.0-98.9) |
+| full | 184/192 | 95.8% (92.0-97.9) |
+
+Predictions: P1 yes (full 95.8%), P2 no, P3 no (compact was 1.6 above full), P4 no (cm 14.6 below
+compact), P5 no (cm lowest type in-flight, 14/24), P6 yes (cm written 94.3%), P7 yes (22 misses written
+but not acted on), P8 yes (7 of 8; s8 cleared twice). Leaks (3+ of 24 below full): ruling, do-not,
+reversed, open-question, in-flight, path, number. Note 7 of the audit did not apply: the arms separated.
+
+### Why (exploratory, read from the transcripts)
+
+1. **One seed carries most of the gap, and its cause is a product fault.** s7's third handover was
+   written as a narrow handover for the reading task: "Decided, not yet applied: None", "Decisions
+   already made" held only the commit-message rules, and a line said the standing rules were listed
+   there when they were not. The 24 facts then reached the final session only through cornerman's
+   appended rulings log, which (a) left entries out to stay short ("5 older or plainer entries left
+   out"; "23 calls a minute" does not appear anywhere in the final session), (b) frames entries as
+   "may be requests already done", (c) keeps superseded rulings (MIT, 2 spaces, single quotes)
+   unmarked next to their corrections. cm s7 missed 21 of 24.
+2. **Same pattern in the second-worst seed.** Keyword scan of the restated sections (outside the
+   rulings log) per handover: s7 went 11/11, 11/11, then 0/11; s3 went 5/11 then 0/11 (s3 -20.8).
+   The other six chains kept their restated rules to the last handover. By the last handover the
+   rulings log was trimmed in all 8 chains. So when the writer restates the rules, cm is close to
+   full; when it does not, the safety net does not hold.
+3. **Without s7 (exploratory, not a replacement for the frozen test):** cm - full -2.4, bootstrap
+   [-9.5, +3.0], t [-11.0, +6.2]; cm 92.9%, full 95.2%, compact 97.0%.
+4. **In-flight is the weakest type outside s7 too** (7 of cm's 10 in-flight misses are in other seeds,
+   several "no files changed"). s6's handover turned "step 5 is the only part left" into "wait for
+   the go-ahead": the handover attaching its own condition to a user ruling (lead (a) from round 4).
+   Read more transcripts before calling it confirmed.
+5. **Lead (b) confirmed:** cm reversed facts with the superseded wording still in a handover, 24/24.
+6. **compact did not lose anything** at this context size (97.4%, 1.6 above full). Test 1 does not
+   show cornerman beating compact on carry-forward; that question belongs to Test 2 (cost, quality).
+
+### Fix candidates for cornerman (not built)
+
+- Never trim the rulings log silently; when it must shrink, drop requests already done, never rules.
+- Mark a superseded ruling as replaced (or drop it) when a later ruling contradicts it.
+- Frame the log as "standing rules unless replaced", not "may be requests already done".
+- Writer check at save time: if the previous handover restated N standing rules and this one restates
+  far fewer, carry the missing ones forward (as "Carried forward" already does for open items).
+
+Release 0.7.4 stays on hold: these faults are in the code it would ship.

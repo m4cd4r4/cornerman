@@ -48,7 +48,7 @@ work turns must read, so context grows on real content; pilot 4 showed filler ge
 | Arm | How the facts arrive | How the clear happens |
 |:--|:--|:--|
 | CM-headless | in the starting brief (as headless users give them) | `run.mjs` chain, nudge at a low threshold |
-| CM-interactive | spread over typed turns, some typed mid-turn (queued) | real TUI in tmux, relay on, nudge at a low threshold |
+| CM-interactive | as built (batch 2026-11-17): all plants in one burst of short notes before work turn 0; spreading them over turns and mid-turn is Test 1b | real TUI in tmux, relay on, nudge at a low threshold |
 | Default-compact | same turns as CM-interactive | `/compact` at the same point |
 | Default-full | same turns | no clear: the ceiling for acted-on |
 
