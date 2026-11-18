@@ -195,6 +195,9 @@ async function main() {
     await waitIdle(`work ${w}`);
     if (sessions() > sBefore) clearAt.push(w);
     if (ARM === "compact" && w % COMPACT_EVERY === 0) { await say("/compact", "compact"); compacts++; await waitIdle("compact", { noStop: true }); }
+    // floor (exploratory, after the frozen batch; Macdara card 2026-11-17 09:50 AWST): no cornerman,
+    // plain /clear after work turns 3, 6, 9. Shows what an agent that lost everything scores.
+    if (ARM === "floor" && w % 3 === 0 && w < W) { await say("/clear", "floor-clear"); await waitIdle("floor-clear", { noStop: true }); if (sessions() > sBefore) clearAt.push(w); }
   }
   const sessionsAtProbes = sessions();
   // Clears inside W after the last plant (cm). Below K, the trial is under-pressured: kept, flagged.
@@ -202,7 +205,7 @@ async function main() {
   // clears after the late plants are recorded too. The relay's default budget is 3 clears a window
   // (pilot s901 at nudge 35k used all 3 by work turn 2, then one 31k-211k session: too early).
   const clearsInWork = sessionsAtProbes - sessionsAfterEarly, clearsAfterLate = sessionsAtProbes - sessionsAfterPlants;
-  if (ARM === "cm" && clearsInWork < CLEARS) log(`UNDER-PRESSURE: ${clearsInWork} clears after the early plants, wanted ${CLEARS}`);
+  if ((ARM === "cm" || ARM === "floor") && clearsInWork < CLEARS) log(`UNDER-PRESSURE: ${clearsInWork} clears after the early plants, wanted ${CLEARS}`);
   log(`clears after work turns [${clearAt}], after late plants ${clearsAfterLate}`);
   const hs = handovers();
   // Written is scored only on handovers filed after the fact's last plant (a late correction
