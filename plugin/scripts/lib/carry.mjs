@@ -73,18 +73,21 @@ export function openItems(body) {
       if (cur && cur.text.trim() && !isNone(cur.text)) items.push(cur);
       cur = null;
     };
-    for (const raw of s.lines) {
+    const BULLET = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/;
+    for (const [n, raw] of s.lines.entries()) {
       const line = raw.trimEnd();
       if (!line.trim()) {
         if (kind.tag === "progress") continue;
         flush();
         continue;
       }
-      const bullet = /^\s*(?:[-*+]|\d+[.)])\s+(.*)$/.exec(line);
+      const bullet = BULLET.exec(line);
       // A line that is only the carried section's own explanation is not an item.
       if (!bullet && kind.tag === "" && /^Open in the previous handover/i.test(line.trim())) continue;
-      // A rules section's lead-in ("Standing rules and facts from the user:") is not a rule.
-      if (!bullet && !cur && kind.rule && /:\s*$/.test(line)) continue;
+      // A rules section's lead-in ("Standing rules and facts from the user:") is not a rule, but
+      // only when bullets follow it: a one-line prose rule can end in a colon too.
+      const next = s.lines.slice(n + 1).find((l) => l.trim());
+      if (!bullet && !cur && kind.rule && /:\s*$/.test(line) && next && BULLET.test(next)) continue;
       if (bullet) {
         flush();
         cur = { tag: kind.tag, text: bullet[1].trim() };

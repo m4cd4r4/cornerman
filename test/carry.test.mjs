@@ -94,6 +94,13 @@ describe("carryForward", () => {
     const twice = carryForward(`${once}\n`, { body: once }).body;
     expect(twice.split(CARRIED_HEADING).length - 1).toBe(1);
   });
+
+  // Reviewer, 2026-11-18: the lead-in skip also dropped a one-line prose rule ending in a colon.
+  it("keeps a prose rule that ends in a colon when no bullets follow it", () => {
+    const prev = "# T\n\n## Decisions already made\nEvery commit message starts with the ticket id, like this:\n";
+    const { carried } = carryForward("# T\n\n## Goal\ng\n", { body: prev });
+    expect(carried.map((c) => c.text)).toEqual(["Every commit message starts with the ticket id, like this:"]);
+  });
 });
 
 describe("previousHandover", () => {
