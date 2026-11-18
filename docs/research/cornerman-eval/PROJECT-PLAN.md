@@ -301,3 +301,7 @@ What it means:
 3. **The margin now has a scale.** Full minus floor is 90 points; cm's 13-point gap is about one
    seventh of what can be lost. In-flight keeps two thirds, the weakest type, as in the batch.
 4. The confirmatory result does not change: C1 NOT SHOWN.
+
+**Decided (Macdara card 2026-11-18 15:15 AWST):** build all 4 fix candidates in one cornerman PR, then
+rerun the cm arm on seeds 1-8 and compare with the batch's full and floor arms. 0.7.4 stays held until
+that rerun shows the gap closed. Test 1b design comes after.
