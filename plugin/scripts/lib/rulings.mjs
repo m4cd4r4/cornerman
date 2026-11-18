@@ -111,36 +111,51 @@ export function readLog(store, session) {
 }
 
 // The section's caps: about 1.5k tokens at most, read by every session in the chain.
-export const MAX_ENTRIES = 30;
+export const MAX_ENTRIES = 40;
 export const MAX_CHARS = 6000;
 
+// A one-off task ("Add applyFee to src/money.js", "Carry on with the release script", "Next
+// batch of reading ..."): it opens with a task verb and carries no rule word. Everything else is a
+// standing rule or fact. Seed 7 of cornerman-eval Test 1 (2026-11-17) is why: the old cap dropped
+// "plain" entries (no CUE word) oldest first, and "We agreed the API limit: 23 calls a minute"
+// has no CUE word, so seven rules went while later task requests stayed. When in doubt an entry
+// counts as a rule: listing a request too long costs a line, dropping a rule costs the rule.
+const TASK =
+  /^(?:please\s+|ok,?\s+|now\s+)?(?:add|implement|create|write|build|fix|change|make|refactor|set|update|remove|delete|rename|move|carry on|continue|next batch|read|run|start|finish|look|show|list|open|commit|push|install|deploy|draft|generate|convert|wire|port|review|explain|find|go ahead|try)\b/i;
+const RULE_WORD = /\b(never|always|don'?t|do not|must|rule|from now on|every time|whenever|actually|correction|ask me|check with me)\b/i;
+export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text);
+
 /**
- * At most MAX_ENTRIES entries and MAX_CHARS of text, in order. Over the cap, a plain
- * request (no CUE word) goes before a ruling, and the oldest first: a ruling is what a
- * handover loses, and a later ruling overrides an earlier one. Returns { kept, dropped }.
+ * At most MAX_ENTRIES entries and MAX_CHARS of text, in order. Over the cap, task requests go
+ * first, oldest first. Standing rules go only when the rules alone are over the cap, oldest first,
+ * and are counted apart so the section says so: a rule never drops out silently.
+ * Returns { kept, dropped, droppedRules }.
  */
 export function bound(entries) {
   const kept = [...entries];
   let chars = kept.reduce((n, e) => n + e.text.length, 0);
   let dropped = 0;
+  let droppedRules = 0;
   while (kept.length > MAX_ENTRIES || (chars > MAX_CHARS && kept.length > 1)) {
-    const plain = kept.findIndex((e) => !CUE.test(e.text));
-    const [gone] = kept.splice(plain > -1 ? plain : 0, 1);
+    const request = kept.findIndex((e) => isRequest(e.text));
+    const [gone] = kept.splice(request > -1 ? request : 0, 1);
     chars -= gone.text.length;
-    dropped++;
+    if (request > -1) dropped++;
+    else droppedRules++;
   }
-  return { kept, dropped };
+  return { kept, dropped, droppedRules };
 }
 
 /** The section's markdown, or "" when there is nothing to list. */
 export function rulingsSection(entries) {
-  const { kept, dropped } = bound(entries);
+  const { kept, dropped, droppedRules } = bound(entries);
   if (!kept.length) return "";
   return (
     `## ${RULINGS_HEADING}\n` +
     `What the user typed in this chain, in their own words, oldest first; saving adds these. A later one overrides an earlier one. ` +
     `Some may be requests already done: check before acting, and never drop one that still applies.` +
-    (dropped ? ` ${dropped} older or plainer entries left out to keep this short.` : "") +
+    (dropped ? ` ${dropped} older task request${dropped === 1 ? "" : "s"} left out to keep this short.` : "") +
+    (droppedRules ? ` ${droppedRules} oldest standing rule${droppedRules === 1 ? "" : "s"} left out for space: restate any that still holds.` : "") +
     `\n` +
     kept.map((e) => `- ${e.at ? `[${e.at.slice(0, 10)}] ` : ""}"${e.text}"`).join("\n")
   );
