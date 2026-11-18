@@ -1,7 +1,7 @@
 # Stage A predictions: cm rerun on seeds 1-8 after the five fixes
 
-Written by Claude (Fable 5.2) on 2026-11-18, about 21:30 AWST, before any stage A trial ran. Run
-approved by Macdara (card, 2026-11-18 21:15 AWST). `PREDICTIONS.md` is frozen and unchanged.
+Written by Claude (Fable 5.2) on 2026-11-18, about 21:15 AWST, before any stage A trial ran. Run
+approved by Macdara (card, 2026-11-18 about 21:12 AWST). `PREDICTIONS.md` is frozen and unchanged.
 
 ## What stage A is, and is not
 
