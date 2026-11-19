@@ -136,8 +136,15 @@ Rules for every plant, carried over from Test 1 and the proof-read:
   design is frozen; a variant the floor passes is dropped (Test 1 had three such decision leans).
 - Two scores per fact: carried (present in the handover, or in the summary read from PostCompact) and
   acted on (hidden checker). Reported per class, never pooled alone.
-- Density per trial: **to confirm**, proposed 3 facts per class in A-H (24), plus one volume trial
-  design (I) and one interference chain (J) per seed.
+- Density per trial: 3 facts per class in A-H (24), plus one volume trial design (I) and one
+  interference chain (J) per seed. Adopted 2026-11-19 as the working value for the development set
+  (the proposal stood unanswered; development runs can change it, the held-out freeze fixes it).
+- From stage A2 (2026-11-19): an ask is judged from what the agent did and said, never from a question
+  mark in the text. Test 1's open-question checker scored a clear "I need your OK" as not attempted.
+- From stage A2: class I must reach the point where cornerman's rules part is over its
+  9,000-character budget and drops a standing rule, naming it. Test 1 filled the budget by the third
+  load with 24 facts and only ever dropped task requests. The probe for the dropped rule is the case
+  to measure: does the agent open the full copy and obey it.
 
 ## Development set and held-out set
 
@@ -188,4 +195,6 @@ Class J is reported separately: it tests whether full context drops, which is Te
 4. Development runs and fixes, until the per-class results stop moving.
 5. Freeze candidates and PREDICTIONS; one held-out run; score; decide.
 
-Depends on: the five-fix PR (Vikunja #4114) and its stage A regression rerun.
+Depends on: the five-fix PR (Vikunja #4114) and its stage A regression rerun. **Both done. Also done:
+the faults 6-8 fix (PR #218, main fea0cee) and its rerun, stage A2, passed 2026-11-19. Step 1 is next;
+the candidates start from fea0cee.**
