@@ -34,4 +34,16 @@ describe("fault 8: every replaced ruling is marked, whatever the correction's wo
     expect(out.filter((e) => e.replaced).map((e) => e.text)).toEqual([early]);
     expect(out.find((e) => e.text === early).replaced).toBe("whole");
   });
+
+  // Reviewer, 2026-11-19: a live rule marked replaced is dropped before live ones, the worst way round.
+  it.each([
+    ["Use 2-space indents.", "Actually, don't open extra browser tabs."],
+    ["Use 2-space indents.", "Never mind, the tab bar can stay."],
+    ["Use 2 spaces for indentation.", "I've changed my mind about the tab key shortcut in the editor docs."],
+    ["Always run the failing tests before a commit.", "Never mind the failing tests on the legacy folder, carry on with the parser."],
+    ["Never use yarn.", "Revised the yarn lockfile, please review."],
+  ])("does not mark %s after %s", (rule, later) => {
+    const out = markReplaced([rule, OTHERS[0], later].map((text) => ({ at: "", text })));
+    expect(out.filter((e) => e.replaced).map((e) => e.text)).toEqual([]);
+  });
 });
