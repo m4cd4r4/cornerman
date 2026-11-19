@@ -76,6 +76,46 @@ at all (a handover into a new session, another worktree, the next day).
 The hybrid is a thin prototype (hooks only, no new UI). If it wins, it is built properly afterwards.
 Compaction in the compact and hybrid arms is the native auto window, which is what a user really gets.
 
+### Hybrid prototype as built (step 1, 2026-11-19; `rig/hybrid/`)
+
+Five hooks, no model call in any of them. cornerman is cloned for its lib only (rulings log and
+"mentioned" test imported from fea0cee, so the hybrid and cm log and bound the user's words with the
+same code); the plugin is not installed and none of its own hooks run.
+
+| Hook | File | What it does |
+|:--|:--|:--|
+| UserPromptSubmit | `prompt.mjs` | Logs the user's words; keeps an uncut copy |
+| PreCompact | `pre.mjs` | Asks the summariser to end with a "Carried forward" list, tagged rule, choice, fact, decision, in flight, ask first |
+| SessionStart, source compact | `start.mjs` | Adds the rulings log (replaced ones marked), and durable items already missing from the summary before this one. At most 9,000 characters |
+| PostCompact | `post.mjs` | Saves the summary, files its tagged items, records which standing rules the summary lost (the arm's "carried" score), finds what this summary dropped |
+| PostToolUse | `deliver.mjs` | Hands the model what the latest summary dropped, once, at the next tool call |
+
+Measured in four smoke runs (Sonnet, 100k window, one typed and one auto compaction each, n = 1 per
+check; `rig/hybrid/result/`). Selftest: `node rig/hybrid/selftest.mjs <cornerman lib>`, 31 checks.
+
+1. **Order at a compaction: PreCompact, summary, SessionStart to its end, PostCompact, and only then
+   is the summary written to the transcript.** So a SessionStart hook can never see the summary just
+   made. What that summary dropped is known to PostCompact alone, which is why a fifth hook
+   (PostToolUse) delivers it. It arrived 2 to 5 seconds after the compaction, in the middle of the turn.
+2. **A note delivered on PostToolUse is not trusted unless announced.** In smoke 3 the model took it
+   for text appended to the file it had just read and answered "I'm not treating it as known". With
+   one sentence in the SessionStart context saying such a note may follow and comes from the same
+   hook (smoke 4), it used the fact. One run each way.
+3. The instructions worked in 8 of 8 summaries: the section was there with 14 to 23 tagged items, and
+   no standing rule in the log was missing from any summary. These smokes plant 3 rules, 1 choice and
+   1 tool-result fact, all recent, so this says the plumbing works and nothing about loss.
+4. Cost of the instructions: the summary grew from 6,662 characters (spike, auto, no hooks) to 10,551
+   to 13,018, and the context after an auto compaction from 8,761 tokens to 10,991 to 14,427. Not like
+   for like (the spike conversation had fewer planted messages). Measure in the development set.
+5. Auto compaction fired at 66,250 to 67,406 tokens in four runs, against 68,315 in the spike.
+6. Each summary rewords the items it copies, so the item file grows (18 then 23 items gave 31 lines in
+   smoke 3). It does not change what is delivered: an item counts as dropped only when the whole
+   summary no longer holds it, and a digit-bearing word of the item must be present.
+
+Not built, for the development runs to decide: `[rule]` and `[in flight]` items are never re-added
+(the log covers rules word for word; an old in-flight state would be wrong), and the delivery note has
+no user-visible line.
+
 ## Threshold is a factor, not a constant (Macdara, 2026-11-18 16:50 AWST: "Is 100k a bit low? Should we have a range of tests?")
 
 Yes to both. 100k is the lowest window the CLI accepts and the most aggressive setting; Test 1's 70k
@@ -188,7 +228,7 @@ Class J is reported separately: it tests whether full context drops, which is Te
 
 0. Rig spike: confirm the five capabilities above in a container, at 2.1.316. **Done 2026-11-18, all
    five confirmed.**
-1. Hybrid prototype (hooks only).
+1. Hybrid prototype (hooks only). **Done 2026-11-19: `rig/hybrid/`, see "Hybrid prototype as built".**
 2. Plant classes, probes and checkers; floor run of every variant; fresh fairness review by a separate
    reviewer.
 3. Author and hash the held-out set.
@@ -196,5 +236,5 @@ Class J is reported separately: it tests whether full context drops, which is Te
 5. Freeze candidates and PREDICTIONS; one held-out run; score; decide.
 
 Depends on: the five-fix PR (Vikunja #4114) and its stage A regression rerun. **Both done. Also done:
-the faults 6-8 fix (PR #218, main fea0cee) and its rerun, stage A2, passed 2026-11-19. Step 1 is next;
+the faults 6-8 fix (PR #218, main fea0cee) and its rerun, stage A2, passed 2026-11-19. Step 2 is next;
 the candidates start from fea0cee.**

@@ -1,0 +1,140 @@
+{
+ "model": "sonnet",
+ "window": "100000",
+ "cornerman": "fea0ceeeef316c6574f27755de75833261f86138",
+ "startScreen": "\n ▐▛███▛█   Claude Code v2.1.316\n▝▜██████▀  Sonnet 5.5 · Claude API\n ▝▝   ▝▝   /work\n\n▎ Auto mode is now Claude Code's default permission mode.\n▎ Auto mode lets Claude handle permission prompts automatically. Claude checks each tool call for risky actions and prompt injection before executing, runs the ones it assesses as lower-risk, and\n▎ blocks the rest.\n▎ https://code.claude.com/docs/en/permission-modes\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n                                                                                                                                                                                    ◐ medium · /effort\n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n❯ \n────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────\n  ⏵⏵ auto mode on (shift+tab to cycle) · ← for agents\n",
+ "compactions": [
+  {
+   "kind": "manual",
+   "boundary": [
+    {
+     "trigger": "manual",
+     "preTokens": 22448,
+     "postTokens": 5908
+    }
+   ],
+   "preTrigger": "manual",
+   "post": {
+    "at": "2026-11-19T04:52:57.199Z",
+    "session": "1dbee072-9e98-428e-893e-1581189ab371",
+    "n": 1,
+    "trigger": "manual",
+    "summaryChars": 9884,
+    "hasSection": true,
+    "items": 15,
+    "byTag": {
+     "rule": 3,
+     "choice": 1,
+     "fact": 5,
+     "decision": 3,
+     "in flight": 1,
+     "ask first": 2
+    },
+    "earlierItemsDropped": [],
+    "rules": 5,
+    "rulesMissing": []
+   },
+   "start": {
+    "at": "2026-11-19T04:52:57.039Z",
+    "session": "1dbee072-9e98-428e-893e-1581189ab371",
+    "n": 1,
+    "fresh": false,
+    "chars": 1220,
+    "over": false,
+    "entries": 7,
+    "kept": 7,
+    "droppedRules": 0,
+    "carriedWanted": 0,
+    "carriedAdded": 0
+   },
+   "postBeforeStart": false,
+   "summaryHasSection": true,
+   "summaryHasPort": true,
+   "summaryHasMoneyRule": true,
+   "answer": "1. Staging port: 4417 (printed by `print-port.mjs` before I deleted it).\n2. Indent for new code: 3 spaces (this replaced the earlier 2-space rule).\n3. Money storage: integer cents only, with no floats.\n4. Storage option: SQLite, the second one.",
+   "graded": {
+    "port": true,
+    "indent": true,
+    "money": true,
+    "choice": true
+   }
+  },
+  {
+   "kind": "auto",
+   "boundary": [
+    {
+     "trigger": "auto",
+     "preTokens": 67242,
+     "postTokens": 11920
+    }
+   ],
+   "preTrigger": "auto",
+   "post": {
+    "at": "2026-11-19T04:55:37.307Z",
+    "session": "1dbee072-9e98-428e-893e-1581189ab371",
+    "n": 2,
+    "trigger": "auto",
+    "summaryChars": 12180,
+    "hasSection": true,
+    "items": 22,
+    "byTag": {
+     "rule": 4,
+     "choice": 1,
+     "fact": 8,
+     "decision": 5,
+     "in flight": 2,
+     "ask first": 2
+    },
+    "earlierItemsDropped": [],
+    "rules": 6,
+    "rulesMissing": []
+   },
+   "start": {
+    "at": "2026-11-19T04:55:37.094Z",
+    "session": "1dbee072-9e98-428e-893e-1581189ab371",
+    "n": 2,
+    "fresh": false,
+    "chars": 4891,
+    "over": false,
+    "entries": 11,
+    "kept": 11,
+    "droppedRules": 0,
+    "carriedWanted": 11,
+    "carriedAdded": 11
+   },
+   "postBeforeStart": false,
+   "summaryHasSection": true,
+   "summaryHasPort": true,
+   "summaryHasMoneyRule": true,
+   "answer": "1. Staging port: 4417 (printed by the print-port script before I deleted it).\n2. Indent for new code: 3 spaces.\n3. Money storage: integer cents only, no floats.\n4. Storage option: SQLite (option 2).",
+   "graded": {
+    "port": true,
+    "indent": true,
+    "money": true,
+    "choice": true
+   }
+  }
+ ],
+ "auto": {
+  "fired": true,
+  "turns": [
+   {
+    "w": 0,
+    "contextAfter": 40731,
+    "boundaries": 0
+   },
+   {
+    "w": 1,
+    "contextAfter": 56981,
+    "boundaries": 0
+   },
+   {
+    "w": 2,
+    "contextAfter": 32878,
+    "boundaries": 1
+   }
+  ]
+ },
+ "errors": [],
+ "contextInTranscript": 6
+}

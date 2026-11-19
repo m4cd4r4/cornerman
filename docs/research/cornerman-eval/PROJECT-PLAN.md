@@ -611,3 +611,25 @@ cost did not rise.
   available route if the rules part proves too small. Not built; measure first.
 - The in-flight probes and the question-mark test in the open-question checker cost every arm a few
   points of noise. The stress-test probes and checkers should not copy either.
+
+## Stage B step 1: hybrid prototype (2026-11-19 12:45-13:30 AWST)
+
+Built under `rig/hybrid/`: five hooks around native auto-compact, no model call, cornerman's rulings
+code imported from fea0cee. Selftest 31 of 31 (each check with a failing case). Four smoke runs in the
+rig container (Sonnet, 100k window, about 7 minutes each, one typed and one auto compaction):
+`rig/hybrid/result/`. Detail in STRESS-TEST-DESIGN.md, "Hybrid prototype as built".
+
+- After both compactions in all four runs the model answered the indent rule (the corrected value),
+  the money rule, the tool-result port and the option picked by "The second one." No hook error.
+  These are recent, lightly buried facts: the smoke shows the hooks work, not that the hybrid wins.
+- Two things the spike had not shown. SessionStart runs to its end before PostCompact, and the summary
+  reaches the transcript after both, so what a summary dropped can only be handed over later (a
+  PostToolUse hook does it, 2 to 5 seconds on). And the model distrusts that later note unless the
+  SessionStart context announces it: unannounced it said "I'm not treating it as known" (smoke 3),
+  announced it used the fact (smoke 4). n = 1 each way.
+- The smoke's grade of answer 5 is a plain text match and reads smoke 3 as a pass; the transcript line
+  above is the result. The stress-test checkers must judge what the agent did with a fact.
+- Cost seen so far: about 2k to 6k more tokens after each auto compaction than the spike's plain
+  compaction (10,991 to 14,427 against 8,761), not like for like.
+
+Next: step 2, plant classes, probes and checkers, floor run of every variant, fairness review.
