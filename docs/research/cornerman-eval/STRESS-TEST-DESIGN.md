@@ -283,6 +283,18 @@ Floor run 0 (forced variant 0, short, commit 00e6de6, 2026-11-19, n = 1):
   notes and docs by chance. As it stands the flag cannot tell a leak from noise; tighten it before the
   development runs.
 
+Floor runs 1-5 (commit 5432bff, 2026-11-19, n = 1 each): 0 invalid plants in all five. The floor
+passed 16 of 140 probes, for three different reasons:
+
+| Cause | Probes passed | Action |
+|:--|:--|:--|
+| **The repo carried the fact.** The work-turn task asked what in each file "could matter for ledger and why", and the agent wrote planted rules into `docs/reading-notes.md` before the clear ("6-attempt cap on bank feed calls", "the 7-attempt rule", "the lower-case account id rule") | I-attempts in runs 1, 2 and 5; I-memo and B-number-B in run 5 | Work-turn task reworded: the notes say what each file documents, and ledger's rules never go in them. Leak scan narrowed to lines the agent added. Runs 1, 2 and 5 rerun to confirm |
+| **The variant is the agent's default** | E-decision-A "jsonl" 3 of 3; E-decision-B "iso" 3 of 3; C-decision-C "lower case" in 2 runs | The two E variants are dropped (each E decision now has one variant). For C the pick is by position, so the driver now picks the position of the upper-case option at run time |
+| **Passed once in three runs** | B-ruling-B variant 1 (TypeError on a fractional amount), G-open-question-C variant 0 (asked by a question card unprompted) | Both dropped by the rule, in a filtered copy of Test 1's pools in `set-dev.mjs` |
+
+The first row is not a variant fault. It would have run in every arm for 50 work turns and let any
+arm pass from the repo. It applies to the held-out set too.
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:

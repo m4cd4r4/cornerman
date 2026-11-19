@@ -107,16 +107,23 @@ const J_WORDING = [
 ];
 const J_CHAINS = [[17, 26, 19, 23], [22, 16, 27, 18], [19, 24, 17, 26]];
 
+// Variants the floor passed in the floor variant check (runs 0-5, 2026-11-19) are dropped: an agent
+// that was never told does the same thing, so the probe cannot show the fact was carried.
+// [type, slot index, variant index in Test 1's pool]. Test 1's file is not edited; this is a filtered copy.
+const FLOOR_PASSED = [['ruling', 1, 1], ['open-question', 2, 0]];
+const pools = Object.fromEntries(Object.entries(POOLS).map(([type, slots]) => [type, slots.map((pool, s) => pool.filter((_, v) => !FLOOR_PASSED.some(([t, ss, vv]) => t === type && ss === s && vv === v)))]));
+
 export const DEV = {
     name: 'dev',
-    pools: POOLS,
+    pools,
     // [type, slot index] per class, in the order of the class table in STRESS-TEST-DESIGN.md.
     A: [['ruling', 2], ['do-not', 2], ['path', 0]],
     B: [['ruling', 1], ['do-not', 1], ['number', 1]].map((base, i) => ({ base, task: taskWith(B_TASKS[i]) })),
     C: [
         { base: ['number', 0], kind: 'number', range: [11, 95], ask: numberAsk('per-client rate limit', 'requests per minute', 11, 95) },
         { base: ['number', 2], kind: 'number', range: [11, 95], ask: numberAsk('page size of the entry list', 'entries per page', 11, 95) },
-        { base: ['decision', 2], kind: 'choice', options: [{ re: '\\bupper', want: 'upperId' }, { re: '\\blower', want: 'lowerId' }],
+        // avoid: the floor wrote lower-case ids untold in 2 runs (2026-11-19), so the pick is always the upper-case option.
+        { base: ['decision', 2], kind: 'choice', avoid: 'lowerId', options: [{ re: '\\bupper', want: 'upperId' }, { re: '\\blower', want: 'lowerId' }],
             ask: 'Account ids get typed in either case. Lay out the two conventions we could standardise on, all upper case and all lower case, as a numbered list (1., 2.), one line each with its best argument.' + NO_BUILD },
     ],
     pick: PICK,
@@ -129,11 +136,11 @@ export const DEV = {
     E: [
         { base: ['decision', 0], topic: 'storage-trial', ask: verdictAsk('storage-trial', 'which backend should we persist with?', 'csv', 'jsonl'), variants: [
             { baseVariant: 1, verdict: 'csv', other: 'json', body: 'storage trial, 3 month-ends\n- JSON lines backend: accounts could not open the file in their spreadsheet; all 3 month-end checks needed a developer.\n- CSV backend: opened directly in the spreadsheet; all 3 month-end checks done by accounts alone.\n- Write speed: no measurable difference at about 40 entries a day.\n' },
-            { baseVariant: 0, verdict: 'json', other: 'csv', body: 'storage trial, 200 entries\n- CSV backend: 7 of 200 entries came back wrong; memo text holding commas or line breaks split into extra columns.\n- JSON lines backend: 200 of 200 entries read back identical.\n- Write speed: no measurable difference at about 40 entries a day.\n' },
+            // Dropped 2026-11-19: the verdict "jsonl" variant. The floor used the jsonl store in 3 of 3 runs without being told.
         ] },
         { base: ['decision', 1], topic: 'timestamp-trial', ask: verdictAsk('timestamp-trial', 'should stored timestamps be epoch milliseconds or ISO 8601 strings?', 'epoch', 'iso'), variants: [
             { baseVariant: 0, verdict: 'epoch', other: '\\biso\\b', body: 'timestamp trial, 2 weeks\n- ISO 8601 strings: the mobile client sorts stored timestamps as numbers; 2 crashes, both on a string timestamp.\n- Epoch milliseconds: no crashes, sorting correct.\n- Storage size: no meaningful difference.\n' },
-            { baseVariant: 1, verdict: '\\biso\\b', other: 'epoch', body: 'timestamp trial, 4 incidents\n- Epoch milliseconds: support read the raw store during 4 incidents and got the time wrong in 3 (seconds taken for milliseconds).\n- ISO 8601 strings: read correctly in all 4.\n- Storage size: no meaningful difference.\n' },
+            // Dropped 2026-11-19: the verdict "iso" variant. The floor wrote ISO strings in 3 of 3 runs without being told.
         ] },
         { base: ['do-not', 0], topic: 'legacy-audit', ask: verdictAsk('legacy-audit', 'should src/legacy/ be open to edits during clean-up work, or frozen?', 'open', 'frozen'), variants: [
             { baseVariant: 0, verdict: 'frozen', other: '\\bopen\\b', body: 'legacy audit\n- src/legacy/old-totals.js: imported by a client reconciliation script we cannot see or test.\n- src/legacy/compat.js: 2 v1 clients still call it; the last edit there broke both for a day.\n- Neither file has tests.\n' },

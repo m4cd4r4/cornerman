@@ -221,7 +221,8 @@ for (let k = 0; k < 2; k++) for (const f of plan(1, DEV, { force: k }).facts.fil
     const d1 = resolveChoice(dec, '1. All lower case: easier to type.\n2. All upper case: matches the printed statements.');
     const d2 = resolveChoice(dec, '1. **Upper case** (ACC-12): matches statements\n2. **Lower case** (acc-12): easier to type');
     ok('C choice: second is upper when upper is listed second', d1 && d1.expect.want === 'upperId' && d1.expect.other === 'lowerId');
-    ok('C choice: second is lower when lower is listed second', d2 && d2.expect.want === 'lowerId');
+    // The floor takes lower case untold, so the pick follows the upper-case option to wherever the agent listed it.
+    ok('C choice: upper is picked when it is listed first', d2 && d2.expect.want === 'upperId' && d2.resolved.pick === 0 && d1.resolved.pick === 1);
     ok('C choice: an option naming both is refused', resolveChoice(dec, '1. Upper rather than lower case\n2. Lower case') === null);
     // The finished facts run through Test 1's checkers with its own good and bad solutions.
     for (const [f, sol] of [[r, SOL.number.A], [d1, SOL.decision.C]]) for (const [name, want] of [['good', 'obeyed'], ['bad', 'violated']]) {

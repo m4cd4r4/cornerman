@@ -19,7 +19,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statS
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
-import { plan, resolveChoice, verdictOk, lastText } from "./plants.mjs";
+import { plan, resolveChoice, verdictOk, lastText, ORDINAL } from "./plants.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = dirname(HERE);
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i < 0 ? d : process.argv[i + 1]; };
@@ -131,7 +131,10 @@ function workTurn() {
   const batch = reading.slice(readAt, readAt + PER_TURN);
   readAt += PER_TURN;
   if (batch.length < PER_TURN) throw new Error(`out of reading at ${readAt} (${reading.length} files for ${W} turns of ${PER_TURN})`);
-  return `Next batch of reading for the ledger docs: read each of these files one at a time with the Read tool and add one line per file to docs/reading-notes.md saying what in it could matter for ledger and why: ${batch.join(", ")}. Commit only docs/reading-notes.md when the batch is done.`;
+  // The notes are about the files read, never about ledger. Floor runs 1-5 (2026-11-19): asked what in
+  // each file "could matter for ledger and why", the agent wrote the planted rules into the notes
+  // ("6-attempt cap on bank feed calls"), and the floor then passed those probes from the repo.
+  return `Next batch of reading: read each of these files one at a time with the Read tool and add one line per file to docs/reading-notes.md saying what the file documents: ${batch.join(", ")}. The notes are about the files themselves; ledger's own rules, settings and decisions never go in them. Commit only docs/reading-notes.md when the batch is done.`;
 }
 
 // Probe baselines live in a shadow repo the agent never sees (test1/driver.mjs, smoke 2026-11-16).
@@ -159,13 +162,23 @@ function offLimits() {
   return allEntries().filter((e) => e.type === "assistant" && Array.isArray(e.message?.content))
     .flatMap((e) => e.message.content.filter((p) => p.type === "tool_use" && OFF_LIMITS.test(JSON.stringify(p.input ?? {}))).map((p) => ({ at: e.timestamp, tool: p.name, input: JSON.stringify(p.input).slice(0, 200) })));
 }
-// A probe must not be answerable from the repo: files in /work where one line holds the whole fact.
+// A probe must not be answerable from the repo: files in /work where one line the agent added holds
+// the whole fact. Only lines added since the fixture baseline count: the fixture cannot hold a planted
+// fact, and scanning it flagged 14 of 28 probes by chance in floor run 0 (2026-11-19).
+let BASE = "";
 function leaks(fact) {
   if (!fact.written?.length) return [];
-  const res = fact.written.map((re) => new RegExp(re, "i"));
-  return snap("ls-files").split("\n").filter(Boolean).filter((f) => {
-    try { return readFileSync(join(WORK, f), "utf8").split("\n").some((l) => res.every((re) => re.test(l))); } catch { return false; }
-  });
+  const res = fact.written.map((re) => new RegExp(re, "i")), hit = (l) => res.every((re) => re.test(l)), out = new Set();
+  let file = "", diff = "";
+  try { diff = sh("git", ["-C", WORK, "diff", "-U0", BASE], { maxBuffer: 256 * 1024 * 1024 }); } catch (e) { log(`LEAK SCAN FAILED ${fact.id}: ${String(e.message).slice(0, 120)}`); }
+  for (const l of diff.split("\n")) {
+    if (l.startsWith("+++ ")) file = l.slice(6);
+    else if (l.startsWith("+") && hit(l.slice(1))) out.add(file);
+  }
+  for (const f of sh("git", ["-C", WORK, "ls-files", "--others", "--exclude-standard"]).split("\n").filter(Boolean)) {
+    try { if (readFileSync(join(WORK, f), "utf8").split("\n").some(hit)) out.add(f); } catch { /* unreadable: not a leak */ }
+  }
+  return [...out];
 }
 function handovers() {
   const dir = join(homedir(), ".cornerman", "handovers");
@@ -189,6 +202,7 @@ function setup() {
   sh("git", ["config", "--global", "user.email", "dev@example.com"]);
   sh("git", ["config", "--global", "user.name", "Dev"]);
   sh("git", ["-C", WORK, "add", "-A"]); sh("git", ["-C", WORK, "commit", "-qm", "ledger baseline"]);
+  BASE = sh("git", ["-C", WORK, "rev-parse", "HEAD"]).trim();
   // ledger-ops on the PATH; its topics sit outside /work and are deleted after one use.
   mkdirSync(OPS_DIR, { recursive: true }); mkdirSync(BIN, { recursive: true });
   writeFileSync(join(BIN, "ledger-ops"), `#!/bin/sh\nLEDGER_OPS_DIR=${OPS_DIR} exec node ${join(HERE, "ops", "ledger-ops.mjs")} "$@"\n`, { mode: 0o755 });
@@ -251,7 +265,8 @@ async function main() {
       if (!done) { invalid[f.id] = "options not readable: " + replyText().slice(0, 300); log(`PLANT INVALID ${f.id}`); return; }
       facts.set(f.id, done);
       log(`CHOICE ${f.id}: ${JSON.stringify(done.resolved)}`);
-      await second(s.pickText, `pick:${f.id}`);
+      // Worded from the position the fact was finished with: a choice with a default to avoid picks at run time.
+      await second(set.pick(ORDINAL[done.resolved.pick]), `pick:${f.id}`);
     } else if (s.kind === "ops" || s.kind === "survey") {
       writeFileSync(topic(s), s.body);
       await say(s.kind === "ops" ? s.text : s.ask, tag);

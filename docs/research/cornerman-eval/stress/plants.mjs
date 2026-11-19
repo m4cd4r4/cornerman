@@ -11,7 +11,7 @@
 import { TYPES, SLOTS } from '../test1/facts.mjs';
 
 const T1 = 'test1/checks/', ST = 'stress/checks/';
-const ORDINAL = ['first', 'second', 'third'];
+export const ORDINAL = ['first', 'second', 'third'];
 const STEP_WORD = ['', '', '', 'three', 'four', 'five'];
 // When each class is delivered. Design table: G at about 70-80%, H corrections at 85-91%, J at
 // 5/30/55/80%. B-F are spread over the first 60% so every one of them crosses several clears.
@@ -75,7 +75,7 @@ export function plan(seed, set, { force = null } = {}) {
         const shell = mk(set.pools, type, s, 0);
         const pick = choose(c.kind === 'number' ? 3 : c.options.length);
         const dynamic = c.kind === 'number' ? { kind: 'number', range: c.range, pick } : {
-            kind: 'choice', pick,
+            kind: 'choice', pick, avoid: c.avoid,
             options: c.options.map((o) => {
                 const v = set.pools[type][s].findIndex((x) => x.expect.want === o.want);
                 const b = mk(set.pools, type, s, v);
@@ -152,8 +152,11 @@ export function resolveChoice(fact, reply) {
     }
     const matched = lines.map((l) => d.options.filter((o) => new RegExp(o.re, 'i').test(l)));
     if (matched.some((m) => m.length !== 1) || new Set(matched.map((m) => m[0])).size !== matched.length) return null;
-    const o = matched[d.pick][0];
-    return { ...fact, variant: o.variant, written: o.written, expect: o.expect, resolved: { options: matched.map((m) => m[0].expect.want), pick: d.pick } };
+    // `avoid` is the option an untold agent takes anyway (floor variant check): the user picks the
+    // other one, wherever the agent listed it. The driver words the pick from resolved.pick.
+    const pick = d.avoid ? matched.findIndex((m) => m[0].expect.want !== d.avoid) : d.pick;
+    const o = matched[pick][0];
+    return { ...fact, variant: o.variant, written: o.written, expect: o.expect, resolved: { options: matched.map((m) => m[0].expect.want), pick } };
 }
 
 // The last text block the agent wrote in a list of transcript entries. A turn that runs a tool
