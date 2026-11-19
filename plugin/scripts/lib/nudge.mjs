@@ -247,6 +247,19 @@ export function runStop(input, { env = process.env } = {}) {
   const limit = threshold(env, sessionId);
   if (tokens == null || tokens < limit) return null;
 
+  // The relay is on and has used its clears (fault 7 of cornerman-eval stage A, 2026-11-18): asked
+  // here, the agent saved a handover nothing loads and wrote "type /clear" to a user who may not be
+  // there, and nothing cleared. Only the user can clear now, so only the user is told, once; Claude
+  // keeps the turn for their work. Claimed like an ask, so a budget raised later gets a real one.
+  if (!headless(env) && relayOn(env) && relayClearsLeft(env, sessionId) === 0) {
+    if (!claimNudge(env, sessionId, tokens)) return null;
+    return {
+      systemMessage:
+        `cornerman: context is about ${k(tokens)} tokens (nudge at ${k(limit)}), and the relay has no clears left in this window, so Claude is not asked to hand over. ` +
+        `To carry on in a fresh context, ask for /cornerman:handover, then type /clear.`,
+    };
+  }
+
   if (!claimNudge(env, sessionId, tokens)) {
     // Asked before. Under the headless runner the process ending is the answer.
     if (headless(env)) return null;
