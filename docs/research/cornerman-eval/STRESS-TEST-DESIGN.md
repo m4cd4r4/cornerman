@@ -186,6 +186,38 @@ Rules for every plant, carried over from Test 1 and the proof-read:
   load with 24 facts and only ever dropped task requests. The probe for the dropped rule is the case
   to measure: does the agent open the full copy and obey it.
 
+### Step 2 design: how each class is delivered (2026-11-19, settled, not yet built)
+
+A class is the way a fact arrives. Its content is one of Test 1's 24 probe targets (8 types, slots
+A-C in `test1/facts.mjs`), so the checkers already proven by `test1/selftest.mjs` are reused. New
+code goes in `stress/`; nothing under `test1/` is edited.
+
+| Class | Targets | Delivery |
+|:--|:--|:--|
+| A | ruling-C, do-not-C, path-A | Standalone note at the start (control) |
+| B | ruling-B, do-not-B, number-B | The rule sits in the middle of a 15-line work task message |
+| C | number-A, number-C, decision-C | The agent writes numbered options (three candidate values, not round numbers; or both camps); the user picks by position ("Go with the second"). The driver parses the reply and sets the expected value at run time. Parse fails: plant invalid, fact excluded and reported |
+| D | path-B, path-C, ruling-A | The value is printed by a tool, `ledger-ops <topic>`, kept outside /work so git history cannot hold it; the driver removes the topic after use |
+| E | decision-A, decision-B, do-not-A | `ledger-ops <survey>` prints evidence, the user asks for a verdict and no build, the driver checks the reply names the expected option, the user answers "OK, go with your call." |
+| F | in-flight A, B, C | One task: "step 2 I did by hand, leave its stub; do step 3 now, no commit, stop". Probe "Carry on with ..." expects the next step with earlier stubs untouched. Overlay copies of the three scripts specify every step in a comment |
+| G | open-question A, B, C | A and B as notes at about 70% and 80% of the work turns; C typed 8 seconds into a running work turn at about 75%. New checker: an ask is judged from what the agent did and said |
+| H | reversed A, B, C | Early plant at the start, correction at about 85-91% |
+| I | 3 new numeric rules on new stub files | Given first (oldest, so cornerman's bound drops them first), then about 48 filler standing rules, one after each work turn, none of which may affect a checker. New numeric checker |
+| J | 1 new numeric value | Changed four times in near-identical wording at about 5%, 30%, 55%, 80%; the probe uses the last. Reported separately |
+
+- 28 probes after all work turns, in a fixed order.
+- Floor variant check is short: plants, one `/clear`, probes, with a forced variant index (k mod pool
+  size), so 6 runs cover every variant. A variant the floor passes is dropped.
+- Arms in the driver: full (confirm in the first trial that the container's Sonnet has a 1M window);
+  compact (`claude --autocompact <window>`); hybrid (the same plus the `rig/hybrid` hooks, cornerman
+  cloned for its lib only); cm (`CORNERMAN_NUDGE_AT` at the measured compaction point; the relay's
+  default budget is 3 clears and about 13 are needed, see `budget()` and the `relay` option in
+  cornerman `plugin/hooks/relay.ts`); floor (`/clear` at the same context size).
+- Reading material in the image: npm docs, 83 files, 486 KB; 18 READMEs over 3 KB under
+  npm/node_modules, 187 KB. Too little for 800k tokens at 6 files a turn (about 15k tokens a turn in
+  the smokes). Add reading, and measure in the first development trial.
+- Estimate, not measured: about 2 hours per 800k trial (50 work turns, about 100 short notes, 28 probes).
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:
