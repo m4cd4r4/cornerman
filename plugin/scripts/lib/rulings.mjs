@@ -143,10 +143,13 @@ const CORRECTION =
 const CORRECTION_WORDS = new Set(words("actually correction scratch change changed plan second thought switch make that instead later never mind revised"));
 // Words that name the same setting without sharing a word: "tabs it is" replaces "Use 3-space
 // indents", and "use 2 spaces for indentation" replaces "indent with tabs" (fault 8). Each match
-// adds its topic as one shared word. "tab" alone is shorter than words() keeps, and a bare "tabs"
-// is often a browser's or an editor's, so only a tab named as indentation counts (reviewer, 2026-11-19).
-const TOPICS = [["§indent", /\b(?:indent\w*|\d+[- ]?spaces?|(?:two|three|four)[- ]spaces?|tabs? it is|tabs? for indent\w*|(?:with|use) tabs)\b/i]];
-const topicWords = (text) => [...words(text), ...TOPICS.filter(([, re]) => re.test(text)).map(([t]) => t)];
+// adds its topic as one shared word. "tab" alone is shorter than words() keeps. "Tabs" is
+// indentation unless the sentence is about a browser's tabs or the tab bar, key or shortcut: three
+// set phrases missed "Switch to tabs." and "Make that tabs." (second review, 2026-11-19).
+const INDENT = /\b(?:indent\w*|\d+[- ]?spaces?|(?:two|three|four)[- ]spaces?)\b/i;
+const NOT_INDENT_TAB = /\b(?:browser|window|tabs? (?:bar|key|shortcut))\b/i;
+const TOPICS = [["§indent", (text) => INDENT.test(text) || (/\btabs\b/i.test(text) && !NOT_INDENT_TAB.test(text))]];
+const topicWords = (text) => [...words(text), ...TOPICS.filter(([, is]) => is(text)).map(([t]) => t)];
 export const REPLACED = "(replaced by a later one)";
 // A prompt can hold several rules, and a correction replaces one of them: "the API limit is 23
 // calls a minute. Use single quotes." stays a rule for its first sentence (plugin sandbox, 2026-11-18).
