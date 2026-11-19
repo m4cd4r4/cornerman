@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.7.3
+
+- **A cancelled session start no longer loses your handover.** A `/clear` fires many
+  SessionStart hooks at once, and when Claude Code cancelled cornerman's, nothing loaded and
+  nothing said so. Your first prompt in the new session now loads the handover this window saved
+  instead (#204).
+- **Cornerman recognises your own window's handover again.** On Windows and macOS the hooks
+  could not read the window's start time, so they never knew a handover was this window's own
+  and fell back to guessing by branch (#204).
+- **The session start is faster.** It reads only the handovers it needs and skips the sync pull
+  when this window's own handover is already on this machine (#204).
+- **A handover you filed for another folder is named, not lost.** On `/clear`, if this window's
+  newest handover was saved for a different repo, the session start says which folder and the
+  command to load it there. Handovers older than the age limit (7 days by default) are archived
+  instead of listed, so weeks-old ones from other windows no longer crowd out yours (#205).
+- **Asking for a handover "for the other session" gives you a prompt to paste.** The handover
+  skill now saves only when the work continues here after `/clear`. When it continues in another
+  repo or session, it prints a ready-to-paste prompt and the current session carries on; it asks
+  once when your wording could mean either (#206).
+- **See how much the relay did this month.** `/cornerman:stats` prints this month's relay
+  windows, sessions and relays by repo, with a total and last month's figures on one line. A
+  worktree or subfolder counts under its repo, and the ten busiest repos are listed with the rest
+  on one row (#184).
+- **Handovers keep what you said in chat.** Cornerman now notes each message you type in a session and
+  adds a "Rulings from the user" section to every handover, in your own words, so a rule you gave only in
+  chat survives the first clear and every clear after it. From a long pasted message it keeps the
+  sentences that read as rules, the section holds at most 30 entries, and a session's notes are removed a
+  month after its last message. `CORNERMAN_RULINGS=0` turns it off.
+- **Headless handovers use the same sections as `/cornerman:handover`.** Under the headless runner the
+  handover ask used to ask only for the next step, so decisions and do-nots fell out. It now names the
+  skill's own sections, and a later segment carries forward the open items of the handover the runner
+  loaded for it.
+- **Under the headless runner, a turn that ignores the handover ask is asked again.** The mid-turn ask
+  was made once per session, and a headless turn that read "finish the current step" as the whole job
+  could run on until Claude Code compacted it, without ever ending its turn for the Stop hook to ask
+  again. It now asks again, more firmly, each time the context has grown 40k past the last ask (three
+  asks in all), and stops once a handover is saved. Interactive sessions are unchanged.
+
 ## 0.7.2
 
 - **The relay no longer stops on work that never commits.** It stopped after two continued

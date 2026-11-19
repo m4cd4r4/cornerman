@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.3 (not released yet)
+## 0.7.3
 
 - **A cancelled session start no longer loses your handover.** A `/clear` fires many
   SessionStart hooks at once, and when Claude Code cancelled cornerman's, nothing loaded and
