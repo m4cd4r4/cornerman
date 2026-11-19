@@ -11,6 +11,7 @@ import { age, chooseHandover, claimedAt, inFuture, isFresh, isOpenQuestion, isRe
 import { hookTimeLeft, isOwnHandover, ownerId, ownerOpen, parseOwner, pidAlive, sameOwner } from "./owner.mjs";
 import { shellPath, tildePath } from "./display.mjs";
 import { OPENER, clean, loadedParts } from "./load-context.mjs";
+import { SEP } from "./start-parts.mjs";
 import { consumedIds, handoverId, handoverRef, lastConsumed, markConsumed, removeUntrackedCopy, repoHandovers, webEnabled } from "./web.mjs";
 
 const LOAD_SCRIPT = join(dirname(fileURLToPath(import.meta.url)), "..", "load.mjs");
@@ -308,9 +309,11 @@ function start(input, { env, now, me: knownMe }) {
   let shown;
   let copy = "";
   let assets = "";
+  let handover = null;
 
   if (load) {
     const p = loadedParts({ root, load, top, branch, now, loadedAt: echo ? load.archivedAt || now : now, sessionId: input.session_id });
+    handover = { at: parts.length, preamble: p.preamble, body: p.body, title: load.meta.title, copyPath: p.copyPath };
     parts.push(...p.context);
     ({ shown, assets, copy } = p);
   }
@@ -367,8 +370,11 @@ function start(input, { env, now, me: knownMe }) {
 
   const out = {
     systemMessage: shown,
-    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: parts.join("\n\n---\n\n") },
+    hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: parts.join(SEP) },
   };
+  // The pieces the context was joined from, for session-start.mjs to split it when it is over
+  // Claude Code's cap on one hook output (start-parts.mjs). Non-enumerable, like afterOutput.
+  Object.defineProperty(out, "pack", { value: { parts, handover }, writable: true });
   // The handover is archived, marked consumed and (for an untracked copy) deleted
   // only once this output has been written successfully (session-start.mjs calls
   // it), so a hook that dies first, or whose reader has gone, leaves it waiting to

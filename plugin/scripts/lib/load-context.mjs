@@ -75,19 +75,20 @@ function copyLine(root, load, top, loadedAt, sessionId) {
       },
       { loadedAt },
     );
-    return copy ? `A copy to read or share: ${tildePath(copy)}` : "";
+    return copy ? { line: `A copy to read or share: ${tildePath(copy)}`, path: tildePath(copy) } : { line: "", path: "" };
   } catch {
-    return "";
+    return { line: "", path: "" };
   }
 }
 
 /**
  * The parts of the output a loaded handover contributes: `context` blocks for
  * Claude, the `shown` line for the user, and the `assets` and `copy` lines that go
- * last in what the user sees.
+ * last in what the user sees. `preamble`, `body` and `copyPath` are context[0]'s
+ * pieces, for a context that has to be split (start-parts.mjs).
  */
 export function loadedParts({ root, load, top, branch, now, loadedAt = now, sessionId }) {
-  const copy = copyLine(root, load, top, loadedAt, sessionId);
+  const { line: copy, path: copyPath } = copyLine(root, load, top, loadedAt, sessionId);
   // A branch mismatch is the one thing about a loaded handover the user should
   // notice, so it goes in both strings rather than only in Claude's copy.
   const from = load.meta.branch && load.meta.branch !== branch ? `, written on branch ${load.meta.branch}` : "";
@@ -97,7 +98,7 @@ export function loadedParts({ root, load, top, branch, now, loadedAt = now, sess
   // the handover. So Claude is also asked to name the handover in its first reply.
   // That is a request, not a guarantee: in testing Claude skipped it 3 times in 9,
   // so nothing user-facing may promise the line.
-  const context = [
+  const preamble =
     `cornerman: this session continues earlier work. Handover "${load.meta.title}", saved ${age(load.meta.created, now)}${from}. ` +
       `Its branch, file and status claims are a snapshot: check them before acting. ` +
       // #194: the next action is one item, not the whole job. Files kept across
@@ -105,10 +106,11 @@ export function loadedParts({ root, load, top, branch, now, loadedAt = now, sess
       `Before your first action, open every file listed under its "Read first" heading (a pointer you do not open carries nothing), ` +
       `and treat every item under "Decided, not yet applied", "Open questions" and "Carried forward" as open work, not background. ` +
       `The user may not have seen the load notice, so open your first reply with this one line, then carry on: ` +
-      `${OPENER(load.meta.title)}\n\n${load.body.trim()}`,
-  ];
+      OPENER(load.meta.title);
+  const body = load.body.trim();
+  const context = [`${preamble}\n\n${body}`];
   const shown = `cornerman: loaded handover "${load.meta.title}" (saved ${age(load.meta.created, now)}${from}).`;
   const note = artifactsNote(root, load);
   if (note) context.push(note.context);
-  return { context, shown, assets: note?.shown ?? "", copy };
+  return { context, shown, assets: note?.shown ?? "", copy, preamble, body, copyPath };
 }

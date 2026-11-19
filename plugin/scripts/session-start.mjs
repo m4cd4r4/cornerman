@@ -6,12 +6,17 @@
 // untracked working-tree handover it just loaded, and only once the output is out.
 // "Out" means the write succeeded: a reader that has gone away (EPIPE) gets nothing,
 // so the copy stays and loads next time (security review 2, 2026-09-27).
+//
+// A context over Claude Code's cap on one hook output is split (lib/start-parts.mjs): this hook
+// prints the first part and leaves the second in a spool for session-start-part.mjs. The spool
+// is written on every path, empty when there is nothing for it, so that hook never waits long.
 import { readFileSync } from "node:fs";
 import { run } from "./lib/hook.mjs";
 import { withWelcome } from "./lib/welcome.mjs";
 import { startRetention } from "./lib/retention-start.mjs";
 import { markStarted } from "./lib/second-chance.mjs";
 import { storeRoot } from "./lib/store.mjs";
+import { packStart, writeSpool } from "./lib/start-parts.mjs";
 
 // Once a day, old relay window files are ledgered and pruned by a detached job; this
 // only reads the marker and never waits (lib/retention-start.mjs).
@@ -20,12 +25,18 @@ startRetention();
 let out = null;
 let ran = false;
 let input = {};
+let extra = "";
 // Tells the first prompt that this session start got through, so it does not load
 // again (lib/second-chance.mjs, issue #204). Only a run that finished and whose
 // output, if any, was written counts.
 const delivered = () => {
   try {
     markStarted(storeRoot(), input.session_id);
+  } catch {}
+};
+const spool = () => {
+  try {
+    writeSpool(storeRoot(), input, extra);
   } catch {}
 };
 try {
@@ -40,6 +51,16 @@ try {
 } catch {
   // a handover still loads without the notice
 }
+try {
+  if (out?.pack && out.hookSpecificOutput) {
+    const parts = packStart(out.pack);
+    out.hookSpecificOutput.additionalContext = parts.main;
+    extra = parts.extra;
+  }
+} catch {
+  // the context goes out whole, as before
+}
+spool();
 if (!out) {
   if (ran) delivered();
   process.exit(0);
