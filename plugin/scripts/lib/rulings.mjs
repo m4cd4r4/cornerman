@@ -138,13 +138,14 @@ export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !
 // "Never mind that", "Revised:" and "I've changed my mind" are the rig's own late corrections
 // (cornerman-eval test1/facts.mjs): stage A left the old indent rule unmarked after them (fault 8).
 const CORRECTION =
-  /^(?:actually|correction|scratch that|change of plan|on second thought|never ?mind|revised|(?:i'?ve |i have )?changed my mind)\b|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
+  /^(?:actually|correction|scratch that|change of plan|on second thought|(?:i'?ve |i have )?changed my mind)\b|^(?:never ?mind(?: that)?|revised)\s*[,:]|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
 // The correction's own words, which say that it corrects, not what.
 const CORRECTION_WORDS = new Set(words("actually correction scratch change changed plan second thought switch make that instead later never mind revised"));
 // Words that name the same setting without sharing a word: "tabs it is" replaces "Use 3-space
 // indents", and "use 2 spaces for indentation" replaces "indent with tabs" (fault 8). Each match
-// adds its topic as one shared word. "tab" alone is shorter than words() keeps.
-const TOPICS = [["§indent", /\b(?:indent\w*|tabs?|\d+[- ]?spaces?|(?:two|three|four)[- ]spaces?)\b/i]];
+// adds its topic as one shared word. "tab" alone is shorter than words() keeps, and a bare "tabs"
+// is often a browser's or an editor's, so only a tab named as indentation counts (reviewer, 2026-11-19).
+const TOPICS = [["§indent", /\b(?:indent\w*|\d+[- ]?spaces?|(?:two|three|four)[- ]spaces?|tabs? it is|tabs? for indent\w*|(?:with|use) tabs)\b/i]];
 const topicWords = (text) => [...words(text), ...TOPICS.filter(([, re]) => re.test(text)).map(([t]) => t)];
 export const REPLACED = "(replaced by a later one)";
 // A prompt can hold several rules, and a correction replaces one of them: "the API limit is 23
