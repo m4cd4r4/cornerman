@@ -10,7 +10,8 @@
 //        hybrid   the same plus the rig/hybrid hooks (cornerman cloned for its lib only)
 //        cm       cornerman installed by the entrypoint (CM_INSTALL=1), nudge at --nudge-at, and
 //                 `/relay unlimited` typed first: the relay's default budget is 3 clears
-//        floor    no plugin; `/clear` typed after any turn that ends at or above --clear-at tokens
+//        floor    no plugin; `/clear` typed after any whole plant, work turn or filler that ends at or
+//                 above --clear-at tokens
 // --short is the floor variant check: plants, 4 work turns, no fillers, one `/clear`, probes.
 // Mounts: /test1 /rig /stress /reading (read only), /out.
 import { execFileSync, spawnSync } from "node:child_process";
@@ -18,7 +19,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statS
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
-import { plan, resolveChoice, verdictOk } from "./plants.mjs";
+import { plan, resolveChoice, verdictOk, lastText } from "./plants.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url)), ROOT = dirname(HERE);
 const arg = (n, d) => { const i = process.argv.indexOf(n); return i < 0 ? d : process.argv[i + 1]; };
@@ -51,13 +52,22 @@ const allEntries = () => transcripts().flatMap((t) => entriesOf(t.p));
 const boundaries = () => allEntries().filter((e) => e.subtype === "compact_boundary");
 const summaries = () => allEntries().filter((e) => e.isCompactSummary).map((e) => ({ at: e.timestamp ?? "", text: textOf(e.message?.content) }));
 const textOf = (c) => (typeof c === "string" ? c : (c || []).filter((p) => p.type === "text").map((p) => p.text).join("\n"));
-const typed = (e) => e.type === "user" && (typeof e.message?.content === "string" || (Array.isArray(e.message?.content) && e.message.content.some((p) => p.type === "text")));
-// Everything in the newest transcript since the user's last typed message.
+// A message the driver typed. A compaction summary, a hook or command entry and the line the cornerman
+// relay types after its own /clear are user entries too, and none of them is the driver speaking.
+const RELOAD = "Continue from the cornerman handover that was just loaded.";
+const typed = (e) => e.type === "user" && !e.isCompactSummary && !e.isMeta && (typeof e.message?.content === "string" || (Array.isArray(e.message?.content) && e.message.content.some((p) => p.type === "text"))) && !textOf(e.message.content).startsWith(RELOAD);
+// Everything since the message the driver just sent, across all transcripts: a clear or a relay
+// between the message and the reply puts the reply in a newer transcript than the message.
+let lastSaid = "";
 function sinceLastSay() {
-  const es = newest() ? entriesOf(newest().p) : [];
-  return es.slice(es.findLastIndex(typed) + 1);
+  const es = allEntries(), key = lastSaid.split("\n")[0].slice(0, 60);
+  let i = key ? es.findLastIndex((e) => typed(e) && textOf(e.message.content).includes(key)) : -1;
+  if (i < 0) i = es.findLastIndex(typed);
+  return es.slice(i + 1);
 }
 const replyText = () => sinceLastSay().filter((e) => e.type === "assistant").map((e) => textOf(e.message?.content)).filter(Boolean).join("\n");
+// floor: the driver's own clears are counted, because a cleared session has no transcript until its first message.
+const eventCount = () => (ARM === "floor" ? 1 + clears : sessions()) + boundaries().length;
 function context() {
   const u = (newest() ? entriesOf(newest().p) : []).filter((e) => e.type === "assistant" && e.message?.usage && !e.isSidechain).at(-1)?.message.usage;
   return u ? (u.input_tokens ?? 0) + (u.cache_read_input_tokens ?? 0) + (u.cache_creation_input_tokens ?? 0) : 0;
@@ -90,6 +100,7 @@ function type(text, label) {
   tmux("load-buffer", "/tmp/say.txt"); tmux("paste-buffer", "-t", "t");
   spawnSync("sleep", ["0.6"]);
   tmux("send-keys", "-t", "t", "Enter");
+  lastSaid = text;
   log(`SAY [${label}] ${text.slice(0, 100).replace(/\n/g, " ")}`);
 }
 const turns = [];
@@ -98,8 +109,6 @@ async function say(text, label, opts) {
   type(text, label);
   const ok = await waitIdle(label, opts);
   turns.push({ label, at: new Date().toISOString(), context: context(), sessions: sessions(), boundaries: boundaries().length, ok });
-  // floor: a plain /clear wherever the other arms would compact or hand over.
-  if (ARM === "floor" && !SHORT && !opts?.noClear && context() >= CLEAR_AT) await clear(label);
   return ok;
 }
 let clears = 0;
@@ -108,6 +117,11 @@ async function clear(after) {
   type("/clear", `clear after ${after}`);
   await waitIdle("clear", { noStop: true });
   clears++;
+}
+// floor: a plain /clear wherever the other arms would compact or hand over, but only after a whole
+// plant step, work turn or filler, never between the two messages of one plant, and never in the probes.
+async function floorClear(after) {
+  if (ARM === "floor" && !SHORT && context() >= CLEAR_AT) await clear(after);
 }
 
 // Work turns: the reading corpus, PER_TURN files a turn, in the order of its index file.
@@ -132,8 +146,18 @@ function snapshot() {
 function runChecker(fact, baseline) {
   const factFile = `/tmp/fact-${fact.id}.json`;
   writeFileSync(factFile, JSON.stringify(fact));
-  const r = spawnSync("node", [join(ROOT, fact.check), WORK, factFile], { encoding: "utf8", env: { ...process.env, ...SHADOW, BASELINE: baseline, TRANSCRIPT: newest()?.p ?? "" }, timeout: 120_000 });
+  // All transcripts joined, oldest first: a clear or a relay during the probe splits it over two files.
+  const all = "/tmp/tx-all.jsonl";
+  writeFileSync(all, transcripts().map((t) => readFileSync(t.p, "utf8").replace(/\n*$/, "\n")).join(""));
+  const r = spawnSync("node", [join(ROOT, fact.check), WORK, factFile], { encoding: "utf8", env: { ...process.env, ...SHADOW, BASELINE: baseline, TRANSCRIPT: all }, timeout: 120_000 });
+  rmSync(factFile, { force: true }); rmSync(all, { force: true });
   return parse(r.stdout.trim().split("\n").at(-1)) ?? { result: "checker-error", detail: (r.stderr || r.stdout || "").slice(0, 400) };
+}
+// Tool calls that name a place holding the plan, the checkers or the expected values. Flagged, not excluded.
+const OFF_LIMITS = /(?<![\w.\/-])\/(stress|test1|out)(?![\w-])|\/tmp\/(fact-|snap\.git|tx-all)/;
+function offLimits() {
+  return allEntries().filter((e) => e.type === "assistant" && Array.isArray(e.message?.content))
+    .flatMap((e) => e.message.content.filter((p) => p.type === "tool_use" && OFF_LIMITS.test(JSON.stringify(p.input ?? {}))).map((p) => ({ at: e.timestamp, tool: p.name, input: JSON.stringify(p.input).slice(0, 200) })));
 }
 // A probe must not be answerable from the repo: files in /work where one line holds the whole fact.
 function leaks(fact) {
@@ -193,13 +217,16 @@ function setup() {
   writeFileSync("/tmp/run-claude.sh", `${env}cd ${WORK}\nclaude --model ${MODEL}${flags}\necho CLAUDE-EXITED $?\nsleep 3600\n`);
 }
 
+// plan.json holds every expected value and the agent can read /out, so it is written when the trial
+// ends (or fails), with the class C facts as the run finished them.
+let writePlan = () => {};
 async function main() {
   setup();
   const { DEV } = await import("./set-dev.mjs");
   const set = { dev: DEV }[SET];
   const P = plan(SEED, set, { force: FORCE });
-  const facts = new Map(P.facts.map((f) => [f.id, f])), invalid = {}, plantedAt = {}, plantedIn = {};
-  writeFileSync(join(OUT, "plan.json"), JSON.stringify(P, null, 1));
+  const facts = new Map(P.facts.map((f) => [f.id, f])), invalid = {}, plantedAt = {}, plantedIn = {}, split = {};
+  writePlan = () => writeFileSync(join(OUT, "plan.json"), JSON.stringify({ ...P, facts: [...facts.values()] }, null, 1));
   if (reading.length < W * PER_TURN) throw new Error(`reading corpus has ${reading.length} files, ${W * PER_TURN} needed`);
 
   tmux("new-session", "-d", "-s", "t", "-x", "200", "-y", "50", "bash /tmp/run-claude.sh");
@@ -210,6 +237,13 @@ async function main() {
   const topic = (s) => join(OPS_DIR, s.topic + ".txt");
   async function deliver(s) {
     const f = facts.get(s.factId), tag = `${s.kind}:${f.id}`;
+    // Set before sending: a handover or summary made during the plant's own turn comes after the plant.
+    plantedAt[f.id] = new Date().toISOString(); plantedIn[f.id] = eventCount();
+    // The second message of a class C or E plant. A clear or compaction since the first one is flagged.
+    const second = async (text, label) => {
+      if (eventCount() !== plantedIn[f.id]) { split[f.id] = true; log(`PLANT SPLIT ${f.id}: a clear or compaction between its two messages`); }
+      await say(text, label);
+    };
     if (s.kind === "note" || s.kind === "task") await say(s.text, tag);
     else if (s.kind === "options") {
       await say(s.ask, tag);
@@ -217,64 +251,69 @@ async function main() {
       if (!done) { invalid[f.id] = "options not readable: " + replyText().slice(0, 300); log(`PLANT INVALID ${f.id}`); return; }
       facts.set(f.id, done);
       log(`CHOICE ${f.id}: ${JSON.stringify(done.resolved)}`);
-      await say(s.pickText, `pick:${f.id}`);
+      await second(s.pickText, `pick:${f.id}`);
     } else if (s.kind === "ops" || s.kind === "survey") {
       writeFileSync(topic(s), s.body);
       await say(s.kind === "ops" ? s.text : s.ask, tag);
       const ran = JSON.stringify(sinceLastSay()).includes(s.body.split("\n")[0]);
-      const reply = replyText();
+      // The verdict is read from the last text block: a line said before the tool call is not the verdict.
+      const reply = lastText(sinceLastSay());
       rmSync(topic(s), { force: true });
       if (!ran) { invalid[f.id] = "ledger-ops output not in the turn"; log(`PLANT INVALID ${f.id}`); return; }
       if (s.kind === "survey") {
         if (!verdictOk(s, reply)) { invalid[f.id] = "verdict was not " + s.verdict + ": " + reply.slice(0, 200); log(`PLANT INVALID ${f.id}`); return; }
-        await say(s.confirm, `accept:${f.id}`);
+        await second(s.confirm, `accept:${f.id}`);
       }
     }
-    plantedAt[f.id] = new Date().toISOString(); plantedIn[f.id] = sessions() + boundaries().length;
   }
 
   const due = (lo, hi) => P.steps.filter((s) => s.at >= lo && s.at < hi);
-  for (const s of P.steps.filter((x) => x.at === 0)) await deliver(s);
+  const plant = async (s) => { await deliver(s); await floorClear(`plant ${s.factId}`); };
+  for (const s of P.steps.filter((x) => x.at === 0)) await plant(s);
   for (let w = 0; w < W; w++) {
     const now = due(w === 0 ? Number.MIN_VALUE : w / W, (w + 1) / W);
-    for (const s of now.filter((x) => x.kind !== "midturn")) await deliver(s);
+    for (const s of now.filter((x) => x.kind !== "midturn")) await plant(s);
     const mid = now.filter((x) => x.kind === "midturn");
     if (mid.length) {
       // Typed while the work turn is running (class G, third fact).
       stopsAtSay = stopCount();
       type(workTurn(), `work:${w}`);
-      for (const s of mid) { await sleep(s.delayMs); type(s.text, `midturn:${s.factId}`); plantedAt[s.factId] = new Date().toISOString(); plantedIn[s.factId] = sessions() + boundaries().length; }
+      for (const s of mid) { await sleep(s.delayMs); plantedAt[s.factId] = new Date().toISOString(); plantedIn[s.factId] = eventCount(); type(s.text, `midturn:${s.factId}`); }
       const ok = await waitIdle(`work ${w}`);
       turns.push({ label: `work:${w}`, at: new Date().toISOString(), context: context(), sessions: sessions(), boundaries: boundaries().length, ok, midturn: true });
     } else await say(workTurn(), `work:${w}`);
-    if (!SHORT && P.fillers[w]) await say(P.fillers[w], `filler:${w}`);
+    await floorClear(`work ${w}`);
+    if (!SHORT && P.fillers[w]) { await say(P.fillers[w], `filler:${w}`); await floorClear(`filler ${w}`); }
   }
   if (SHORT) await clear("plants");
-  const events = sessions() + boundaries().length;
   log(`work turns ${W}, sessions ${sessions()}, compactions ${boundaries().length}, clears typed ${clears}, invalid plants ${Object.keys(invalid).length}`);
 
   const results = [];
   for (const id of P.probes) {
     const f = facts.get(id);
-    if (invalid[id]) { results.push({ cls: f.cls, id, acted: "plant-invalid", detail: invalid[id] }); continue; }
+    if (invalid[id]) { results.push({ cls: f.cls, type: f.type, id, variant: f.variant, acted: "plant-invalid", detail: invalid[id] }); continue; }
     // snapshot() first: it creates the shadow repo that leaks() lists files from.
-    const baseline = snapshot(), leak = leaks(f), before = sessions() + boundaries().length;
-    await say(f.probe, `probe:${id}`, { noClear: true });
+    const baseline = snapshot(), leak = leaks(f), before = eventCount();
+    await say(f.probe, `probe:${id}`);
     const acted = runChecker(f, baseline);
-    results.push({ cls: f.cls, type: f.type, id, variant: f.variant, acted: acted.result, detail: acted.detail, leak, eventsCrossed: events - (plantedIn[id] ?? events), eventDuringProbe: sessions() + boundaries().length > before, ...carried(f, plantedAt[id]) });
+    // eventsCrossed is counted to this probe: the compact, hybrid and cm arms go on compacting or clearing during the probes.
+    results.push({ cls: f.cls, type: f.type, id, variant: f.variant, acted: acted.result, detail: acted.detail, leak, eventsCrossed: before - (plantedIn[id] ?? before), eventDuringProbe: eventCount() > before, plantSplit: !!split[id], ...carried(f, plantedAt[id]) });
     log(`PROBE ${id} ${acted.result} ${acted.detail ?? ""}${leak.length ? " LEAK " + leak.join(",") : ""}`);
   }
 
+  const off = offLimits();
+  if (off.length) log(`OFF LIMITS: ${off.length} tool call(s) named /stress, /test1, /out or a checker file`);
   const b = boundaries().map((x) => ({ trigger: x.compactMetadata?.trigger, preTokens: x.compactMetadata?.preTokens, postTokens: x.compactMetadata?.postTokens }));
   writeFileSync(join(OUT, "result.json"), JSON.stringify({
     arm: ARM, seed: SEED, set: SET, force: FORCE, short: SHORT, model: MODEL, window: WINDOW, nudge: NUDGE, clearAt: CLEAR_AT, W,
     sessions: sessions(), compactions: b, clearsTyped: clears, handovers: handovers().length, peakContext: Math.max(0, ...turns.map((t) => t.context)),
-    fullArmCompacted: ARM === "full" && b.length > 0, memoryFiles: memoryFiles(), invalid, turns, results,
+    fullArmCompacted: ARM === "full" && b.length > 0, memoryFiles: memoryFiles(), invalid, split, offLimits: off, turns, results,
   }, null, 1));
+  writePlan();
   mkdirSync(join(OUT, "transcripts"), { recursive: true });
   for (const t of transcripts()) cpSync(t.p, join(OUT, "transcripts", t.p.split("/").at(-1)));
   if (existsSync(join(homedir(), ".cornerman"))) cpSync(join(homedir(), ".cornerman"), join(OUT, "cm"), { recursive: true });
   tmux("kill-server");
 }
 
-main().catch((e) => { log(`DRIVER ERROR ${e.stack}`); writeFileSync(join(OUT, "error.txt"), String(e.stack)); process.exit(1); });
+main().catch((e) => { log(`DRIVER ERROR ${e.stack}`); try { writePlan(); } catch {} writeFileSync(join(OUT, "error.txt"), String(e.stack)); process.exit(1); });

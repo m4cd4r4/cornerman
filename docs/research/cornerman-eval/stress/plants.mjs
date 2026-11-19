@@ -112,10 +112,13 @@ export function plan(seed, set, { force = null } = {}) {
     steps.forEach((s, i) => { s.n = i; });
     steps.sort((a, b) => a.at - b.at || a.n - b.n);
     const t1 = facts.filter((f) => 'ABCDEFGH'.includes(f.cls));
-    const probes = [
+    // The three reversed (H) probes run first: they are style rules, and a file an earlier probe
+    // wrote in the right style would show a later probe the answer.
+    const order = [
         ...SLOTS.flatMap((slot) => TYPES.map((type) => t1.find((f) => f.type === type && f.slot === slot).id)),
         ...facts.filter((f) => f.cls === 'I' || f.cls === 'J').map((f) => f.id),
     ];
+    const probes = [...order.filter((id) => id.startsWith('H-')), ...order.filter((id) => !id.startsWith('H-'))];
     return { seed, set: set.name, force, facts, steps, fillers: set.fillers, probes };
 }
 
@@ -149,7 +152,14 @@ export function resolveChoice(fact, reply) {
     return { ...fact, variant: o.variant, written: o.written, expect: o.expect, resolved: { options: matched.map((m) => m[0].expect.want), pick: d.pick } };
 }
 
-// Class E: the verdict is the first line of the reply. It must name the expected option alone.
+// The last text block the agent wrote in a list of transcript entries. A turn that runs a tool
+// often opens with a line like "Let me run that." in an earlier block; the answer is the last one.
+export function lastText(entries) {
+    return entries.filter((e) => e.type === 'assistant' && Array.isArray(e.message?.content))
+        .flatMap((e) => e.message.content.filter((p) => p.type === 'text' && p.text.trim()).map((p) => p.text)).at(-1) ?? '';
+}
+
+// Class E: the verdict is the first line of the reply (its last text block). It must name the expected option alone.
 export function verdictOk(step, reply) {
     const first = String(reply).split('\n').map((l) => l.replace(/[*_`#>]/g, '').trim()).find(Boolean) || '';
     return new RegExp(step.verdict, 'i').test(first) && !new RegExp(step.other, 'i').test(first);

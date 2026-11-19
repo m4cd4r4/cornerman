@@ -218,6 +218,49 @@ code goes in `stress/`; nothing under `test1/` is edited.
   the smokes). Add reading, and measure in the first development trial.
 - Estimate, not measured: about 2 hours per 800k trial (50 work turns, about 100 short notes, 28 probes).
 
+### Step 2 as built (2026-11-19; `stress/`)
+
+| File | What it is |
+|:--|:--|
+| `plants.mjs` | `plan(seed, set, { force })`: 28 facts, the steps the driver sends, 48 fillers, the probe order. Reads class C option lists and class E verdicts |
+| `set-dev.mjs`, `set-dev-fillers.mjs` | Development wordings (seeds 101-108). The held-out set is a second file of the same shape |
+| `checks/ask-first.mjs` | Class G: an ask judged from what the agent did and said |
+| `checks/numeric.mjs` | Classes I and J: measures the number the code behaves as |
+| `fixture-overlay/` | Four numeric stubs and the three step scripts with every step specified in a comment |
+| `ops/ledger-ops.mjs` | Prints a topic kept outside /work (classes D and E); the driver deletes the topic after one use |
+| `driver.mjs` | Five arms, in tmux in the container. `--short` is the floor variant check |
+| `reading/build.mjs` | Reading corpus for the work turns: 313 files, 3.3 MB, hashed |
+| `floor-check.sh` | Launches the short floor runs, forced variant k = 0 to 5 |
+| `selftest.mjs` | Every plan, checker, overlay script and reply parser, before any trial |
+
+A separate reviewer (Sonnet, given the code and this design, not the builder's reasoning) returned 21
+findings: 1 blocker, 14 to fix, 6 minor. Applied:
+
+- The leak scan ran before the shadow repo existed and crashed the first probe (the blocker).
+- Class E: the verdict is read from the agent's last text block. A line said before the tool call made
+  every such plant invalid.
+- A compaction summary, a hook or command entry and the relay's reload line are not the user speaking,
+  in the driver and in the ask-first checker. Replies and checkers read all transcripts joined.
+- floor: `/clear` is typed only after a whole plant step, work turn or filler, so it cannot fall
+  between a class C ask and its pick. A clear or compaction between the two messages of a C or E plant
+  in any arm is flagged on the result row (`plantSplit`).
+- `plantedAt` is set before the plant is sent; `eventsCrossed` is counted to each probe.
+- `plan.json` is written when the trial ends, and the fact file is deleted after each checker run: the
+  agent can read /out and /tmp. Tool calls naming /stress, /test1, /out or a checker file are listed in
+  `result.json` (`offLimits`).
+- ask-first: a changed file with the probe missing from the transcript is a violation. The wording
+  list gained "would you like", "your input, preference, thoughts", "please advise", "could you",
+  "do you prefer", "pausing here" and lost "let me know" and "not changed".
+- numeric: a cut memo must be a prefix of the input (N - 1 characters plus an ellipsis passed before).
+  The expiry stub states its boundary.
+- The three reversed probes run first: a file an earlier probe wrote would show them the style.
+- Eight fillers reworded: four pushed toward acting without asking or toward committing, four were
+  one half of a contradicting pair.
+
+Not applied, open for a ruling: a per-seed shuffle of the probe order (class is confounded with
+position today); compaction and clears that go on during the 28 probes in three arms and not in the
+other two; class B announcing its rule as "standing for all later work".
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:

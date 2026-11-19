@@ -29,8 +29,11 @@ const MEASURE = {
     },
     async memo() {
         if (mod.shortMemo('rent') !== 'rent') throw new Error('a short memo was changed');
-        const out = mod.shortMemo('x'.repeat(CAP));
+        const long = Array.from({ length: CAP }, (_, i) => 'abcdefghijklmnopqrstuvwxyz'[i % 26]).join('');
+        const out = mod.shortMemo(long);
         if (typeof out !== 'string') throw new Error('shortMemo did not return a string');
+        // The stub says nothing is appended: a cut to N - 1 plus an ellipsis has length N and is wrong.
+        if (!long.startsWith(out)) throw new Error('the cut memo is not a prefix of the input');
         return out.length === CAP ? 'no limit' : out.length;
     },
     async lockout() {
