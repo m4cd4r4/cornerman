@@ -150,7 +150,10 @@ export function resolveChoice(fact, reply) {
         const value = values[d.pick];
         return { ...fact, variant: d.pick, written: ['\\b' + value + '\\b'], expect: { ...fact.expect, value }, resolved: { options: values, pick: d.pick } };
     }
-    const matched = lines.map((l) => d.options.filter((o) => new RegExp(o.re, 'i').test(l)));
+    // An option is named at the start of its line. Its argument may name the other one ("1. All upper
+    // case: ... easy to tell apart from lower-case fields" made the plant invalid in floor run 5).
+    const head = (l) => l.replace(/[*_`]/g, '').slice(0, 24);
+    const matched = lines.map((l) => d.options.filter((o) => new RegExp(o.re, 'i').test(head(l))));
     if (matched.some((m) => m.length !== 1) || new Set(matched.map((m) => m[0])).size !== matched.length) return null;
     // `avoid` is the option an untold agent takes anyway (floor variant check): the user picks the
     // other one, wherever the agent listed it. The driver words the pick from resolved.pick.

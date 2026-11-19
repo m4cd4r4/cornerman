@@ -274,7 +274,8 @@ Floor run 0 (forced variant 0, short, commit 00e6de6, 2026-11-19, n = 1):
   lists read, 3 of 3 class E verdicts read, no split plant, no off-limits tool call.
 - The floor passed 0 of 28: 27 violated, 1 not attempted (A-path-A, where the agent put up a question
   card, which the driver cancels). No variant 0 is dropped.
-- **A work turn of 6 files adds about 40k tokens, not 15k**: context after the four work turns was
+- **A work turn of 6 files adds about 40k tokens, not 15k** (with the first task wording; the
+  reworded task below adds 10k to 20k): context after the four work turns was
   61k, 104k, 144k, 180k. 50 such turns would be about 2M, twice the full arm's window. 2 files a turn
   gives about 13k a turn and about 650k over 50 turns, and keeps one filler per turn. To settle in the
   first development trial (`--per-turn`).
@@ -294,6 +295,20 @@ passed 16 of 140 probes, for three different reasons:
 
 The first row is not a variant fault. It would have run in every arm for 50 work turns and let any
 arm pass from the repo. It applies to the held-out set too.
+
+Confirmation, floor runs 1, 2 and 5 again (commit b7a6c2c, 2026-11-19, n = 1 each): **the floor passed
+0 of 83 probes** (79 violated, 4 not attempted behind a cancelled question card), no off-limits tool
+call, and the class C pick landed on the upper-case option in both runs that read it.
+
+- One plant was invalid: in run 5 the agent's upper-case option argued "easy to tell apart from other
+  lower-case fields", so the line matched both options. The reader now looks at the start of the line.
+- **With the reworded task a 6-file work turn adds about 10k to 20k tokens**, not 40k: context after the
+  four work turns was 52k, 72k, 88k, 99k (run 1), 51k, 65k, 79k, 86k (run 2), 38k, 51k, 64k, 71k (run 5).
+  The earlier 40k was the agent searching the repo to tie each file to ledger. 50 turns of 6 files is
+  then about 500k to 1M: still to settle in the first development trial.
+- The narrowed leak scan flags 5 or 6 probes a run, down from 14, all on docs the class B tasks had
+  the agent write (`docs/export.md`, `docs/storage.md`, `docs/reports.md`) or on code from earlier
+  probes. The floor failed every flagged probe, so none is a real leak; read the flag with the file named.
 
 ## Development set and held-out set
 
