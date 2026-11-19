@@ -78,7 +78,9 @@ describe("plugin footprint", () => {
     const names = Object.values(hooks).flatMap((entries) =>
       entries.flatMap((e) => e.hooks.map((h) => h.command.match(/hook-entry\.cjs"\s+([\w-]+)/)?.[1])),
     );
-    expect(names).toHaveLength(6);
+    // 7 = six hooks plus session-start-part, the second SessionStart output
+    // that keeps each part under the 10,000-character cap (fault 6).
+    expect(names).toHaveLength(7);
     for (const name of names) expect(existsSync(join(PLUGIN, "scripts", `${name}.mjs`)), name).toBe(true);
   });
 });
