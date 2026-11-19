@@ -135,10 +135,17 @@ export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !
 // quotes unmarked next to these, and all 24 reversed facts of the batch had the old wording in view.
 // "switch to" and the like count only at a sentence start (after an opener such as "Actually,"):
 // "Never switch to yarn" is a rule of its own, and marked "Use pnpm" replaced (reviewer, 2026-11-18).
+// "Never mind that", "Revised:" and "I've changed my mind" are the rig's own late corrections
+// (cornerman-eval test1/facts.mjs): stage A left the old indent rule unmarked after them (fault 8).
 const CORRECTION =
-  /^(?:actually|correction|scratch that|change of plan|on second thought)\b|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
+  /^(?:actually|correction|scratch that|change of plan|on second thought|never ?mind|revised|(?:i'?ve |i have )?changed my mind)\b|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
 // The correction's own words, which say that it corrects, not what.
-const CORRECTION_WORDS = new Set(words("actually correction scratch change plan second thought switch make that instead later"));
+const CORRECTION_WORDS = new Set(words("actually correction scratch change changed plan second thought switch make that instead later never mind revised"));
+// Words that name the same setting without sharing a word: "tabs it is" replaces "Use 3-space
+// indents", and "use 2 spaces for indentation" replaces "indent with tabs" (fault 8). Each match
+// adds its topic as one shared word. "tab" alone is shorter than words() keeps.
+const TOPICS = [["§indent", /\b(?:indent\w*|tabs?|\d+[- ]?spaces?|(?:two|three|four)[- ]spaces?)\b/i]];
+const topicWords = (text) => [...words(text), ...TOPICS.filter(([, re]) => re.test(text)).map(([t]) => t)];
 export const REPLACED = "(replaced by a later one)";
 // A prompt can hold several rules, and a correction replaces one of them: "the API limit is 23
 // calls a minute. Use single quotes." stays a rule for its first sentence (plugin sandbox, 2026-11-18).
@@ -156,13 +163,13 @@ export function markReplaced(entries) {
     if (!CORRECTION.test(e.text)) return;
     // A bare number is what a correction changes ("make that 3"), not what it is about: in seed 7
     // "3 spaces" matched "steps 2 and 3" of the release script on it.
-    const want = new Set(words(e.text).filter((w) => !CORRECTION_WORDS.has(w) && !/^\d+$/.test(w)));
+    const want = new Set(topicWords(e.text).filter((w) => !CORRECTION_WORDS.has(w) && !/^\d+$/.test(w)));
     let best = -1;
     let most = 0;
     for (let j = 0; j < i; j++) {
       const o = out[j];
       if (o.replaced === "whole" || isRequest(o.text)) continue;
-      const shared = new Set(words(o.text).filter((w) => want.has(w))).size;
+      const shared = new Set(topicWords(o.text).filter((w) => want.has(w))).size;
       if (shared >= most && shared > 0) [best, most] = [j, shared];
     }
     if (best > -1) out[best].replaced = sentenceCount(out[best].text) > 1 ? "part" : "whole";
