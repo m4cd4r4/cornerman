@@ -86,6 +86,13 @@ for (const p of plans) {
         return lines.length === 15 && lines[7].endsWith(f.plant[0].text);
     }));
 }
+// Probe order: the same for a seed every time, different between seeds, and it changes no variant choice.
+{
+    const seeds = plans.filter((p) => p.force == null);
+    ok('probe order repeats for a seed', seeds.every((p) => plan(p.seed, DEV).probes.join() === p.probes.join()));
+    ok('probe order differs between seeds', new Set(seeds.map((p) => p.probes.join())).size === seeds.length);
+    ok('B lead-in is the plain one', seeds[0].steps.filter((s) => s.factId.startsWith('B-')).every((s) => s.text.split('\n')[7].startsWith('By the way, from now on: ')));
+}
 // Forced variants 0-5 reach every variant of every pool.
 {
     const seen = new Set(plans.filter((p) => p.force != null).flatMap((p) => p.facts.map((f) => f.id + ':' + (f.variant ?? f.dynamic.pick))));

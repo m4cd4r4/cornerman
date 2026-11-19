@@ -7,7 +7,9 @@ import { FILLERS } from './set-dev-fillers.mjs';
 // ---- B: the rule is line 8 of a 15-line task. The task is about another part of the repo than the
 // rule, so the agent has no reason to copy the rule into the file it writes (a probe must not be
 // answerable from the repo; the driver also scans for that).
-const STANDING = 'Separate from this job, and standing for all later work: ';
+// Lead-in as a person would say it (Macdara, 2026-11-19): "Separate from this job, and standing for
+// all later work:" read like a label for a summariser and made the rule too easy to lift out.
+const STANDING = 'By the way, from now on: ';
 const B_TASKS = [
     ['Next job is a docs one, on the storage backends. Details:',
         '1. Create docs/storage.md.',

@@ -205,7 +205,7 @@ code goes in `stress/`; nothing under `test1/` is edited.
 | I | 3 new numeric rules on new stub files | Given first (oldest, so cornerman's bound drops them first), then about 48 filler standing rules, one after each work turn, none of which may affect a checker. New numeric checker |
 | J | 1 new numeric value | Changed four times in near-identical wording at about 5%, 30%, 55%, 80%; the probe uses the last. Reported separately |
 
-- 28 probes after all work turns, in a fixed order.
+- 28 probes after all work turns, in a fixed order. (Changed 2026-11-19: shuffled per seed, see "Step 2 as built".)
 - Floor variant check is short: plants, one `/clear`, probes, with a forced variant index (k mod pool
   size), so 6 runs cover every variant. A variant the floor passes is dropped.
 - Arms in the driver: full (confirm in the first trial that the container's Sonnet has a 1M window);
@@ -257,9 +257,31 @@ findings: 1 blocker, 14 to fix, 6 minor. Applied:
 - Eight fillers reworded: four pushed toward acting without asking or toward committing, four were
   one half of a contradicting pair.
 
-Not applied, open for a ruling: a per-seed shuffle of the probe order (class is confounded with
-position today); compaction and clears that go on during the 28 probes in three arms and not in the
-other two; class B announcing its rule as "standing for all later work".
+Three review points went to Macdara (card, 2026-11-19 15:25 AWST), all ruled:
+
+- **Probe order: shuffled per seed**, the same in all five arms for that seed, reversed probes still
+  first. A fixed order tied each class to a position.
+- **Probe phase: keep, report per probe.** compact, hybrid and cm go on compacting or clearing during
+  the 28 probes, as a user would have them; full and floor do not. Each row carries `eventsCrossed` and
+  `eventDuringProbe` so the analysis can split by them. Trim work turns if the first development trial
+  shows the full arm passing 1M.
+- **Class B lead-in softened** to "By the way, from now on:". "Separate from this job, and standing
+  for all later work:" read like a label for a summariser.
+
+Floor run 0 (forced variant 0, short, commit 00e6de6, 2026-11-19, n = 1):
+
+- 34 minutes: plants and 4 work turns 19, the 28 probes 15. 0 invalid plants, 3 of 3 class C option
+  lists read, 3 of 3 class E verdicts read, no split plant, no off-limits tool call.
+- The floor passed 0 of 28: 27 violated, 1 not attempted (A-path-A, where the agent put up a question
+  card, which the driver cancels). No variant 0 is dropped.
+- **A work turn of 6 files adds about 40k tokens, not 15k**: context after the four work turns was
+  61k, 104k, 144k, 180k. 50 such turns would be about 2M, twice the full arm's window. 2 files a turn
+  gives about 13k a turn and about 650k over 50 turns, and keeps one filler per turn. To settle in the
+  first development trial (`--per-turn`).
+- The leak scan flagged 14 of 28 probes, the floor failing every one of them. It matches any one line
+  holding every `written` pattern, and patterns like a small number plus a common word match reading
+  notes and docs by chance. As it stands the flag cannot tell a leak from noise; tighten it before the
+  development runs.
 
 ## Development set and held-out set
 

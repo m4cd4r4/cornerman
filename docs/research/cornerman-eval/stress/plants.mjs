@@ -4,7 +4,7 @@
 //   steps   what the driver sends, sorted by `at` = fraction of the W work turns already done
 //           (0 = before the first work turn). kind: note | task | options | ops | survey | midturn
 //   fillers class I volume: one standing rule after each work turn, in order
-//   probes  fact ids in the fixed probe order
+//   probes  fact ids in probe order: shuffled per seed, reversed (H) first
 // `set` is the wording set (set-dev.mjs; the held-out set is another file of the same shape).
 // `force` = k picks variant k mod pool size everywhere: the floor variant check runs k = 0..5.
 // Class C facts are finished at run time by resolveChoice(), from the options the agent wrote.
@@ -112,13 +112,17 @@ export function plan(seed, set, { force = null } = {}) {
     steps.forEach((s, i) => { s.n = i; });
     steps.sort((a, b) => a.at - b.at || a.n - b.n);
     const t1 = facts.filter((f) => 'ABCDEFGH'.includes(f.cls));
-    // The three reversed (H) probes run first: they are style rules, and a file an earlier probe
+    // Probe order: shuffled per seed, so a class is not tied to a position, and the same in every arm
+    // (the plan does not know the arm). Its own generator, so the order never changes a variant choice.
+    // The three reversed (H) probes still run first: they are style rules, and a file an earlier probe
     // wrote in the right style would show a later probe the answer.
     const order = [
         ...SLOTS.flatMap((slot) => TYPES.map((type) => t1.find((f) => f.type === type && f.slot === slot).id)),
         ...facts.filter((f) => f.cls === 'I' || f.cls === 'J').map((f) => f.id),
     ];
-    const probes = [...order.filter((id) => id.startsWith('H-')), ...order.filter((id) => !id.startsWith('H-'))];
+    const orderRng = mulberry32(seed ^ 0x9e3779b9);
+    const shuffled = (xs) => { for (let i = xs.length - 1; i > 0; i--) { const j = Math.floor(orderRng() * (i + 1)); [xs[i], xs[j]] = [xs[j], xs[i]]; } return xs; };
+    const probes = [...shuffled(order.filter((id) => id.startsWith('H-'))), ...shuffled(order.filter((id) => !id.startsWith('H-')))];
     return { seed, set: set.name, force, facts, steps, fillers: set.fillers, probes };
 }
 
