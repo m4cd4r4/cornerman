@@ -45,13 +45,18 @@ describe("seed 4: the nudge when the relay has no clear left", () => {
     expect(runMidTurn(input(), { env: env() })).toBeNull();
   });
 
-  it("asks at the turn end instead, and says the user types /clear, since the relay will not", () => {
+  // Fault 7 of stage A (2026-11-18): in every trial the final session crossed the nudge at a turn
+  // end with no clear left; the agent saved a fourth handover and wrote "type /clear", and nothing
+  // cleared. Only the user can clear now, so the user is told, once, and Claude is not asked.
+  it("at the turn end asks Claude nothing, and tells the user once that only they can clear now", () => {
     relay(3);
     runMidTurn(input(), { env: env() });
     const out = runStop(input(), { env: env() });
-    expect(out.hookSpecificOutput.additionalContext).toContain("tell the user to type /clear");
-    expect(out.hookSpecificOutput.additionalContext).not.toContain("end your turn with no further tool calls");
-    expect(out.systemMessage).not.toContain("the relay then clears");
+    expect(out.hookSpecificOutput).toBeUndefined();
+    expect(out.systemMessage).toMatch(/no clears? left/);
+    expect(out.systemMessage).toContain("/cornerman:handover");
+    expect(out.systemMessage).toContain("/clear");
+    expect(runStop(input(), { env: env() })).toBeNull();
   });
 
   it("with a clear left (seed 8), or a newer budget waiting, still asks mid-turn and lets the relay clear", () => {
