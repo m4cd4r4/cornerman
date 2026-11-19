@@ -50,7 +50,7 @@ describe("fault 8: every replaced ruling is marked, whatever the correction's wo
 
   // Second review, 2026-11-19: f86a4f9 counted a tab as indentation only in three set phrases,
   // so these corrections, each probed, left the old indent rule live.
-  it.each(["Switch to tabs.", "Actually make that tabs.", "Make that tabs.", "Change that to tabs.", "Actually, tabs, not spaces.", "Actually tabs please."])(
+  it.each(["Switch to tabs.", "Actually make that tabs.", "Make that tabs.", "Change that to tabs.", "Actually, tabs, not spaces.", "Actually tabs please.", "Never mind. Use tabs for indentation.", "Never mind the indent rule, use 4 spaces."])(
     "marks Use 2-space indents. after %s",
     (later) => {
       const out = markReplaced(["Use 2-space indents.", OTHERS[0], later].map((text) => ({ at: "", text })));

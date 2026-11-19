@@ -138,7 +138,7 @@ export const isRequest = (text) => TASK.test(text) && !RULE_WORD.test(text) && !
 // "Never mind that", "Revised:" and "I've changed my mind" are the rig's own late corrections
 // (cornerman-eval test1/facts.mjs): stage A left the old indent rule unmarked after them (fault 8).
 const CORRECTION =
-  /^(?:actually|correction|scratch that|change of plan|on second thought|(?:i'?ve |i have )?changed my mind)\b|^(?:never ?mind(?: that)?|revised)\s*[,:]|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
+  /^(?:actually|correction|scratch that|change of plan|on second thought|(?:i'?ve |i have )?changed my mind)\b|^(?:never ?mind(?: that)?|revised)\s*[.,:]|^never ?mind (?:the|that|my) [\w -]*?\brules?\b|(?:^|[.!?:]\s+|^(?:actually|ok|so|no),?\s+)(?:switch to|make that|change that to)\b/i;
 // The correction's own words, which say that it corrects, not what.
 const CORRECTION_WORDS = new Set(words("actually correction scratch change changed plan second thought switch make that instead later never mind revised"));
 // Words that name the same setting without sharing a word: "tabs it is" replaces "Use 3-space
