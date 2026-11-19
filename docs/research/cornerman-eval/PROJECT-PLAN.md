@@ -525,3 +525,89 @@ So the fix has a simple form: cornerman emits its session-start context as separ
 a defined order for what shrinks when one part alone is over. Limits of this measurement: headless
 `-p` with source startup. The cut seen in the trials was in the terminal app after `/clear`, with the
 same message, so the cap is taken to be the same there; the fix PR should confirm it in the sandbox.
+
+## Stage A2 results: cm rerun on seeds 1-8 after the context-cap fixes (ran 2026-11-19 10:51-12:27 AWST)
+
+Predictions were committed before the run (`test1/PREDICTIONS-STAGE-A2.md`, commit e35b527). cornerman
+at fea0cee (main after PR #218, which fixes faults 6, 7 and 8). 8 of 8 trials valid on the first run.
+Scorer output: `test1/results/stage-a2-2026-11-19.md`. Full, compact and floor are the Test 1 trials
+from 17 and 18 November, so every comparison below is across days.
+
+**This is a regression check on the seeds the fixes were diagnosed from. It passes. It does not show
+the carry-forward claim; stage B does that.**
+
+| | s1 | s2 | s3 | s4 | s5 | s6 | s7 | s8 | pooled |
+|:--|--:|--:|--:|--:|--:|--:|--:|--:|--:|
+| cm, stage A (474f66b) | 24 | 22 | 23 | 24 | 24 | 24 | 22 | 22 | 185/192 (96.4%) |
+| cm, stage A2 (fea0cee) | 24 | 22 | 23 | 22 | 24 | 23 | 24 | 23 | 185/192 (96.4%) |
+| full (Test 1) | 22 | 23 | 22 | 23 | 24 | 24 | 24 | 22 | 184/192 (95.8%) |
+
+- cm - full +0.5 points, 95% [-2.6, +3.6]; cm - compact -1.0 [-3.6, +1.6] (paired seed bootstrap).
+- By type, of 24: in-flight 19 (was 18), open-question 22 (was 23), the other six 24.
+- Cost: median 1.78M input-equivalents per trial, 53% of full (per seed 48% to 58%). Unchanged.
+- Clears: 3 in work in 8 of 8 trials; 4 sessions and 3 handovers in every trial.
+
+### What the three fixes did (script `test1/stage-a2-checks.mjs`, run on stage A first as the failing case)
+
+| Check | Stage A | Stage A2 |
+|:--|--:|--:|
+| Loads where the CLI cut cornerman's context | 23 of 24 | **0 of 24** |
+| Loads that arrived as two outputs, rules part present | 0 | 24 of 24 |
+| Largest single output, characters | cut to about 2,000 | 8,999 (budget 9,000, cap 10,000) |
+| Loads where the agent opened the full copy | 20 of 23 | 5 of 24 |
+| Final sessions that saved a fourth handover | 8 of 8 | **0 of 8** |
+| Final sessions asked to save and clear | 8 of 8 | 0 of 8 (user told once instead, 8 of 8) |
+| Reversed facts whose old ruling is unmarked in the log | 5 of 24 | **0 of 24** |
+
+- This is the first check of the split in the terminal app after `/clear`. It holds there: part 1 was
+  3,211 to 7,169 characters, part 2 (the standing rules) 4,191 to 8,999.
+- Replaced marks were read by eye from `test1/stage-a2-marks.mjs` output. The script also flags the 8
+  correction lines themselves ("..., not MIT"); those are the new rule and need no mark.
+- Part 2 reached its budget in the third load of 5 trials (seeds 2, 3, 5, 6, 7). Each dropped 1 or 2
+  task requests, said so, gave the path of the full copy and told the agent to open it. The agent
+  opened it in all 5, and in no other load.
+
+### The 7 misses (none is a fact lost across a clear)
+
+- **5 in-flight, not attempted** (s2 migrate step 4 and archive step 3, s4 migrate step 4 and archive
+  step 4, s8 migrate step 4). In every one the agent named the right step, left the hand-done steps as
+  stubs and asked for the missing spec. This is the probe fault recorded in stage A, on other seeds
+  this time (stage A: seeds 2, 7, 8).
+- **s3 open-question-A4, violated.** Missed in all three arms in Test 1 and in stage A as well.
+- **s6 open-question-C1, not attempted.** The agent did what the fact asks: "Before I change
+  `src/config.js`, I need your OK", quoting the user's rule. The checker counts an ask only when the
+  text holds a question mark (`checks/open-question.mjs` line 31), and this reply has none. A checker
+  blind spot; the score is left as the frozen checker gave it.
+
+### Predictions (11 of 13 came true)
+
+| # | Prediction | Came true | Value |
+|:--|:--|:--|:--|
+| B1 | Pass rule holds | YES | 185 >= 179; no type 3 below; lowest seed 22; 0 cut |
+| B2 | cm pooled 183 or more | YES | 185 |
+| B3 | Cut in 0 of 24 loads | YES | 0 |
+| B4 | Every output 9,000 characters or fewer | YES | largest 8,999 |
+| B5 | Both parts reach the model in every split load | YES | 24 of 24 |
+| B6 | At least 8 of 24 loads name a drop with the path of the full copy | no | 5 (8 name a drop; 3 of those are the log's own "2 older task requests left out" line, which gives no path) |
+| B7 | Agent opens the full copy in 8 or fewer loads | YES | 5 |
+| B8 | No final session saves a fourth handover or asks for /clear | YES | 0 of 8 |
+| B9 | Replaced marks missing for 0 of 24 | YES | 0 |
+| B10 | At least 3 of the 5 stage A probe-fault misses recur | no | 2 (s2 and s8 migrate); the fault moved to s4 and s2 archive |
+| B11 | clearsInWork 3 in at least 7 of 8 | YES | 8 of 8 |
+| B12 | cm cost at or below 60% of full | YES | 53% |
+| B13 | All 8 trials valid on the first run | YES | 8 of 8 |
+
+None of the four risks in "Where I expect to be wrong" showed: part 2 never went missing, in-flight
+and open-question did not fall, no live ruling was marked replaced (ruling and do-not 24 of 24), and
+cost did not rise.
+
+### What this leaves for the stress test
+
+- The rules part filled its 9,000-character budget by the third load with 24 planted facts and 10 work
+  turns. A long chain will sit at the budget from then on, shrinking in the order task requests,
+  replaced rulings, standing rules oldest first. The stress test will reach the "standing rule dropped
+  and named" case, which Test 1 cannot. That case is the one to plant for and measure.
+- The cap is per hook output and three outputs of 7,000 arrived whole, so a third output is an
+  available route if the rules part proves too small. Not built; measure first.
+- The in-flight probes and the question-mark test in the open-question checker cost every arm a few
+  points of noise. The stress-test probes and checkers should not copy either.
