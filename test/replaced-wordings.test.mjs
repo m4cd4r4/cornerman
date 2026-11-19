@@ -42,8 +42,19 @@ describe("fault 8: every replaced ruling is marked, whatever the correction's wo
     ["Use 2 spaces for indentation.", "I've changed my mind about the tab key shortcut in the editor docs."],
     ["Always run the failing tests before a commit.", "Never mind the failing tests on the legacy folder, carry on with the parser."],
     ["Never use yarn.", "Revised the yarn lockfile, please review."],
+    ["Use 2-space indents.", "Actually, use tabs in the browser for the docs."],
   ])("does not mark %s after %s", (rule, later) => {
     const out = markReplaced([rule, OTHERS[0], later].map((text) => ({ at: "", text })));
     expect(out.filter((e) => e.replaced).map((e) => e.text)).toEqual([]);
   });
+
+  // Second review, 2026-11-19: f86a4f9 counted a tab as indentation only in three set phrases,
+  // so these corrections, each probed, left the old indent rule live.
+  it.each(["Switch to tabs.", "Actually make that tabs.", "Make that tabs.", "Change that to tabs.", "Actually, tabs, not spaces.", "Actually tabs please."])(
+    "marks Use 2-space indents. after %s",
+    (later) => {
+      const out = markReplaced(["Use 2-space indents.", OTHERS[0], later].map((text) => ({ at: "", text })));
+      expect(out.filter((e) => e.replaced).map((e) => e.text)).toEqual(["Use 2-space indents."]);
+    },
+  );
 });
