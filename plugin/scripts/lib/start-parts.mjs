@@ -237,7 +237,8 @@ const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
  * The text the main hook left for this session start, waiting up to `waitMs` for it. Only a spool
  * written at or after `since` counts: an older one belongs to an earlier start. "" when none came.
  */
-export function takeSpool(root, input, { since, waitMs = 15_000, stepMs = 50 } = {}) {
+// 17s of the hook's 20s timeout: the main hook can spend 13s on a slow process table and a pull.
+export function takeSpool(root, input, { since, waitMs = 17_000, stepMs = 50 } = {}) {
   const file = spoolFile(root, input);
   const until = Date.now() + waitMs;
   for (;;) {

@@ -16,7 +16,7 @@ import { withWelcome } from "./lib/welcome.mjs";
 import { startRetention } from "./lib/retention-start.mjs";
 import { markStarted } from "./lib/second-chance.mjs";
 import { storeRoot } from "./lib/store.mjs";
-import { packStart, writeSpool } from "./lib/start-parts.mjs";
+import { BUDGET, fit, packStart, writeSpool } from "./lib/start-parts.mjs";
 
 // Once a day, old relay window files are ledgered and pruned by a detached job; this
 // only reads the marker and never waits (lib/retention-start.mjs).
@@ -58,7 +58,11 @@ try {
     extra = parts.extra;
   }
 } catch {
-  // the context goes out whole, as before
+  // A split that failed still never goes over the cap: the context is cut at the budget, with a notice.
+  try {
+    const ctx = out.hookSpecificOutput.additionalContext;
+    if (ctx.length > BUDGET) out.hookSpecificOutput.additionalContext = fit([{ text: ctx, rank: Infinity }], BUDGET, out.pack?.handover?.copyPath);
+  } catch {}
 }
 spool();
 if (!out) {
