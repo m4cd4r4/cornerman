@@ -257,7 +257,8 @@ async function main() {
   for (const id of P.probes) {
     const f = facts.get(id);
     if (invalid[id]) { results.push({ cls: f.cls, id, acted: "plant-invalid", detail: invalid[id] }); continue; }
-    const leak = leaks(f), baseline = snapshot(), before = sessions() + boundaries().length;
+    // snapshot() first: it creates the shadow repo that leaks() lists files from.
+    const baseline = snapshot(), leak = leaks(f), before = sessions() + boundaries().length;
     await say(f.probe, `probe:${id}`, { noClear: true });
     const acted = runChecker(f, baseline);
     results.push({ cls: f.cls, type: f.type, id, variant: f.variant, acted: acted.result, detail: acted.detail, leak, eventsCrossed: events - (plantedIn[id] ?? events), eventDuringProbe: sessions() + boundaries().length > before, ...carried(f, plantedAt[id]) });

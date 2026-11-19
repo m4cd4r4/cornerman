@@ -1,0 +1,3 @@
+{"ts":"2026-11-19T06:10:00Z","agent":"orchestrator","phase":"execute","action":"complete","task":"stress step 2: plants, checkers, overlay, driver, selftest","result":"pass","commit":"3a8de42","note":"selftest 384/384"}
+{"ts":"2026-11-19T06:43:00Z","agent":"orchestrator","phase":"review","action":"dispatch_fairness_reviewer","task":"fairness review of stress/ against STRESS-TEST-DESIGN.md","model":"sonnet"}
+{"ts":"2026-11-19T07:05:00Z","agent":"fairness-reviewer-1","phase":"review","action":"complete","verdict":"ISSUES","issues":21,"result":"partial","note":"1 blocker (leak scan before shadow repo exists), 14 should fix, 6 minor"}
