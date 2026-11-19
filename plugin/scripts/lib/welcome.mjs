@@ -36,6 +36,8 @@ export function withWelcome(out, { env = process.env } = {}) {
     systemMessage: out?.systemMessage ? `${out.systemMessage}\n${line}` : line,
     hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: context ? `${context}\n\n---\n\n${ask}` : ask },
   };
+  // The ask is one more part of the context, so a split (start-parts.mjs) keeps it.
+  if (out?.pack) Object.defineProperty(merged, "pack", { value: { ...out.pack, parts: [...out.pack.parts, ask] }, writable: true });
   Object.defineProperty(merged, "afterOutput", {
     value: () => {
       out?.afterOutput?.();
