@@ -134,7 +134,9 @@ function workTurn() {
   // The notes are about the files read, never about ledger. Floor runs 1-5 (2026-11-19): asked what in
   // each file "could matter for ledger and why", the agent wrote the planted rules into the notes
   // ("6-attempt cap on bank feed calls"), and the floor then passed those probes from the repo.
-  return `Next batch of reading: read each of these files one at a time with the Read tool and add one line per file to docs/reading-notes.md saying what the file documents: ${batch.join(", ")}. The notes are about the files themselves; ledger's own rules, settings and decisions never go in them. Commit only docs/reading-notes.md when the batch is done.`;
+  // Whole files, said in the task: in development trial 1 (2026-11-20) the full and cm agents read the
+  // first 60 lines of each file and the compact agent read every file whole, 3.5 times the text.
+  return `Next batch of reading: read each of these files one at a time with the Read tool, each one whole from its first line to its last (no limit, no offset), and add one line per file to docs/reading-notes.md saying what the file documents: ${batch.join(", ")}. The notes are about the files themselves; ledger's own rules, settings and decisions never go in them. Commit only docs/reading-notes.md when the batch is done.`;
 }
 
 // Probe baselines live in a shadow repo the agent never sees (test1/driver.mjs, smoke 2026-11-16).
@@ -161,6 +163,11 @@ const OFF_LIMITS = /(?<![\w.\/-])\/(stress|test1|out)(?![\w-])|\/tmp\/(fact-|sna
 function offLimits() {
   return allEntries().filter((e) => e.type === "assistant" && Array.isArray(e.message?.content))
     .flatMap((e) => e.message.content.filter((p) => p.type === "tool_use" && OFF_LIMITS.test(JSON.stringify(p.input ?? {}))).map((p) => ({ at: e.timestamp, tool: p.name, input: JSON.stringify(p.input).slice(0, 200) })));
+}
+// Reads of a reading file that asked for part of it. Every arm must read the same text (see workTurn).
+function limitedReads() {
+  return allEntries().filter((e) => e.type === "assistant" && Array.isArray(e.message?.content))
+    .flatMap((e) => e.message.content.filter((p) => p.type === "tool_use" && p.name === "Read" && String(p.input?.file_path ?? "").startsWith(READING) && (p.input.limit != null || p.input.offset != null)).map((p) => p.input.file_path));
 }
 // A probe must not be answerable from the repo: files in /work where one line the agent added holds
 // the whole fact. Only lines added since the fixture baseline count: the fixture cannot hold a planted
@@ -319,11 +326,13 @@ async function main() {
 
   const off = offLimits();
   if (off.length) log(`OFF LIMITS: ${off.length} tool call(s) named /stress, /test1, /out or a checker file`);
+  const limited = limitedReads();
+  if (limited.length) log(`LIMITED READS: ${limited.length} read(s) of a reading file with a limit or offset`);
   const b = boundaries().map((x) => ({ trigger: x.compactMetadata?.trigger, preTokens: x.compactMetadata?.preTokens, postTokens: x.compactMetadata?.postTokens }));
   writeFileSync(join(OUT, "result.json"), JSON.stringify({
     arm: ARM, seed: SEED, set: SET, force: FORCE, short: SHORT, model: MODEL, window: WINDOW, nudge: NUDGE, clearAt: CLEAR_AT, W,
     sessions: sessions(), compactions: b, clearsTyped: clears, handovers: handovers().length, peakContext: Math.max(0, ...turns.map((t) => t.context)),
-    fullArmCompacted: ARM === "full" && b.length > 0, memoryFiles: memoryFiles(), invalid, split, offLimits: off, turns, results,
+    fullArmCompacted: ARM === "full" && b.length > 0, memoryFiles: memoryFiles(), invalid, split, offLimits: off, perTurn: PER_TURN, limitedReads: limited, turns, results,
   }, null, 1));
   writePlan();
   mkdirSync(join(OUT, "transcripts"), { recursive: true });

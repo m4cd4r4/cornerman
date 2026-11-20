@@ -46,7 +46,7 @@ export const FILLERS = [
     'When a doc describes something deprecated, mark the notes line with (deprecated).',
     'Folder names are lower case, with hyphens between words.',
     'In notes, British spelling: organise, behaviour, licence as a noun.',
-    'If a reading file is longer than you expected, read all of it anyway.',
+    'In notes, a version number is written with a leading "v", as in v18.',
     'In replies, say "done" only for work that is finished, never for work in progress.',
     'Docs files end with exactly one newline.',
     'When a notes line is about security, start its text with "security:".',
