@@ -624,9 +624,19 @@ What has to change before more seeds (not built):
    user's own later instruction (H-reversed-A). Decide whether fix 9's "until told to carry on" under Do
    not is acceptable, or the stop moves to State as fix 9 intended.
 2. **Hybrid:** find what grows after each compaction and bound it. At twice compact's compactions it is
-   not "compact plus a plugin" on cost.
-3. **J wording (development set):** "Update:" invites a code change. Check the held-out J plants for the
-   same shape, read only (hashed).
+   not "compact plus a plugin" on cost. **Found (2026-11-20 20:30 AWST): the "Carried forward" list.**
+   `pre.mjs` says "Copy every item of an earlier section ... Never leave an item out for length", so the
+   list only grows: 28 items (4.8k characters) in the first summary, 141 (49k) in the largest, which is
+   72k characters against compact's 32k at most. 70 of the 141 are `[rule]` lines (25 decision, 23 fact,
+   8 ask first, 6 choice, 4 in flight). Every rule is then carried twice, because `start.mjs` re-adds the
+   rulings log word for word after each compaction. The hook additions after a compaction are the same
+   size in both arms (57k to 104k characters of attachments), so they are not the cause. Fix candidate H1
+   (not built): `pre.mjs` names the rules `start.mjs` will re-add within its budget and asks the summary
+   to list only the rest.
+3. **J wording (development set):** "Update:" invites a code change. **Checked: the held-out J plants
+   have the same shape** ("Change: a quote lapses after N days.", same `src/expiry.js` stub). Left as is:
+   the set is hashed, the driver drops a plant acted on at plant time, and only the floor arm has done it
+   (1 of 5 arms in trial 3, 0 of 6 in trials 1 and 2).
 4. **Ruled (Macdara card 2026-11-20 20:10 AWST): events per arm are reported next to every score and
    cost; the cm nudge stays at 68k.** Item 5 of trial 2 is closed.
 
