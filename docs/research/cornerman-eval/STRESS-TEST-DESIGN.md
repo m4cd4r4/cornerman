@@ -627,7 +627,8 @@ What has to change before more seeds (not built):
    not "compact plus a plugin" on cost.
 3. **J wording (development set):** "Update:" invites a code change. Check the held-out J plants for the
    same shape, read only (hashed).
-4. Item 5 of trial 2 (events per arm), with these numbers, to Macdara.
+4. **Ruled (Macdara card 2026-11-20 20:10 AWST): events per arm are reported next to every score and
+   cost; the cm nudge stays at 68k.** Item 5 of trial 2 is closed.
 
 ## Development set and held-out set
 
