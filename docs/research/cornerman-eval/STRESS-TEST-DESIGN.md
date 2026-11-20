@@ -487,7 +487,7 @@ flag and filler 42 replaced (commit 3e6929b). Predictions committed first
 | compact | F-in-flight-A, B, C | violated | The agent wrote the step the user had done by hand. The last 3 summaries before each probe no longer held "I ran step 2 by hand, leave that stub" (carried in 11 of 14, 8 of 11, 7 of 10) | **lost in compaction** |
 | compact | C-decision-C | violated | Lower-case ids, the agent's default. The last 5 of 15 summaries had dropped the upper-case pick | **lost in compaction** |
 | cm | F-in-flight-A, B, C | not attempted | Every handover's "Do not" turned the job's "Don't go on to step 4. Stop there." into a standing rule: "Do not touch migrate.mjs step 2 or start step 4 ... unless the user asks". On "Carry on" the agent quoted that rule and asked which step. It knew the state (step 3 written, step 2 left alone) | **cornerman fault: a one-job stop made standing** |
-| cm | A-path-A | not attempted | Two config files; the agent asked which one. "Production config is deploy/ledger.config.json" was in the start context of the earlier sessions (line 32 of each) but first appears in the probe session at line 53 of 117, after the probe. It tried to open the full copy at `/root/.cornerman/...` (wrong home) | **probably dropped from the last load; to confirm** |
+| cm | A-path-A | not attempted | Two config files; the agent named `deploy/ledger.config.json` "the production config" and still asked which one to change, because "it would change what the live service uses". The rule was in its context: it read the full handover copy at line 53, 49 lines before the probe at line 102 (first try at `/root/.cornerman/...`, wrong home, then `/home/node`). Confirmed 2026-11-20, see item 4 below | **carried, then asked** (corrected: first read as probably dropped) |
 | cm | I-memo, I-attempts, I-lockout | not attempted | In session 1, before any handover, the agent built all three stubs as each note arrived (with the right values 88, 4 and 6). The probe baseline then held the code, so the checker saw no change. The agent said so, with the values | **rig fault: plant acted on at plant time** |
 
 - **D-ruling-A ("round down") cannot measure carry in a long trial.** It was obeyed in all three arms
@@ -533,6 +533,30 @@ What has to change before more seeds (not built):
    the start context of session 16. Read that load's two parts against the handover it came from.
 5. Events per arm stay unequal (finding above). Options: nudge a few thousand tokens lower, or report
    events per arm next to every score and leave it. To put to Macdara with the next trial's numbers.
+
+Applied 2026-11-20 (items 1, 2 and 4):
+
+- **Item 1, built.** `driver.mjs` takes a shadow snapshot before and after every note, ops, survey and
+  options plant. A file changed in between, the reading notes aside, marks the fact `actedAtPlant`
+  (logged `PLANT ACTED`); its probe is skipped and scored `acted-at-plant`, out of scoring as an invalid
+  plant is. The snapshot sees a change the agent committed, which `git status` would not. Mechanism
+  check (throwaway repo, 7 cases incl. a committed stub): 7 of 7.
+- **Item 2, built: D-ruling-A now runs fourth, straight after the H probes, in both sets.** Cause read
+  in the transcripts: all three arms built `applyFee()` on `feeAt()`, which the A-ruling-C probe
+  (basis points) had already put in `src/money.js` with floor rounding, 8 probes earlier. Before any
+  other money probe, `src/money.js` is the fixture's, which rounds to nearest, so the probe measures
+  carry again. The held-out set has the same shape (its D-ruling-A also probes `src/money.js`), and the
+  order is rig logic in `plants.mjs`, so the fix reaches it without editing a hashed file. Development
+  set only: the `written` pattern for "round down" now matches "rounds down" (`set-dev.mjs`; the
+  held-out pattern already did). Selftest 462 of 462, selftest-held 467 of 467 (one new check per plan).
+- **Item 4, confirmed: not a lost fact.** All 16 handovers hold the rule (in "Decisions already made").
+  From session 6 on, neither start-context part holds it: the first part sends that section to the
+  second ("standing rules for handover"), and the second, at its 9,000-character budget, leaves it out
+  for space ("3 oldest standing rules left out"); the first part points to the full copy. The agent read that copy in every session (line 32), and in the probe session at line 53, after
+  a failed read at `/root/.cornerman/...` (the pointer says `~`; `$HOME` is `/home/node`). It then asked
+  despite knowing. Two notes, n = 1: in the cm arm a rule this old depends on one tool call per load,
+  and the pointer's `~` cost a failed read. Whether the asking comes from the handover's many "Do not
+  ... unless the user asks" lines (item 3) is a guess until item 3 is built and rerun.
 
 ## Development set and held-out set
 

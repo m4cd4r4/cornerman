@@ -4,7 +4,7 @@
 //   steps   what the driver sends, sorted by `at` = fraction of the W work turns already done
 //           (0 = before the first work turn). kind: note | task | options | ops | survey | midturn
 //   fillers class I volume: one standing rule after each work turn, in order
-//   probes  fact ids in probe order: shuffled per seed, reversed (H) first
+//   probes  fact ids in probe order: shuffled per seed, reversed (H) first, then D-ruling-A
 // `set` is the wording set (set-dev.mjs; the held-out set is another file of the same shape).
 // `force` = k picks variant k mod pool size everywhere: the floor variant check runs k = 0..5.
 // Class C facts are finished at run time by resolveChoice(), from the options the agent wrote.
@@ -88,6 +88,7 @@ export function plan(seed, set, { force = null } = {}) {
     });
     set.D.forEach((d, i) => {
         const f = base('D', d.base);
+        if (d.written?.[f.variant]) f.written = d.written[f.variant];
         step(AT.D[i], 'ops', f, { topic: d.topic, body: 'ledger-ops report: ' + d.topic + '\n' + f.plant[0].text + '\n', text: set.opsText(d.topic) });
     });
     set.E.forEach((e, i) => {
@@ -122,7 +123,12 @@ export function plan(seed, set, { force = null } = {}) {
     ];
     const orderRng = mulberry32(seed ^ 0x9e3779b9);
     const shuffled = (xs) => { for (let i = xs.length - 1; i > 0; i--) { const j = Math.floor(orderRng() * (i + 1)); [xs[i], xs[j]] = [xs[j], xs[i]]; } return xs; };
-    const probes = [...shuffled(order.filter((id) => id.startsWith('H-'))), ...shuffled(order.filter((id) => !id.startsWith('H-')))];
+    // D-ruling-A runs straight after them (development trial 2, 2026-11-20): its probe adds a money
+    // function that has to round, and in all three arms the agent built it on feeAt(), which an earlier
+    // probe had put in src/money.js with floor rounding, so the repo answered it. Before any other money
+    // probe, src/money.js is the fixture's, which rounds to nearest.
+    const first = order.filter((id) => id === 'D-ruling-A');
+    const probes = [...shuffled(order.filter((id) => id.startsWith('H-'))), ...first, ...shuffled(order.filter((id) => !id.startsWith('H-') && !first.includes(id)))];
     return { seed, set: set.name, force, facts, steps, fillers: set.fillers, probes };
 }
 

@@ -81,6 +81,7 @@ for (const p of plans) {
     // A reversed fact's old value must not be in the correction the same way it is asked for.
     ok(label + ' I first', p.steps.slice(0, 3).every((s) => s.factId.startsWith('I-')));
     ok(label + ' reversed probes first', p.probes.slice(0, 3).every((id) => id.startsWith('H-')) && p.probes.slice(3).every((id) => !id.startsWith('H-')));
+    ok(label + ' D-ruling-A before any other probe that writes money code', p.probes[3] === 'D-ruling-A', p.probes[3]);
     ok(label + ' B is line 8 of 15', p.steps.filter((s) => s.factId.startsWith('B-')).every((s) => {
         const lines = s.text.split('\n'), f = p.facts.find((x) => x.id === s.factId);
         return lines.length === 15 && lines[7] === 'By the way, from now on: ' + f.plant[0].text;

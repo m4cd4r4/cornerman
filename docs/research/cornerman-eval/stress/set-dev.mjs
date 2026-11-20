@@ -130,7 +130,8 @@ export const DEV = {
     D: [
         { base: ['path', 1], topic: 'fx-table' },
         { base: ['path', 2], topic: 'invoice-template' },
-        { base: ['ruling', 0], topic: 'money-policy' },
+        // written, by variant: Test 1's pattern for "round down" misses "rounds down" (trial 2, 2026-11-20).
+        { base: ['ruling', 0], topic: 'money-policy', written: { 0: ['(round(s|ed|ing)?\\s+down|floor)'] } },
     ],
     opsText,
     E: [

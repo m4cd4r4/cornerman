@@ -81,6 +81,7 @@ for (const p of plans) {
     // I is planted before everything else; a B rule is line 8 of 15.
     ok(label + ' I first', p.steps.slice(0, 3).every((s) => s.factId.startsWith('I-')));
     ok(label + ' reversed probes first', p.probes.slice(0, 3).every((id) => id.startsWith('H-')) && p.probes.slice(3).every((id) => !id.startsWith('H-')));
+    ok(label + ' D-ruling-A before any other probe that writes money code', p.probes[3] === 'D-ruling-A', p.probes[3]);
     ok(label + ' B is line 8 of 15', p.steps.filter((s) => s.factId.startsWith('B-')).every((s) => {
         const lines = s.text.split('\n'), f = p.facts.find((x) => x.id === s.factId);
         return lines.length === 15 && lines[7].endsWith(f.plant[0].text);
@@ -91,6 +92,8 @@ for (const p of plans) {
     const seeds = plans.filter((p) => p.force == null);
     ok('probe order repeats for a seed', seeds.every((p) => plan(p.seed, DEV).probes.join() === p.probes.join()));
     ok('probe order differs between seeds', new Set(seeds.map((p) => p.probes.join())).size === seeds.length);
+    const roundDown = plan(101, DEV, { force: 0 }).facts.find((f) => f.id === 'D-ruling-A');
+    ok('D-ruling-A round down: written matches "rounds down"', roundDown.written.every((re) => new RegExp(re, 'i').test('The fee rounds down to a whole cent.')), JSON.stringify(roundDown.written));
     ok('B lead-in is the plain one', seeds[0].steps.filter((s) => s.factId.startsWith('B-')).every((s) => s.text.split('\n')[7].startsWith('By the way, from now on: ')));
 }
 // Forced variants 0-5 reach every variant of every pool.

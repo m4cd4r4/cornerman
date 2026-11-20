@@ -678,3 +678,19 @@ committed first; 8 of 12 held. Detail: STRESS-TEST-DESIGN.md, "Second developmen
 
 Next: driver flag for a plant acted on at plant time; D-ruling-A out of the pool; cornerman fix
 candidate 9 (a job's stop stays with the job); confirm the dropped config rule.
+
+## Stage B: rig fixes after trial 2 (2026-11-20 afternoon)
+
+Detail: STRESS-TEST-DESIGN.md, "Second development trial", "Applied 2026-11-20".
+
+- Driver flags a plant acted on at plant time (`actedAtPlant`, probe scored `acted-at-plant`, out of
+  scoring), read from shadow snapshots so a committed change counts.
+- D-ruling-A runs fourth, after the H probes, in both sets: in trial 2 every arm built it on `feeAt()`,
+  which an earlier probe had written with floor rounding. Development `written` pattern fixed.
+- **Correction: cm did not lose the production-config rule.** It read the full handover copy before
+  the probe, called `deploy/ledger.config.json` the production config, and asked anyway. So of cm's 7
+  misses, 3 are the stop made standing, 3 the rig fault, 1 an ask despite the fact.
+- Selftest 462 of 462, selftest-held 467 of 467.
+
+Next: cornerman fix candidate 9 on a branch from main, then predictions and trial 3 (seed 101, with
+the hybrid and floor arms).

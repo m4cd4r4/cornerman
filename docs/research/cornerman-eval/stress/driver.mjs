@@ -148,6 +148,9 @@ function snapshot() {
   snap("commit", "-q", "--allow-empty", "-m", "snap");
   return snap("rev-parse", "HEAD");
 }
+// Files the agent changed between two shadow snapshots, the reading notes aside. Read from the shadow
+// repo, so a change the agent committed in /work counts as well as one it left uncommitted.
+const changedSince = (a, b) => snap("diff", "--name-only", a, b).split("\n").filter((f) => f && f !== "docs/reading-notes.md");
 function runChecker(fact, baseline) {
   const factFile = `/tmp/fact-${fact.id}.json`;
   writeFileSync(factFile, JSON.stringify(fact));
@@ -247,7 +250,7 @@ async function main() {
   if (!["dev", "held"].includes(SET)) throw new Error(`unknown --set ${SET}`);
   const set = SET === "held" ? (await import("./set-held.mjs")).HELD : (await import("./set-dev.mjs")).DEV;
   const P = plan(SEED, set, { force: FORCE });
-  const facts = new Map(P.facts.map((f) => [f.id, f])), invalid = {}, plantedAt = {}, plantedIn = {}, split = {};
+  const facts = new Map(P.facts.map((f) => [f.id, f])), invalid = {}, actedAtPlant = {}, plantedAt = {}, plantedIn = {}, split = {};
   writePlan = () => writeFileSync(join(OUT, "plan.json"), JSON.stringify({ ...P, facts: [...facts.values()] }, null, 1));
   if (reading.length < W * PER_TURN) throw new Error(`reading corpus has ${reading.length} files, ${W * PER_TURN} needed`);
 
@@ -291,7 +294,20 @@ async function main() {
   }
 
   const due = (lo, hi) => P.steps.filter((s) => s.at >= lo && s.at < hi);
-  const plant = async (s) => { await deliver(s); await floorClear(`plant ${s.factId}`); };
+  // A plant acted on at plant time (development trial 2, 2026-11-20): the cm agent built the three
+  // class I stubs in session 1 as the notes arrived, so each probe's baseline already held the code
+  // and the checker saw no change. A note, ops, survey or options plant asks for no change, so a file
+  // it changed marks the fact, which is then left out of scoring as an invalid plant is.
+  const QUIET = ["note", "ops", "survey", "options"];
+  const plant = async (s) => {
+    const before = QUIET.includes(s.kind) ? snapshot() : null;
+    await deliver(s);
+    if (before) {
+      const files = changedSince(before, snapshot());
+      if (files.length) { actedAtPlant[s.factId] = [...new Set([...(actedAtPlant[s.factId] ?? []), ...files])]; log(`PLANT ACTED ${s.factId}: ${files.join(", ")}`); }
+    }
+    await floorClear(`plant ${s.factId}`);
+  };
   for (const s of P.steps.filter((x) => x.at === 0)) await plant(s);
   for (let w = 0; w < W; w++) {
     const now = due(w === 0 ? Number.MIN_VALUE : w / W, (w + 1) / W);
@@ -309,12 +325,13 @@ async function main() {
     if (!SHORT && P.fillers[w]) { await say(P.fillers[w], `filler:${w}`); await floorClear(`filler ${w}`); }
   }
   if (SHORT) await clear("plants");
-  log(`work turns ${W}, sessions ${sessions()}, compactions ${boundaries().length}, clears typed ${clears}, invalid plants ${Object.keys(invalid).length}`);
+  log(`work turns ${W}, sessions ${sessions()}, compactions ${boundaries().length}, clears typed ${clears}, invalid plants ${Object.keys(invalid).length}, acted at plant ${Object.keys(actedAtPlant).length}`);
 
   const results = [];
   for (const id of P.probes) {
     const f = facts.get(id);
     if (invalid[id]) { results.push({ cls: f.cls, type: f.type, id, variant: f.variant, acted: "plant-invalid", detail: invalid[id] }); continue; }
+    if (actedAtPlant[id]) { results.push({ cls: f.cls, type: f.type, id, variant: f.variant, acted: "acted-at-plant", detail: actedAtPlant[id].join(", ") }); continue; }
     // snapshot() first: it creates the shadow repo that leaks() lists files from.
     const baseline = snapshot(), leak = leaks(f), before = eventCount();
     await say(f.probe, `probe:${id}`);
@@ -332,7 +349,7 @@ async function main() {
   writeFileSync(join(OUT, "result.json"), JSON.stringify({
     arm: ARM, seed: SEED, set: SET, force: FORCE, short: SHORT, model: MODEL, window: WINDOW, nudge: NUDGE, clearAt: CLEAR_AT, W,
     sessions: sessions(), compactions: b, clearsTyped: clears, handovers: handovers().length, peakContext: Math.max(0, ...turns.map((t) => t.context)),
-    fullArmCompacted: ARM === "full" && b.length > 0, memoryFiles: memoryFiles(), invalid, split, offLimits: off, perTurn: PER_TURN, limitedReads: limited, turns, results,
+    fullArmCompacted: ARM === "full" && b.length > 0, memoryFiles: memoryFiles(), invalid, actedAtPlant, split, offLimits: off, perTurn: PER_TURN, limitedReads: limited, turns, results,
   }, null, 1));
   writePlan();
   mkdirSync(join(OUT, "transcripts"), { recursive: true });
