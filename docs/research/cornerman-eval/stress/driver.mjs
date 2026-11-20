@@ -4,7 +4,7 @@
 // from plants.mjs: plants by class, W read-heavy work turns (the same in every arm), a filler
 // standing rule after each one, then 28 probes, each scored by its checker. Writes /out/result.json.
 //   node /stress/driver.mjs --arm full|compact|hybrid|cm|floor --seed N [--work 50] [--window 100000]
-//        [--nudge-at 68000] [--clear-at 68000] [--force K] [--short] [--model sonnet] [--set dev]
+//        [--nudge-at 68000] [--clear-at 68000] [--force K] [--short] [--model sonnet] [--set dev|held]
 // Arms:  full     no clear, no compaction (--autocompact 1000000; a compaction here is flagged)
 //        compact  native auto-compact at --window, no plugin
 //        hybrid   the same plus the rig/hybrid hooks (cornerman cloned for its lib only)
@@ -236,8 +236,9 @@ function setup() {
 let writePlan = () => {};
 async function main() {
   setup();
-  const { DEV } = await import("./set-dev.mjs");
-  const set = { dev: DEV }[SET];
+  // The held-out set is loaded only when asked for: a development trial never reads its file.
+  if (!["dev", "held"].includes(SET)) throw new Error(`unknown --set ${SET}`);
+  const set = SET === "held" ? (await import("./set-held.mjs")).HELD : (await import("./set-dev.mjs")).DEV;
   const P = plan(SEED, set, { force: FORCE });
   const facts = new Map(P.facts.map((f) => [f.id, f])), invalid = {}, plantedAt = {}, plantedIn = {}, split = {};
   writePlan = () => writeFileSync(join(OUT, "plan.json"), JSON.stringify({ ...P, facts: [...facts.values()] }, null, 1));

@@ -7,7 +7,10 @@
 # The env file path comes from CM_ENV_FILE, never from this file.
 set -u
 BASE=${CM_EVAL_DIR:-/opt/cornerman-eval}
-OUT=${ST_OUT:-$BASE/out/stress-floor-check}
+# ST_SET=held checks the held-out set's variants (its own output folder; the dev results stay).
+SET=${ST_SET:-dev}
+SUFFIX=$([ "$SET" = dev ] && echo "" || echo "-$SET")
+OUT=${ST_OUT:-$BASE/out/stress-floor-check$SUFFIX}
 ENVF=${CM_ENV_FILE:?set CM_ENV_FILE to the trial env file}
 [ -e "$BASE/reading/index.txt" ] || { echo "no reading corpus in $BASE/reading: run stress/reading/build.mjs first"; exit 1; }
 mkdir -p "$OUT"
@@ -21,7 +24,7 @@ for k in "${@:-0 1 2 3 4 5}"; do for k in $k; do
   docker run -d --name "stfc-k$k" --memory 1536m --cpus 1 \
     --env-file "$ENVF" -e CM_INSTALL=0 \
     -v "$BASE/test1":/test1:ro -v "$BASE/rig":/rig:ro -v "$BASE/stress":/stress:ro -v "$BASE/reading":/reading:ro -v "$OUT/$name":/out \
-    cornerman-eval:dev node /stress/driver.mjs --arm floor --seed $((900 + k)) --force "$k" --short --model sonnet >/dev/null \
+    cornerman-eval:dev node /stress/driver.mjs --arm floor --seed $((900 + k)) --force "$k" --short --set "$SET" --model sonnet >/dev/null \
     && echo "$(date -u +%FT%TZ) started $name"
   sleep 20
 done; done
