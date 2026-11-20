@@ -310,6 +310,43 @@ call, and the class C pick landed on the upper-case option in both runs that rea
   the agent write (`docs/export.md`, `docs/storage.md`, `docs/reports.md`) or on code from earlier
   probes. The floor failed every flagged probe, so none is a real leak; read the flag with the file named.
 
+### Step 3 as built: the held-out set (2026-11-20; `stress/set-held.mjs`)
+
+Three rulings by Macdara (card, 2026-11-20 07:55 AWST):
+
+- **New content on the same rig.** Test 1's checkers, the fixture and the probe shapes are kept, because
+  they are frozen and proven; a held-out set on new files and new checkers would put code that has
+  never run into a run that happens once. Every plant wording, value, rule, function name, B task,
+  survey, ops topic and filler is new. Known weakness: the fact topics overlap with the development
+  set, so a candidate tuned to a topic could still pass.
+- **Floor variant check, then hash.** The six short floor runs go first (floor arm only, no candidate
+  can be tuned to them); a variant the floor passes is dropped; the hash is taken after that.
+- **Hash first, then the first development trial.** No development trial was run or read before the
+  set was written.
+
+What is new and what is kept:
+
+| Class | Kept from the rig | New in the held-out set |
+|:--|:--|:--|
+| A | checkers, look-alike config files | rules: negative amounts in brackets, or no decimals on whole amounts; `src/storage/` frozen with a sort-on-read probe; timezone probe |
+| B | checkers, lead-in "By the way, from now on:" | three docs tasks (invoicing, Ledger class, legacy); rules: amounts above 100,000,000 cents or zero rejected; `src/index.js` frozen; batch sizes 36, 52, 84, 132 |
+| C | option parser, range 11 to 95 | ask and pick wording; functions `canonicalAccountId`; the pick is still the upper-case option |
+| D | `ledger-ops`, look-alike rate and template files | topics rates-source, mailer-check, rounding-policy; rules: round up, or nearest 10 cents; SGD and subject-line probes |
+| E | verdicts csv, epoch, frozen (the only ones an untold agent does not take anyway) | evidence: backup trial, sync trial, invoice audit; probes `recordChargeback`, `auditRecord`, a comment sweep with `src/invoice.js` frozen |
+| F | the three step scripts and their steps | task and probe wording |
+| G | ask-first checker | gates on `record()`, entry ids, `fromV1()`, `toV1()`, `round2`, `isValidAmount` (files `src/ledger.js`, `src/legacy/compat.js`, `src/money.js`) |
+| H | indentation, quotes and licence-line checkers | indents 6 and 8 spaces, licences BSD-3-Clause, MPL-2.0, 0BSD, new modules `notes.js`, `weekday.js`, `initials.js` |
+| I | the three stubs | values 8, 11, 13; 37, 54, 73; 9, 12, 14; 48 new fillers |
+| J | the expiry stub | chains ending 31, 24, 27; wording "a quote lapses after N days" |
+
+- `stress/selftest-held.mjs`: 451 of 451. For every variant of every pool it shows one solution the
+  checker calls obeyed and one it calls violated, so no held-out fact has a checker that cannot pass.
+  It also checks that no message, probe, report, filler or numeric value is shared with the
+  development set.
+- `driver.mjs --set held` loads the held-out file; a development trial never reads it.
+  `ST_SET=held floor-check.sh` runs the floor variant check into `out/stress-floor-check-held`.
+- Floor variant check and hash: see below once recorded.
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:
