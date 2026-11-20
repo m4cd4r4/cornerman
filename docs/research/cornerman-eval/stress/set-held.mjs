@@ -189,7 +189,16 @@ const numberB = [
 ].map(numberFact('batch', 'src/batch.js is still a stub. Write the import batching.'));
 const numberC = [[27, 'The entry list shows 27 entries a page.']].map(numberFact('page', 'src/paginate.js is still a stub. Write the pagination for the entry list.'));
 
-const pools = {
+// Variants the floor passed in the held-out floor variant check (runs 0-5, 2026-11-20) are dropped: an
+// agent that was never told does the same thing, so the probe cannot show the fact was carried.
+// [type, slot index, variant index in the pool above].
+//   path B 2 (conf/exchange-rates.json): the floor put SGD in that file in 4 of 4 runs where it edited one.
+//   reversed A 2 (8 spaces, then 2): the floor indented the new module with 2 spaces.
+// Kept although the floor passed it once in 6 runs: decision C (upper-case account ids). It is the only
+// variant its checker allows and the floor wrote lower case in the other 5 (Macdara, card 2026-11-20 09:48 AWST).
+const FLOOR_PASSED = [['path', 1, 2], ['reversed', 0, 2]];
+const kept = (type, slots) => slots.map((pool, s) => pool.filter((_, v) => !FLOOR_PASSED.some(([t, ss, vv]) => t === type && ss === s && vv === v)));
+const pools = Object.fromEntries(Object.entries({
     ruling: [rulingA, rulingB, rulingC],
     decision: [decisionA, decisionB, decisionC],
     'do-not': [doNotA, doNotB, doNotC],
@@ -197,7 +206,7 @@ const pools = {
     'open-question': [openQA, openQB, openQC],
     path: [pathA, pathB, pathC],
     number: [numberA, numberB, numberC],
-};
+}).map(([type, slots]) => [type, kept(type, slots)]));
 
 // ---- B: the rule is line 8 of a 15-line docs task about another part of the repo.
 // The lead-in is the one Macdara ruled on 2026-11-19; it is part of the class, not of the wording set.

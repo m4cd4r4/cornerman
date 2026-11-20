@@ -339,13 +339,46 @@ What is new and what is kept:
 | I | the three stubs | values 8, 11, 13; 37, 54, 73; 9, 12, 14; 48 new fillers |
 | J | the expiry stub | chains ending 31, 24, 27; wording "a quote lapses after N days" |
 
-- `stress/selftest-held.mjs`: 451 of 451. For every variant of every pool it shows one solution the
+- `stress/selftest-held.mjs`: 451 of 451 as authored (445 of 445 after the floor check drops). For every variant of every pool it shows one solution the
   checker calls obeyed and one it calls violated, so no held-out fact has a checker that cannot pass.
   It also checks that no message, probe, report, filler or numeric value is shared with the
   development set.
 - `driver.mjs --set held` loads the held-out file; a development trial never reads it.
   `ST_SET=held floor-check.sh` runs the floor variant check into `out/stress-floor-check-held`.
-- Floor variant check and hash: see below once recorded.
+Floor variant check of the held-out set (runs 0-5, floor arm only, commit e3fae04, 2026-11-20
+08:11-09:20 AWST, n = 1 each, about 33 minutes a run; `out/stress-floor-check-held` on the VPS):
+
+- 0 invalid plants, no split plant, no off-limits tool call, no memory file, no timeout in all six.
+  18 of 18 class C option lists read; the pick landed on the upper-case option in 6 of 6.
+- **The floor passed 3 of 168 probes** (151 violated, 14 not attempted). The 14 are the agent asking
+  which file or rule applies where the fact was the answer: D-path-C 6 (a question card each time),
+  D-ruling-A variant 1 "nearest 10 cents" 3, A-path-A 3, D-path-B 2.
+
+| Passed | Run | Why | Action |
+|:--|:--|:--|:--|
+| D-path-B variant 2, `conf/exchange-rates.json` | 2 | The agent's default: the floor put SGD in that file in 4 of 4 runs where it edited one | Dropped (3 variants left) |
+| H-reversed-A variant 2, 8 spaces then 2 | 2 | The floor indented the new module with 2 spaces | Dropped (3 variants left; none ends on 2 spaces) |
+| C-decision-C, upper-case account ids | 5 | The floor wrote upper case once ("my own choice") and lower case in the other 5 runs | **Kept** (Macdara, card 2026-11-20 09:48 AWST) |
+
+- C-decision-C is the only variant its frozen checker allows, so dropping it would leave class C with
+  two facts. A lost fact there passes about 1 time in 6 in every arm alike; the held-out floor arm
+  measures it. The development set carries the same choice.
+- **Two of the six runs added about 40k tokens per work turn** (runs 1 and 3: 60k, 104k, 143k, 178k);
+  the other four added 11k to 20k. The reworded task did not remove the large case. Settle
+  `--per-turn` from the first development trial.
+- The leak scan flagged 4 to 8 probes a run, on docs the class B tasks wrote and on code from earlier
+  probes. The floor failed all of them except C-decision-C in run 5, flagged on `src/initials.js`
+  (the probe before it asks for upper-case initials). Read the flag with the file named.
+- After the two drops: selftest-held 445 of 445.
+
+**Hash (2026-11-20 09:49 AWST, `stress/held.sha256.json`, sha256 of LF-normalised content):**
+
+| File | sha256 |
+|:--|:--|
+| `stress/set-held.mjs` | `ef8cc210a72372bad122977bcffd8b2c05cfa49c3661fc066a7366b509dd06fe` |
+| `stress/set-held-fillers.mjs` | `44dfdd8da5625c1c1550a63d4b2c1c801725879ca2599b2c0e48c1586fa2c31f` |
+
+No change to either file from here. The set is run once, when the candidates are frozen.
 
 ## Development set and held-out set
 

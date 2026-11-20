@@ -1,0 +1,8 @@
+{
+ "frozen": "2026-11-20T01:49:49.025Z",
+ "note": "held-out set (seeds 201-216) after the floor variant check of 2026-11-20: path B 2 and reversed A 2 dropped, decision C kept by ruling. sha256 of LF-normalised content. No change to these files after this hash; run once, when the candidates are frozen.",
+ "files": {
+  "set-held.mjs": "ef8cc210a72372bad122977bcffd8b2c05cfa49c3661fc066a7366b509dd06fe",
+  "set-held-fillers.mjs": "44dfdd8da5625c1c1550a63d4b2c1c801725879ca2599b2c0e48c1586fa2c31f"
+ }
+}
