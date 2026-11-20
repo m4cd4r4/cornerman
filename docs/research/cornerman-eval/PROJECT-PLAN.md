@@ -656,3 +656,25 @@ of predictions: STRESS-TEST-DESIGN.md, "First development trial".
 
 Next: task wording that forces whole reads, a driver flag for limited reads, filler 42 removed,
 2 files a turn, predictions for trial 2, then rerun all three arms on seed 101.
+
+## Stage B: second development trial, seed 101 (ran 2026-11-20 12:40-14:14 AWST)
+
+The rerun with equal reading (whole files, 2 a turn, 0 limited reads in every arm). Predictions
+committed first; 8 of 12 held. Detail: STRESS-TEST-DESIGN.md, "Second development trial".
+
+- **The arms separate.** Acted on: full 28, compact 24, cm 21 of 28. One seed; it decides nothing.
+- **compact lost 4 facts in compaction:** the three in-flight "I did step 2 by hand, leave it" facts and
+  the upper-case pick (class C), each gone from the last summaries after 8 to 11 chained summaries.
+- **cm missed 7, of which 4 trace to cornerman:** every handover turned the in-flight job's "Stop there"
+  into a standing "Do not start step 4 unless the user asks", so "Carry on" got a question (3); and the
+  production-config rule was probably dropped from the last load (1, to confirm).
+- The other 3 cm misses are a rig fault: the cm agent built the class I stubs in session 1 as the notes
+  arrived, with the right values, so the probe saw no change. D-ruling-A cannot measure carry in a long
+  trial (the repo answers it in every arm).
+- On the 24 facts this seed can measure: full 24, compact 20, cm 20.
+- Cost in input-token equivalents: full 16.2M, compact 3.9M (24%), cm 4.8M (30%, 122% of compact).
+  Hours 1.3 to 1.5 per arm, run side by side.
+- Events still unequal: cm 14 handovers, compact 19 compactions before the probes.
+
+Next: driver flag for a plant acted on at plant time; D-ruling-A out of the pool; cornerman fix
+candidate 9 (a job's stop stays with the job); confirm the dropped config rule.

@@ -460,6 +460,80 @@ What has to change before the next development trial (not built):
 5. Still open after that: whether "nudge at the measured compaction point" gives cm and compact the
    same number of events. This trial cannot say.
 
+Items 1 to 4 were built and run as trial 2 (below).
+
+### Second development trial (seed 101, 2026-11-20 12:40-14:14 AWST; `out/stress-dev-2` on the VPS)
+
+The same three arms as trial 1, at `--per-turn 2`, with the whole-read task wording, the `limitedReads`
+flag and filler 42 replaced (commit 3e6929b). Predictions committed first
+(`stress/PREDICTIONS-DEV-TRIAL-2.md`). 0 limited reads in all three arms, so the arms did the same reading.
+0 invalid plants, 0 split plants, 0 off-limits calls, no timeout, no memory file.
+
+| Measure | full | compact | cm |
+|:--|--:|--:|--:|
+| Acted on, of 28 | 28 | 24 | 21 |
+| Compactions or handovers, before the probes / in all | 0 / 0 | 19 / 20 | 14 / 16 |
+| Context at each event | none | 66.2k to 74.1k, median 68.0k | after a turn ending at 54k to 65k |
+| Context just after a compaction | none | 9.3k to 19.6k, median 14.3k | new session at 17k to 38k after its first work turn |
+| Added per work turn, median | 11.8k | 11.6k | 12.3k |
+| Peak context | 726k | 66k | 68k |
+| Hours, first message to last probe | 1.3 | 1.5 | 1.4 |
+| Cost, input-token equivalents | 16.2M | 3.9M (24% of full) | 4.8M (30% of full, 122% of compact) |
+
+**Every miss, read in the transcript:**
+
+| Arm | Probe | Scored | What happened | Kind |
+|:--|:--|:--|:--|:--|
+| compact | F-in-flight-A, B, C | violated | The agent wrote the step the user had done by hand. The last 3 summaries before each probe no longer held "I ran step 2 by hand, leave that stub" (carried in 11 of 14, 8 of 11, 7 of 10) | **lost in compaction** |
+| compact | C-decision-C | violated | Lower-case ids, the agent's default. The last 5 of 15 summaries had dropped the upper-case pick | **lost in compaction** |
+| cm | F-in-flight-A, B, C | not attempted | Every handover's "Do not" turned the job's "Don't go on to step 4. Stop there." into a standing rule: "Do not touch migrate.mjs step 2 or start step 4 ... unless the user asks". On "Carry on" the agent quoted that rule and asked which step. It knew the state (step 3 written, step 2 left alone) | **cornerman fault: a one-job stop made standing** |
+| cm | A-path-A | not attempted | Two config files; the agent asked which one. "Production config is deploy/ledger.config.json" was in the start context of the earlier sessions (line 32 of each) but first appears in the probe session at line 53 of 117, after the probe. It tried to open the full copy at `/root/.cornerman/...` (wrong home) | **probably dropped from the last load; to confirm** |
+| cm | I-memo, I-attempts, I-lockout | not attempted | In session 1, before any handover, the agent built all three stubs as each note arrived (with the right values 88, 4 and 6). The probe baseline then held the code, so the checker saw no change. The agent said so, with the values | **rig fault: plant acted on at plant time** |
+
+- **D-ruling-A ("round down") cannot measure carry in a long trial.** It was obeyed in all three arms
+  while 1 of 15 summaries and 0 of 11 handovers carried it. The leak flag names `src/money.js` in every
+  arm: earlier probes add money code to that file and the agent copies its rounding. Its `written`
+  pattern also misses "rounds down".
+- On the facts this seed can measure (classes I and D-ruling-A left out), compact and cm each kept 20
+  of 24 and full kept 24 of 24. They lost different things: compaction lost old in-flight detail and
+  an option picked by position after 8 to 11 chained summaries; cornerman kept the in-flight state
+  but over-applied the job's stop, and probably lost one class A rule from the last load. n = 1 seed.
+- cm cost 122% of compact here, against the decision rule's 110% row. One seed, not read as a result.
+- Events were still unequal (cm 14, compact 19 before the probes). cm checks its nudge at turn ends
+  and a turn often ends at 54k to 65k, under 68k, so its cycles run longer than compaction's.
+
+Predictions (8 of 12 held):
+
+| # | Prediction | Held | Measured |
+|:--|:--|:--|:--|
+| 1 | 0 to 5 limited reads in every arm | YES | 0, 0, 0 |
+| 2 | Full arm adds 10k to 13k per work turn, median | YES | 11.8k |
+| 3 | Full context after the work 560k to 680k, peak below 800k, no compaction | YES | 654k, peak 726k, none |
+| 4 | Compact: 10 to 16 compactions before the probes | no | 19 |
+| 5 | Compact compacts at 66k to 78k, median 68k to 70k | YES | 20 of 20, median 68.0k |
+| 6 | 9k to 21k after a compaction in 8 of 10, no rise | YES | 20 of 20; first ten median 14.2k, last ten 14.8k |
+| 7 | cm: 11 to 16 handovers before the probes, 0 to 4 more than compact | no | 14, which is 5 fewer |
+| 8 | cm rules part at budget by the second or third load; class I out of it in every later load; every handover restates them | no | first "standing rules left out" in the fourth rules output; class I back in five later outputs; restated in 3, 3 and 7 of 15 or 16 handovers, because the stubs were already built and the handovers listed them as uncommitted work |
+| 9 | Hours: full 1.2 to 2.0, compact 1.2 to 2.0, cm 1.3 to 2.2 | YES | 1.3, 1.5, 1.4 |
+| 10 | Full 14M to 22M; compact and cm 25% to 45% of full; cm within 25% of compact | no, by 1 point | 16.2M; compact 24%, cm 30%; cm 122% of compact |
+| 11 | 0 or 1 invalid plants per arm | YES | 0, 0, 0 (by the driver's rule, which does not yet see a plant acted on at plant time) |
+| 12 | Split plants: 0 in full, 0 to 2 in compact and cm | YES | 0, 0, 0 |
+
+What has to change before more seeds (not built):
+
+1. **Driver: a plant acted on at plant time.** After each note, ops or survey turn, any change under
+   /work other than `docs/reading-notes.md` marks the fact `actedAtPlant` and leaves it out of scoring,
+   as an invalid plant is. Class I stubs and any other probe target.
+2. **D-ruling-A** leaves the pooled score, or its probe moves to a file no earlier probe writes. Fix its
+   `written` pattern for "rounds down". Development set only; the held-out set is hashed.
+3. **cornerman fix candidate 9:** the handover writer must scope a "stop there" or "don't go on to
+   step N" to the job it came with, never turn it into a standing "Do not". It is the round 4 lead (the
+   handover attaching its own condition) in a new shape.
+4. **cornerman, to confirm first:** why the production-config rule was in sessions up to 15 and not in
+   the start context of session 16. Read that load's two parts against the handover it came from.
+5. Events per arm stay unequal (finding above). Options: nudge a few thousand tokens lower, or report
+   events per arm next to every score and leave it. To put to Macdara with the next trial's numbers.
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:
