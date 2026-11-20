@@ -694,3 +694,23 @@ Detail: STRESS-TEST-DESIGN.md, "Second development trial", "Applied 2026-11-20".
 
 Next: cornerman fix candidate 9 on a branch from main, then predictions and trial 3 (seed 101, with
 the hybrid and floor arms).
+
+## Stage B: third development trial, seed 102, five arms (ran 2026-11-20 17:04-19:40 AWST)
+
+First run of all five arms side by side; cm and hybrid on cornerman PR #220 (fix 9). Predictions
+committed first; 9 of 16 held, 1 half. Detail: STRESS-TEST-DESIGN.md, "Third development trial".
+
+- Rig clean in all five: 0 limited reads, 0 invalid, 0 split. Acted on: full 28, hybrid 28, compact 27,
+  cm 27 of 28; floor 0 of 27. One seed; it decides nothing.
+- compact's miss: the summary narrowed "the export file" to `src/export.js`, so a default-filename change
+  went ahead without asking. cm's miss: a cornerman fault, an unanswered "what does 'that' mean?" became
+  "Do not change any indentation rule until answered" in every later handover.
+- **Fix 9 did not move the stop out of Do not** (12 of 17 handovers; reworded "until told to carry on").
+  "Carry on" got the work in 3 of 3, but by the committed rule that is not a test of fix 9. PR #220 stays
+  unmerged.
+- **The hybrid compacts about twice as often as compact** (36 against 19 before the probes): what is left
+  after each compaction grows to a 25.5k median against compact's 14.9k. Cost 143% of compact, 2.58 h.
+- Cost: full 18.6M, compact 3.8M (20%), hybrid 5.4M (29%), cm 5.0M (27%, 131% of compact), floor 3.7M.
+
+Next: cornerman, no Do not made from an unanswered question, and settle where a job's stop goes; hybrid,
+find and bound what grows after each compaction; J plant wording; events per arm to Macdara.

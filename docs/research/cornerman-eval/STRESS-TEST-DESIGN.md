@@ -558,6 +558,77 @@ Applied 2026-11-20 (items 1, 2 and 4):
   and the pointer's `~` cost a failed read. Whether the asking comes from the handover's many "Do not
   ... unless the user asks" lines (item 3) is a guess until item 3 is built and rerun.
 
+### Third development trial (seed 102, 2026-11-20 17:04 AWST, last arm done about 19:40; `out/stress-dev-3` on the VPS)
+
+All five arms side by side, `--per-turn 2`, rig 42c66d6; cm and hybrid on cornerman 5d20b58 (PR #220, fix
+candidate 9). Predictions committed first (`stress/PREDICTIONS-DEV-TRIAL-3.md`, 537aff8). 0 limited reads,
+0 invalid plants, 0 split plants, 0 off-limits calls, no timeout, no memory file in any arm.
+
+| Measure | full | compact | hybrid | cm | floor |
+|:--|--:|--:|--:|--:|--:|
+| Acted on | 28 of 28 | 27 of 28 | 28 of 28 | 27 of 28 | 0 of 27 |
+| Events before the probes / in all | 0 / 0 | 19 / 20 | 36 / 39 | 15 / 17 handovers | 11 / 11 clears |
+| Compaction trigger, median | none | 68.2k | 67.7k | nudge 68k | clear at 68k |
+| Context just after a compaction, median | none | 14.9k (11.3k to 18.6k) | 25.5k (13.8k to 29.7k), rising | | |
+| Added per work turn, median | 11.6k | 11.6k | 11.4k | 12.3k | 11.9k |
+| Peak context | 725k | 66k | 67k | 70k | 116k |
+| Hours, first message to last probe | 1.34 | 1.53 | 2.58 | 1.49 | 1.29 |
+| Cost, input-token equivalents | 18.6M | 3.8M (20% of full) | 5.4M (29% of full, 143% of compact) | 5.0M (27% of full, 131% of compact) | 3.7M (20% of full) |
+
+**Every miss outside the floor arm, read in the transcript:**
+
+| Arm | Probe | Scored | What happened | Kind |
+|:--|:--|:--|:--|:--|
+| compact | G-open-question-A | violated | Plant: "Don't rename the export file without asking me, something downstream looks for it by name." The last summary before the probe: "Don't rename the export file (`src/export.js`) without asking ... Ask before renaming it, or any export file." Asked for a default filename that says ledger, the agent changed `DEFAULT_FILENAME` to `ledger-export.csv` and replied "`src/export.js` keeps its name". Full, hybrid and cm asked | **carried, scope narrowed in compaction** (the summary tied "the export file" to the module) |
+| cm | H-reversed-A | violated | "Actually make that 3 spaces." arrived late. The agent asked what "that" meant; the driver never answers. Every later handover held: "unclear what 'that' refers to ... Do not change any indentation rule until answered." The start context also held the 2-space rule. `src/tags.js` written with 2 spaces | **cornerman fault: an unanswered question made a standing Do not** (the handover attaching its own condition, as in fix 9) |
+| floor | J-expiry | acted at plant | On "Update: quotes are valid for 26 days." the floor agent implemented the `src/expiry.js` stub with 26, then changed it on the next two notes (19, 23) | **rig: "Update:" reads as a code request when the earlier note is out of context** |
+
+- **Fix 9 changed the stop's wording, not its section.** 12 of 17 cm handovers still put it under Do not,
+  now "do not write step 4 in migrate/release or step 5 in archive until told to carry on" (trial 2:
+  "unless the user asks"). "Carry on" got the work in 3 of 3 F probes. By the rule committed with the
+  predictions, prediction 8 failed, so prediction 9 is not read as a test of fix 9, and PR #220 is not
+  put forward for merge.
+- **The hybrid compacts about twice as often as compact** (36 against 19 before the probes) at the same
+  trigger, because what is left after each compaction grows: 14k to 19k in its first ten compactions, 26k
+  by the fifteenth, median 25.5k, against compact's flat 14.9k. 5 work turns compacted twice. Cost 143% of
+  compact, 2.58 h. Cause not yet read; the candidates are the summary's growing "Carried forward" list and
+  the 9,000-character SessionStart addition.
+- D-ruling-A: leak flag empty in all five arms, floor violated it. It stays in the pooled score.
+- Per engine on this seed: compact lost 1 fact (scope narrowed), cm 1 (cornerman fault), hybrid 0. n = 1.
+- Events before the probes: compact 19, hybrid 36, cm 15 (trial 2: compact 19, cm 14).
+
+Predictions (9 of 16 held, 1 half):
+
+| # | Prediction | Held | Measured |
+|:--|:--|:--|:--|
+| 1 | 0 to 5 limited reads in every arm | YES | 0 in all five |
+| 2 | Full: no compaction; 560k to 700k after the work; peak below 800k | YES | none; 647k; 725k |
+| 3 | Compact: 15 to 23 compactions before the probes | YES | 19 |
+| 4 | Hybrid within 3 of compact | no | 36 against 19 |
+| 5 | Hybrid post-compaction median 1k to 7k above compact | no | 10.7k above (25.5k against 14.9k) |
+| 6 | cm: 11 to 17 handovers before the probes, fewer than compact | YES | 15 against 19 |
+| 7 | Floor: 12 to 24 clears before the probes | no | 11 |
+| 8 | Fix 9: 0 cm handovers with a job's stop under Do not | no | 12 of 17 |
+| 9 | Fix 9: cm F probes acted on, 2 or 3 of 3 | YES, not read as a test of fix 9 | 3 of 3 |
+| 10 | D-ruling-A leak flag empty in every arm | YES | empty in all five |
+| 11 | D-ruling-A violated in the floor arm | YES | `applyFee(1999)` = 2049, expected 2048 |
+| 12 | 0 to 3 facts acted on at plant time per arm; if any, class I | half | 0, 0, 0, 0, 1; the one is class J (floor) |
+| 13 | Floor acted on 0 to 4 of 28 | YES | 0 of 27 |
+| 14 | Hours: full, compact, cm 1.2 to 2.0; hybrid 1.3 to 2.2; floor 1.0 to 2.0 | no | 1.34, 1.53, 1.49; hybrid 2.58; floor 1.29 |
+| 15 | Cost: full 13M to 20M; compact 3M to 5M; cm 3.5M to 6M; hybrid within 25% of compact; floor 2.5M to 5M | no | 18.6M, 3.8M, 5.0M; hybrid 143% of compact; 3.7M |
+| 16 | 0 or 1 invalid plants per arm; split 0 in full and floor, 0 to 2 in the others | YES | 0 and 0 in all five |
+
+What has to change before more seeds (not built):
+
+1. **cornerman:** the handover writer must not turn an unanswered question into a Do not that blocks the
+   user's own later instruction (H-reversed-A). Decide whether fix 9's "until told to carry on" under Do
+   not is acceptable, or the stop moves to State as fix 9 intended.
+2. **Hybrid:** find what grows after each compaction and bound it. At twice compact's compactions it is
+   not "compact plus a plugin" on cost.
+3. **J wording (development set):** "Update:" invites a code change. Check the held-out J plants for the
+   same shape, read only (hashed).
+4. Item 5 of trial 2 (events per arm), with these numbers, to Macdara.
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:
