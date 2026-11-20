@@ -95,6 +95,10 @@ previous handover.
 - Branch, last commit, PR number if there is one.
 - Done and verified, with how it was verified (the command, and what it printed).
 - In progress, uncommitted, or unverified. Say which.
+- A job the user stopped part-way ("write step 3, don't go on to step 4, stop there"): where it
+  stopped and what comes next ("scripts/migrate.mjs: step 3 written, uncommitted, stopped there as
+  asked; step 4 is next"). The stop ended with that job: when the user says to carry on, the next
+  step is the one to do.
 
 ## Decided, not yet applied
 Rulings the user has made that are ready to apply, one per line, with where they are recorded.
@@ -116,7 +120,9 @@ this section or "Do not" that you drop.
 
 ## Do not
 Traps, approaches already tried and failed, anything off-limits. Say what happened,
-so it is not retried in a slightly different form.
+so it is not retried in a slightly different form. A limit the user put on one job ("stop there",
+"don't go on to step 4") is not a "Do not": it goes with that job under State. Something the user
+said to leave alone for good (a stub they wrote by hand) stays here.
 
 ## Key files
 - path/to/file - why it matters
