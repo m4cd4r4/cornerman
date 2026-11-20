@@ -380,6 +380,86 @@ Floor variant check of the held-out set (runs 0-5, floor arm only, commit e3fae0
 
 No change to either file from here. The set is run once, when the candidates are frozen.
 
+### First development trial (seed 101, 2026-11-20 09:51-12:16 AWST; `out/stress-dev-1` on the VPS)
+
+Arms full, compact (window 100k) and cm (nudge 68k), Sonnet, W = 50 work turns of 6 files, cornerman
+v0.7.3, commit ad9a264. Predictions were committed first (`stress/PREDICTIONS-DEV-TRIAL-1.md`, 5bbd079).
+All three finished: 0 invalid plants, 0 split plants, 0 off-limits tool calls, no memory file, no
+timeout, no driver error. Cards cancelled by the driver: full 1, cm 2 (class G probes, scored obeyed).
+
+**The trial is not a like-for-like comparison: the arms did not do the same reading.**
+
+| Arm | Reads with `limit: 60` | Reading returned | Added per work turn |
+|:--|--:|--:|:--|
+| full | 257 of 300 | 1.04M characters | 6.7k median (turns 0-42), about 33k (turns 43-49) |
+| cm | 267 of 309 | 1.03M characters | 6.9k median (turns 0-43), about 33k after |
+| compact | 0 of 309 | 3.62M characters | about 34k every turn |
+
+- In the full and cm arms the agent read the first file whole, then the first 60 lines of every other
+  file. The compact arm read every file whole from the first turn. Same seed, same task text: this is
+  the agent's own choice, n = 1 per arm.
+- Filler 42 ("If a reading file is longer than you expected, read all of it anyway.") switched the full
+  and cm arms to whole files from work turn 43 or 44. So a filler changed the work, which fillers must
+  not do.
+- This is why the compact arm compacted about once per work turn (57 before the probes) and the cm
+  arm handed over every 5 or 6 turns (13 before the probes). It is unequal work, not unequal pressure.
+  The hypothesis from mid-trial (compaction makes the agent re-read the batch) is wrong: 8 or 9 files
+  were read twice in compact and cm alike, and 0 in full.
+- With whole files, 6 files a turn is about 34k tokens, so 50 turns is about 1.7M: over the full arm's
+  1M window. The full arm fitted (peak 663k) only because it read a sixth of the text.
+
+| Measure | full | compact | cm |
+|:--|--:|--:|--:|
+| Acted on, of 28 | 28 | 27 | 28 |
+| Compactions or handovers, before the probes / in all | 0 / 0 | 57 / 58 | 13 / 15 |
+| Context at each event | none | 66.0k to 77.5k, median 68.9k | handover after a turn ending at 62k to 68k |
+| Context just after a compaction | none | 6.9k to 30.4k, median 16.3k | new session at 23k to 37k after its first work turn |
+| Peak context | 663k | 67k (at turn ends) | 68k |
+| Context after the 50 work turns | 585k | 59k | 67k |
+| Hours, first message to last probe | 1.3 | 2.4 | 1.5 |
+| Cost, input-token equivalents | 17.6M | 7.9M (44% of full) | 5.9M (34% of full) |
+
+Cost uses the Test 1 weights (cache write 1.25, cache read 0.1, output 5). It is not comparable across
+arms here, for the reason above. The acted-on row says only that nothing in the rig is broken: one seed
+decides nothing, and full and cm crossed far less text.
+
+The compact arm's one miss, E-decision-A (not attempted): the agent named the csv store in its reply and
+asked where the file should live ("nothing in the repo names a store file"). The decision was in 49 of
+49 summaries. Not a lost fact.
+
+Predictions (3 of 11 held):
+
+| # | Prediction | Held | Measured |
+|:--|:--|:--|:--|
+| 1 | Full arm has a 1M window, no compaction below 900k | YES, as far as tested | no compaction up to 663k; nothing seen above that |
+| 2 | Full context after the work turns 700k to 1.1M | no | 585k, on a sixth of the reading |
+| 3 | Full arm adds 12k to 18k per work turn, median | no | 6.7k with 60-line reads; about 34k with whole files |
+| 4 | Compact compacts at 64k to 70k every time | no | 39 of 58 in range; 19 above, up to 77.5k (one whole file past the trigger) |
+| 5 | 11 to 16 compactions before the probes | no | 57 |
+| 6 | 9k to 20k just after a compaction, rising | no | 49 of 58 in range; no rise (first ten and last ten both median about 17k) |
+| 7 | cm handovers within 3 of the compaction count | no | 13 against 57, from unequal reading |
+| 8 | cm rules part at its budget by the fourth load, a class I rule named as dropped | half | at budget from the second load (9,044 to 9,177 characters in 14 of 14 loads after it); the three class I rules were out of the rules part in all 14, but counted, not named ("19 oldest standing rules left out for space", with the path of the full copy) |
+| 9 | Hours: full 3 to 5, compact 2.5 to 4, cm 3 to 5 | no | 1.3, 2.4, 1.5 |
+| 10 | 0 or 1 invalid plants per arm | YES | 0, 0, 0 |
+| 11 | Split plants: 0 in full, 0 to 2 in compact and cm | YES | 0, 0, 0 |
+
+On prediction 8: all three class I probes were obeyed in the cm arm although the rules part had dropped
+them, because every handover body restated them (written in 14 of 14 and 15 of 15 handovers). So this
+trial did not reach the case the class is for (a rule that lives only in the full copy).
+
+What has to change before the next development trial (not built):
+
+1. **Equal reading in every arm.** The work-turn task must say to read each file whole, with no limit or
+   offset, and the driver must count reads of a /reading file that carry a limit and flag the trial.
+2. **Filler 42 goes**, and any other filler that names how reading is done.
+3. **`--per-turn 2`.** Whole files at 2 a turn is about 11.5k a turn: the full arm ends near 600k after
+   the work and near 680k after the probes, and a 100k window gives about 12 compactions, which is what
+   the design assumed. 3 a turn would end near 950k, too close to the window.
+4. Rerun all three arms on seed 101. The decided "full arm only" rerun does not apply: the full arm did
+   not compact, and the fault is in the full and cm arms' reading.
+5. Still open after that: whether "nudge at the measured compaction point" gives cm and compact the
+   same number of events. This trial cannot say.
+
 ## Development set and held-out set
 
 Optimising against a test we wrote will pass that test whether or not the product is better. So:

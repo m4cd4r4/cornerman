@@ -633,3 +633,26 @@ rig container (Sonnet, 100k window, about 7 minutes each, one typed and one auto
   compaction (10,991 to 14,427 against 8,761), not like for like.
 
 Next: step 2, plant classes, probes and checkers, floor run of every variant, fairness review.
+
+## Stage B: first development trial, seed 101 (ran 2026-11-20 09:51-12:16 AWST)
+
+Arms full, compact (100k window) and cm (nudge 68k), 50 work turns of 6 files, cornerman v0.7.3.
+Predictions committed first (`stress/PREDICTIONS-DEV-TRIAL-1.md`); 3 of 11 held. Detail and the table
+of predictions: STRESS-TEST-DESIGN.md, "First development trial".
+
+- The rig ran clean in all three arms: 0 invalid plants, 0 split plants, 0 off-limits tool calls, no
+  timeout. Acted on: full 28 of 28, compact 27 of 28, cm 28 of 28. One seed; it decides nothing.
+- **The arms did unequal work, so nothing here compares them.** The full and cm agents read the first
+  60 lines of each reading file (257 and 267 of about 300 reads); the compact agent read every file
+  whole, 3.5 times the text. A filler rule at work turn 42 switched full and cm to whole files.
+- That, and not compaction itself, is why compact compacted 57 times before the probes and cm handed
+  over 13 times.
+- Whole files at 6 a turn is about 1.7M tokens of work, over the full arm's 1M window. The full arm
+  peaked at 663k only because it read a sixth of the text.
+- Hours: full 1.3, compact 2.4, cm 1.5. Cost in input-token equivalents: 17.6M, 7.9M, 5.9M.
+- cm's rules part sat at its 9,000-character budget from the second load and left the class I rules
+  out of it in 14 of 14 loads, by count and path, not by name. The handover body restated them every
+  time, so the "rule only in the full copy" case was not reached.
+
+Next: task wording that forces whole reads, a driver flag for limited reads, filler 42 removed,
+2 files a turn, predictions for trial 2, then rerun all three arms on seed 101.
