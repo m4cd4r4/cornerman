@@ -60,7 +60,7 @@ before acting on it.
 
 ## Known issues
 
-From `docs/CLAUDE-TODO.md`, re-checked 2026-10-03:
+Re-checked 2026-10-03:
 
 | # | Issue | State |
 |---|---|---|

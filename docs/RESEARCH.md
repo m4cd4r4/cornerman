@@ -4,7 +4,7 @@ cornerman, then called clear-resume, was tested before release. This page is the
 
 **How to read the labels.** *Measured* means a run produced the number. *Modelled* means a fitted formula produced it. *Judgement* means the author chose it. Costs are API-equivalent (list price), because the runs used a subscription token. Prices changed between 9 and 10 Oct 2026, so only numbers from the same day compare.
 
-**Where the raw data lives.** The run records, transcripts and harness are on the author's machine, not in this repo. The repo holds the designs and the two write-ups that were committed with predictions first: [idle end to end](research/idle-e2e/results.md) and the [CLAUDE.md trim test](research/claude-md-trim-test.md). The [results page](https://m4cd4r4.github.io/clear-resume/) charts the build runs. Predictions were written before each run and every one is reported, hit or miss.
+**Where the raw data lives.** The run records, transcripts, harness, study designs and the two write-ups committed with predictions first (idle end to end, CLAUDE.md trim test) are on the author's machine, not in this repo. The [results page](https://m4cd4r4.github.io/clear-resume/) charts the build runs. Predictions were written before each run and every one is reported, hit or miss.
 
 ## Summary
 
@@ -110,7 +110,7 @@ Saving now appends the last files written, edited and read, the last commands th
 
 ## Does a shorter CLAUDE.md change the work?
 
-A 4.5k-token project file against a 2.0k-token trim (Sonnet 5.5, 4 tasks, 100 scored runs, 12 to 13 Oct). The first reply was about 2.7k tokens smaller. No rule the trimmed file kept was broken more often, but cost did not fall: one task cost about 29% more on the trimmed arm, because it read the moved reference file in 12 of 15 runs against 5 of 15. A 0-in-15 result still allows a failure rate near 18%. See the [write-up](research/claude-md-trim-test.md).
+A 4.5k-token project file against a 2.0k-token trim (Sonnet 5.5, 4 tasks, 100 scored runs, 12 to 13 Oct). The first reply was about 2.7k tokens smaller. No rule the trimmed file kept was broken more often, but cost did not fall: one task cost about 29% more on the trimmed arm, because it read the moved reference file in 12 of 15 runs against 5 of 15. A 0-in-15 result still allows a failure rate near 18%.
 
 ## What the literature says
 
