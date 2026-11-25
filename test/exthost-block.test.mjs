@@ -28,7 +28,7 @@ async function bestBlock(pass) {
 // Best of three still failed at 51.4 ms in a run that took twice its usual time (2026-11-06): the
 // refresh is CPU-bound, so every pass on a contended CPU is slow. The budget scales by how slow a
 // fixed piece of CPU work is right now against the same work on a quiet machine (about 8 ms on
-// Macdara's desk, 2-2.7x that under 20 busy-loop processes, in step with the refresh's 25 to
+// the author's machine, 2-2.7x that under 20 busy-loop processes, in step with the refresh's 25 to
 // 51-64 ms). The smaller of two readings is used, never below 1x and never above 4x, so the 182 ms
 // freeze still fails on a quiet machine and anything past 200 ms fails on any machine.
 const QUIET_YARDSTICK_MS = 8;

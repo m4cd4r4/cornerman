@@ -314,7 +314,7 @@ Source: I:/Scratch/_ab/RESULTS.md (the A/B write-up, outside this repo), section
 - Means: relay 53.7M US$25.93, compaction 50.4M US$24.22
 - Both used fewer tokens than one session that never compacts (Sonnet about 1.6x, Opus 81.5M vs 53.7M, about 1.5x).
 - On this 30-item build, the relay and Claude Code's auto-compaction at ~177k finished the same share of runs (Sonnet 5 of 6 each, Opus 3 of 3 each) at about the same tokens and cost.
-- Planned tests: predictions written BEFORE the runs (drafted 2026-10-10 14:55 AWST, for Macdara's review)
+- Planned tests: predictions written BEFORE the runs (drafted 2026-10-10 14:55 AWST)
 - P3 started 15:16 AWST
 - Cache hits and refreshes on Claude Opus 5.5 and Claude Sonnet 5.5 are priced at 0.05x the base input price.
 - priced at the 2026-10-11 list (Sonnet 5.5: 2 / 4 (1h write) / 0.10 read / 10; Opus 5.5: 4 / 8 / 0.20 / 20). Check: all 15 runs on CLI 2.1.296 re-cost within US$0.02 of the CLI's own cost

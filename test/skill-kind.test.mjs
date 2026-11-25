@@ -1,5 +1,5 @@
 // Issue #206: asked for a handover "for the other session", a window saved one with
-// --cwd pointing at another repo. Macdara wanted a prompt to paste there, and this
+// --cwd pointing at another repo. The ask was a prompt to paste there, and this
 // session to carry on. The skill now decides the kind before it writes anything.
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
