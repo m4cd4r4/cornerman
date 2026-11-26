@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
-import { carryForward, missingSections, previousHandover } from "./lib/carry.mjs";
+import { carryForward, missingSections, previousHandover, waitingHolds } from "./lib/carry.mjs";
 import { addRulings, replacedRulings } from "./lib/rulings.mjs";
 import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
@@ -127,6 +127,17 @@ try {
   const gaps = missingSections(body);
   if (gaps.length && !process.argv.includes("--open-question"))
     console.log(`Note: this handover has no ${gaps.map((g) => `"${g}"`).join(" or ")} section. If there is anything there, save again with it (write "None" if empty).`);
+  // A line that waits on the user outlives the wait: the next session never sees the user answer or
+  // say "carry on" to it (lib/carry.mjs, waitingHolds). An open-question snapshot waits by design.
+  const holds = process.argv.includes("--open-question") ? [] : waitingHolds(body);
+  if (holds.length)
+    console.log(
+      `Note: ${holds.length} line${holds.length === 1 ? " waits" : "s wait"} on the user:\n` +
+        holds.map((h) => `  - [${h.section}] ${h.text}`).join("\n") +
+        `\nA job the user stopped part-way goes under State: where it stopped and what comes next. For a question the user left unanswered, ` +
+        `put their words and your most likely reading under "Decisions already made", marked unconfirmed, and keep the question open without the hold. ` +
+        `Neither may hold back what the user asks next. Save again with them moved, unless the user said to leave something alone for good.`,
+    );
   // Only when the folders really differ: the same folder in another spelling is no surprise.
   if (!sameFolder(startedIn, process.cwd()))
     console.log(`Filed against the session root ${shownPath(startedIn)}, not the current directory.`);

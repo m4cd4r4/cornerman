@@ -107,7 +107,11 @@ This is work to do, not background: the next session applies these, not only the
 
 ## Open questions
 Anything shown to the user for a choice with no answer recorded, and where it lives. Write "None"
-if there are none.
+if there are none. A question you asked about the user's own instruction ("what does 'that' refer
+to?") that got no answer: write their words and your most likely reading here, and put that reading
+under "Decisions already made", marked unconfirmed. Never add a hold ("do not change X until
+answered"): the next session never sees the answer arrive, so the hold outlives the question and
+blocks what the user asks next.
 
 ## Also read
 Other handovers or records on the same task, and what each still holds open.
@@ -122,7 +126,10 @@ this section or "Do not" that you drop.
 Traps, approaches already tried and failed, anything off-limits. Say what happened,
 so it is not retried in a slightly different form. A limit the user put on one job ("stop there",
 "don't go on to step 4") is not a "Do not": it goes with that job under State. Something the user
-said to leave alone for good (a stub they wrote by hand) stays here.
+said to leave alone for good (a stub they wrote by hand) stays here. When one message holds both
+("don't commit it and don't go on to step 4"), split it: "do not commit unless asked" here, the step
+under State. A line in the handover you started from that waits on the user ("until told to carry
+on") moves to State; do not restate it here.
 
 ## Key files
 - path/to/file - why it matters
@@ -143,7 +150,9 @@ Leave out sections that would be empty, except "Read first", "Decided, not yet a
 Saving checks your work: any "Read first", "Decided, not yet applied", "Open questions" or
 "Progress" line in the handover you started from that yours does not mention is appended under
 "Carried forward from the previous handover", and the save prints the list. If one is really done
-or dropped, save again saying so; otherwise leave it.
+or dropped, save again saying so; otherwise leave it. The save also names any "Do not", "Open
+questions" or "Decisions already made" line that waits on the user ("until told to carry on", "until
+answered"); save again with each one moved as above.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it

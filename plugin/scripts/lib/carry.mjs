@@ -175,6 +175,9 @@ export function carryForward(body, previous, { replaced = [] } = {}) {
       if ((it.tag === "rule" || it.tag === "do not") && replaced.some((t) => mentioned(it, t))) return false;
       return !mentioned(it, own);
     });
+    // A rule that waits on the user is a job's stop, not a standing rule: carried as a [stop], so the
+    // "still holds" line below does not ask for it under Do not again (trial 3, fix 10).
+    for (const it of carried) if ((it.tag === "rule" || it.tag === "do not") && isHold(it)) it.tag = "stop";
     if (!carried.length) return { body: own, carried };
     const from = previous.title ? ` "${previous.title}"` : "";
     const section =
@@ -183,6 +186,9 @@ export function carryForward(body, previous, { replaced = [] } = {}) {
       `silently. Treat each as still open. Apply it, or say in your next handover that it is done or dropped.` +
       (carried.some((it) => it.tag === "rule" || it.tag === "do not")
         ? ` A [rule] or [do not] still holds: restate it under "Decisions already made" or "Do not" next time.`
+        : "") +
+      (carried.some((it) => it.tag === "stop")
+        ? ` A [stop] is where the user paused a job: put it under State, with what comes next, and keep only what the user said to leave alone for good under Do not.`
         : "") +
       `\n` +
       carried.map((it) => `- [${it.tag}] ${it.text}`).join("\n");
@@ -220,6 +226,25 @@ export function previousHandover({ own = [], loaded = [], owner, sameOwner, now 
 /** How many open items a handover holds, for the load-time listing of other handovers. */
 export function openCount(body) {
   return openItems(body).filter((it) => it.tag === "decided" || it.tag === "open question").length;
+}
+
+// A line that holds work until the user speaks again. Development trial 3 of the cornerman-eval stress
+// test (seed 102, 2026-11-20): one handover filed the user's "don't go on to step 4" under Do not as
+// "do not write step 4 ... until told to carry on", and every later writer restated it (12 of 17); an
+// unanswered "what does 'that' mean?" became "Do not change any indentation rule until answered" under
+// Open questions, and the next session kept the old 2-space rule. "Unless asked" is a standing rule
+// ("do not commit unless asked") and is not matched. Nor is a condition the user named: "no edits until
+// the user says it is signed off" and "until told otherwise" are the user's own rules (every handover
+// of the same trial held the first), so only a wait for an answer or for "carry on" counts.
+const HOLD = /\b(?:until|till)\s+(?:(?:it\s+is|it's|this\s+is|they\s+are)\s+)?(?:answered|clarified|(?:the\s+)?user\s+(?:answers|replies|clarifies)|told\s+to\s+(?:carry\s+on|continue|go\s+on|proceed|resume))\b/i;
+const HOLD_SECTIONS = { "do not": "Do not", "open question": "Open questions", rule: "Decisions already made" };
+const isHold = (it) => it.tag in HOLD_SECTIONS && HOLD.test(it.text) && (it.tag !== "open question" || /\b(?:do not|don'?t|never)\b/i.test(it.text));
+
+/** The session's own Do not, Open questions and Decisions lines that wait on the user: [{ section, text }]. */
+export function waitingHolds(body) {
+  return openItems(withoutCarried(body))
+    .filter(isHold)
+    .map((it) => ({ section: HOLD_SECTIONS[it.tag], text: it.text }));
 }
 
 /** Whether a body states both always-present sections, even as "None". */
