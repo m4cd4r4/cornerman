@@ -120,12 +120,18 @@ export const words = (s) =>
     // "dropped" -> "dropp" -> "drop": undouble a final consonant the suffix left behind.
     .map((w) => (/\d|[./#]/.test(w) ? w : w.replace(/([b-df-hj-np-tv-z])\1$/, "$1")));
 
+// A bracket that says where something is recorded ("(ruled in decisions.md #4)", "(see PLAN.md)") is a
+// pointer. Any other bracket is part of the item: "(250 means 2.5%, never 0.025 or 2.5)" is the rule
+// itself, and stripping it left only words every ledger handover repeats (dev trial 4, fix 11).
+const POINTER = /\.[a-z]{1,5}\b|\/|#\d|\b(?:ruled|recorded|logged|see|per)\b/i;
+const withoutPointers = (text) => String(text).replace(/\([^)]*\)/g, (b) => (POINTER.test(b) ? " " : b));
+
 /** Whether the new body still mentions an item: most of its significant words appear in it. */
 export function mentioned(item, body) {
   const have = new Set(words(body));
   // A bracketed pointer ("(ruled in decisions.md #4)") says where, not what: a
   // restatement rarely repeats it, so it does not count against a match.
-  const want = [...new Set(words(String(item.text).replace(/\([^)]*\)/g, " ")))];
+  const want = [...new Set(words(withoutPointers(item.text)))];
   if (!want.length) {
     const flat = (s) => String(s).toLowerCase().replace(/\s+/g, " ").trim();
     return flat(body).includes(flat(item.text));
@@ -136,7 +142,7 @@ export function mentioned(item, body) {
   // reason ("Drop the gallery hover zoom, the built-in look is fine"), which a
   // restatement ("Gallery hover zoom dropped") does not repeat. A head of at least
   // three significant words, all present, counts as a mention.
-  const head = [...new Set(words(String(item.text).replace(/\([^)]*\)/g, " ").split(/,|\s[-:]\s|;/)[0]))];
+  const head = [...new Set(words(withoutPointers(item.text).split(/,|\s[-:]\s|;/)[0]))];
   return head.length >= 3 && head.every((w) => have.has(w));
 }
 
