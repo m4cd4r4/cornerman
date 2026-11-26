@@ -85,6 +85,9 @@ Files kept across sessions that the next session must open before acting: a deci
 review page with rulings, a client or workspace map (a folder's CLAUDE.md), a do-not or mistakes
 list. One per line: path - what it holds and, for a record, how many open items. Carry every one
 forward from the handover you started from unless it no longer exists. Write "None" if there are none.
+Never list work output here: notes or a log the work appends to, or a doc the session wrote. Every
+later session reads each file in full, so a file that grows makes every start bigger; name it under
+"Key files" instead.
 The SessionStart hook tells the next session to open each of these before its first action.
 
 ## Progress
@@ -152,7 +155,8 @@ Saving checks your work: any "Read first", "Decided, not yet applied", "Open que
 "Carried forward from the previous handover", and the save prints the list. If one is really done
 or dropped, save again saying so; otherwise leave it. The save also names any "Do not", "Open
 questions" or "Decisions already made" line that waits on the user ("until told to carry on", "until
-answered"); save again with each one moved as above.
+answered"); save again with each one moved as above. It also names any "Read first" file that changed
+since the previous handover; move work output to "Key files" and save again.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it

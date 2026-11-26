@@ -1,3 +1,5 @@
+import { statSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 // Carry-forward: no open item drops out of a handover chain silently (#194).
 //
 // A handover that narrows to the next step loses work that is settled but not yet
@@ -251,6 +253,32 @@ export function waitingHolds(body) {
   return openItems(withoutCarried(body))
     .filter(isHold)
     .map((it) => ({ section: HOLD_SECTIONS[it.tag], text: it.text }));
+}
+
+// A Read first file the work keeps writing to. Development trial 5 of the cornerman-eval stress test
+// (seed 104, 2026-11-26): every handover listed docs/reading-notes.md, which the work appended a line to
+// per reading file, and each doc the session wrote joined the list (8 files by the end). The start note
+// opens every Read first file, so each session re-read more and the start context climbed from 22k to
+// 58k. A file changed since the previous handover was saved is named at save time: a record (a decision
+// log) may stay, work output goes under Key files.
+const PATH_AT_START = /^`?([^\s`]+?)`?(?:\s+[-:(]|\s*$)/;
+
+/** The session's own Read first paths whose file changed after `previous.created`, relative to `top`. */
+export function growingReads(body, previous, top) {
+  const since = Date.parse(previous?.created ?? "");
+  if (!Number.isFinite(since)) return [];
+  const out = [];
+  for (const it of openItems(withoutCarried(body))) {
+    if (it.tag !== "read first") continue;
+    const m = PATH_AT_START.exec(it.text.trim());
+    if (!m) continue;
+    try {
+      if (statSync(isAbsolute(m[1]) ? m[1] : join(top, m[1])).mtimeMs > since) out.push(m[1]);
+    } catch {
+      // gone or not a path: nothing to name
+    }
+  }
+  return out;
 }
 
 /** Whether a body states both always-present sections, even as "None". */
