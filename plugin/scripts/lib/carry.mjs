@@ -1,3 +1,5 @@
+import { statSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 // Carry-forward: no open item drops out of a handover chain silently (#194).
 //
 // A handover that narrows to the next step loses work that is settled but not yet
@@ -120,12 +122,18 @@ export const words = (s) =>
     // "dropped" -> "dropp" -> "drop": undouble a final consonant the suffix left behind.
     .map((w) => (/\d|[./#]/.test(w) ? w : w.replace(/([b-df-hj-np-tv-z])\1$/, "$1")));
 
+// A bracket that says where something is recorded ("(ruled in decisions.md #4)", "(see PLAN.md)") is a
+// pointer. Any other bracket is part of the item: "(250 means 2.5%, never 0.025 or 2.5)" is the rule
+// itself, and stripping it left only words every ledger handover repeats (dev trial 4, fix 11).
+const POINTER = /\.[a-z]{1,5}\b|\/|#\d|\b(?:ruled|recorded|logged|see|per)\b/i;
+const withoutPointers = (text) => String(text).replace(/\([^)]*\)/g, (b) => (POINTER.test(b) ? " " : b));
+
 /** Whether the new body still mentions an item: most of its significant words appear in it. */
 export function mentioned(item, body) {
   const have = new Set(words(body));
   // A bracketed pointer ("(ruled in decisions.md #4)") says where, not what: a
   // restatement rarely repeats it, so it does not count against a match.
-  const want = [...new Set(words(String(item.text).replace(/\([^)]*\)/g, " ")))];
+  const want = [...new Set(words(withoutPointers(item.text)))];
   if (!want.length) {
     const flat = (s) => String(s).toLowerCase().replace(/\s+/g, " ").trim();
     return flat(body).includes(flat(item.text));
@@ -136,7 +144,7 @@ export function mentioned(item, body) {
   // reason ("Drop the gallery hover zoom, the built-in look is fine"), which a
   // restatement ("Gallery hover zoom dropped") does not repeat. A head of at least
   // three significant words, all present, counts as a mention.
-  const head = [...new Set(words(String(item.text).replace(/\([^)]*\)/g, " ").split(/,|\s[-:]\s|;/)[0]))];
+  const head = [...new Set(words(withoutPointers(item.text).split(/,|\s[-:]\s|;/)[0]))];
   return head.length >= 3 && head.every((w) => have.has(w));
 }
 
@@ -175,6 +183,9 @@ export function carryForward(body, previous, { replaced = [] } = {}) {
       if ((it.tag === "rule" || it.tag === "do not") && replaced.some((t) => mentioned(it, t))) return false;
       return !mentioned(it, own);
     });
+    // A rule that waits on the user is a job's stop, not a standing rule: carried as a [stop], so the
+    // "still holds" line below does not ask for it under Do not again (trial 3, fix 10).
+    for (const it of carried) if ((it.tag === "rule" || it.tag === "do not") && isHold(it)) it.tag = "stop";
     if (!carried.length) return { body: own, carried };
     const from = previous.title ? ` "${previous.title}"` : "";
     const section =
@@ -183,6 +194,9 @@ export function carryForward(body, previous, { replaced = [] } = {}) {
       `silently. Treat each as still open. Apply it, or say in your next handover that it is done or dropped.` +
       (carried.some((it) => it.tag === "rule" || it.tag === "do not")
         ? ` A [rule] or [do not] still holds: restate it under "Decisions already made" or "Do not" next time.`
+        : "") +
+      (carried.some((it) => it.tag === "stop")
+        ? ` A [stop] is where the user paused a job: put it under State, with what comes next, and keep only what the user said to leave alone for good under Do not.`
         : "") +
       `\n` +
       carried.map((it) => `- [${it.tag}] ${it.text}`).join("\n");
@@ -220,6 +234,77 @@ export function previousHandover({ own = [], loaded = [], owner, sameOwner, now 
 /** How many open items a handover holds, for the load-time listing of other handovers. */
 export function openCount(body) {
   return openItems(body).filter((it) => it.tag === "decided" || it.tag === "open question").length;
+}
+
+// A line that holds work until the user speaks again. Development trial 3 of the cornerman-eval stress
+// test (seed 102, 2026-11-20): one handover filed the user's "don't go on to step 4" under Do not as
+// "do not write step 4 ... until told to carry on", and every later writer restated it (12 of 17); an
+// unanswered "what does 'that' mean?" became "Do not change any indentation rule until answered" under
+// Open questions, and the next session kept the old 2-space rule. "Unless asked" is a standing rule
+// ("do not commit unless asked") and is not matched. Nor is a condition the user named: "no edits until
+// the user says it is signed off" and "until told otherwise" are the user's own rules (every handover
+// of the same trial held the first), so only a wait for an answer or for "carry on" counts.
+const HOLD = /\b(?:until|till)\s+(?:(?:it\s+is|it's|this\s+is|they\s+are)\s+)?(?:answered|clarified|(?:the\s+)?user\s+(?:answers|replies|clarifies)|told\s+to\s+(?:carry\s+on|continue|go\s+on|proceed|resume))\b/i;
+const HOLD_SECTIONS = { "do not": "Do not", "open question": "Open questions", rule: "Decisions already made" };
+const isHold = (it) => it.tag in HOLD_SECTIONS && HOLD.test(it.text) && (it.tag !== "open question" || /\b(?:do not|don'?t|never)\b/i.test(it.text));
+
+/** The session's own Do not, Open questions and Decisions lines that wait on the user: [{ section, text }]. */
+export function waitingHolds(body) {
+  return openItems(withoutCarried(body))
+    .filter(isHold)
+    .map((it) => ({ section: HOLD_SECTIONS[it.tag], text: it.text }));
+}
+
+// A Read first file the work keeps writing to. Development trial 5 of the cornerman-eval stress test
+// (seed 104, 2026-11-26): every handover listed docs/reading-notes.md, which the work appended a line to
+// per reading file, and each doc the session wrote joined the list (8 files by the end). The start note
+// opens every Read first file, so each session re-read more and the start context climbed from 22k to
+// 58k. A file changed since the previous handover was saved is named at save time: a record (a decision
+// log) may stay, work output goes under Key files.
+const PATH_AT_START = /^`?([^\s`]+?)`?(?:\s+[-:(]|\s*$)/;
+
+/** The session's own Read first paths whose file changed after `previous.created`, relative to `top`. */
+export function growingReads(body, previous, top) {
+  const since = Date.parse(previous?.created ?? "");
+  if (!Number.isFinite(since)) return [];
+  const out = [];
+  for (const it of openItems(withoutCarried(body))) {
+    if (it.tag !== "read first") continue;
+    const m = PATH_AT_START.exec(it.text.trim());
+    if (!m) continue;
+    try {
+      if (statSync(isAbsolute(m[1]) ? m[1] : join(top, m[1])).mtimeMs > since) out.push(m[1]);
+    } catch {
+      // gone or not a path: nothing to name
+    }
+  }
+  return out;
+}
+
+// A ruling the writer changed on its own say. Development trial 6 of the cornerman-eval stress test
+// (seed 105, 2026-11-26): the session listed "1. all lower case, 2. all upper case", the user picked "the
+// second one", and handover 5 recorded upper case. Handover 6 wrote "all LOWER case ... The previous
+// handover wrongly said upper case; corrected here", taking the order from the user's request, not the
+// session's list, with no new user message; every later handover kept it and the probe built lower case.
+// A Decisions line that says it corrects an earlier handover is named at save time, beside the earlier
+// version, so the writer changes a carried ruling only on the user's word.
+const CORRECTS = /\b(?:previous|earlier|last|prior)\s+handover\b[^.]*\b(?:wrong|wrongly|mistaken|incorrect|corrected|was\s+wrong)\b|\bcorrected\s+here\b/i;
+
+/** The session's own Decisions and Decided lines that say they correct an earlier handover: [{ text, was }]. */
+export function revisedRulings(body, previous) {
+  if (!previous?.body) return [];
+  const RULED = new Set(["rule", "decided"]);
+  const before = openItems(previous.body).filter((it) => RULED.has(it.tag));
+  const overlap = (a, b) => {
+    const have = new Set(words(b));
+    return [...new Set(words(a))].filter((w) => have.has(w)).length;
+  };
+  return openItems(withoutCarried(body))
+    .filter((it) => RULED.has(it.tag) && CORRECTS.test(it.text))
+    .map((it) => {
+      const best = before.map((p) => [overlap(p.text, it.text), p.text]).sort((a, b) => b[0] - a[0])[0];
+      return { text: it.text, was: best && best[0] > 0 ? best[1] : null };
+    });
 }
 
 /** Whether a body states both always-present sections, even as "None". */

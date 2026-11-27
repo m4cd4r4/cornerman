@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
-import { carryForward, missingSections, previousHandover } from "./lib/carry.mjs";
+import { carryForward, growingReads, missingSections, previousHandover, revisedRulings, waitingHolds } from "./lib/carry.mjs";
 import { addRulings, replacedRulings } from "./lib/rulings.mjs";
 import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
@@ -127,6 +127,37 @@ try {
   const gaps = missingSections(body);
   if (gaps.length && !process.argv.includes("--open-question"))
     console.log(`Note: this handover has no ${gaps.map((g) => `"${g}"`).join(" or ")} section. If there is anything there, save again with it (write "None" if empty).`);
+  // A line that waits on the user outlives the wait: the next session never sees the user answer or
+  // say "carry on" to it (lib/carry.mjs, waitingHolds). An open-question snapshot waits by design.
+  const holds = process.argv.includes("--open-question") ? [] : waitingHolds(body);
+  if (holds.length)
+    console.log(
+      `Note: ${holds.length} line${holds.length === 1 ? " waits" : "s wait"} on the user:\n` +
+        holds.map((h) => `  - [${h.section}] ${h.text}`).join("\n") +
+        `\nA job the user stopped part-way goes under State: where it stopped and what comes next. For a question the user left unanswered, ` +
+        `put their words and your most likely reading under "Decisions already made", marked unconfirmed, and keep the question open without the hold. ` +
+        `Neither may hold back what the user asks next. Save again with them moved, unless the user said to leave something alone for good.`,
+    );
+  // A Read first file the work keeps writing to is re-read in full by every later session
+  // (lib/carry.mjs, growingReads).
+  const growing = growingReads(body, previous?.meta, top);
+  if (growing.length)
+    console.log(
+      `Note: ${growing.length} Read first file${growing.length === 1 ? " has" : "s have"} changed since the previous handover:\n` +
+        growing.map((p) => `  - ${p}`).join("\n") +
+        `\nThe next session opens every Read first file before it acts. Keep a record there (a decision log, a do-not list); ` +
+        `move work output (notes or a log the work appends to, a doc this session wrote) to "Key files" and save again.`,
+    );
+  // A ruling the writer changed on its own say outlives the mistake: every later handover carries it
+  // (lib/carry.mjs, revisedRulings).
+  const revised = revisedRulings(body, previous);
+  if (revised.length)
+    console.log(
+      `Note: ${revised.length} line${revised.length === 1 ? " says it corrects" : "s say they correct"} an earlier handover:\n` +
+        revised.map((r) => `  - now: ${r.text}${r.was ? `\n    was: ${r.was}` : ""}`).join("\n") +
+        `\nChange a carried ruling only when the user said so in this session; quote their words. A pick by position ("the second one") ` +
+        `means that item in the list as this session showed it, not as the request named them. Otherwise restore the earlier version and save again.`,
+    );
   // Only when the folders really differ: the same folder in another spelling is no surprise.
   if (!sameFolder(startedIn, process.cwd()))
     console.log(`Filed against the session root ${shownPath(startedIn)}, not the current directory.`);

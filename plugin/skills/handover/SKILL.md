@@ -85,6 +85,9 @@ Files kept across sessions that the next session must open before acting: a deci
 review page with rulings, a client or workspace map (a folder's CLAUDE.md), a do-not or mistakes
 list. One per line: path - what it holds and, for a record, how many open items. Carry every one
 forward from the handover you started from unless it no longer exists. Write "None" if there are none.
+Never list work output here: notes or a log the work appends to, or a doc the session wrote. Every
+later session reads each file in full, so a file that grows makes every start bigger; name it under
+"Key files" instead.
 The SessionStart hook tells the next session to open each of these before its first action.
 
 ## Progress
@@ -95,6 +98,10 @@ previous handover.
 - Branch, last commit, PR number if there is one.
 - Done and verified, with how it was verified (the command, and what it printed).
 - In progress, uncommitted, or unverified. Say which.
+- A job the user stopped part-way ("write step 3, don't go on to step 4, stop there"): where it
+  stopped and what comes next ("scripts/migrate.mjs: step 3 written, uncommitted, stopped there as
+  asked; step 4 is next"). The stop ended with that job: when the user says to carry on, the next
+  step is the one to do.
 
 ## Decided, not yet applied
 Rulings the user has made that are ready to apply, one per line, with where they are recorded.
@@ -103,7 +110,11 @@ This is work to do, not background: the next session applies these, not only the
 
 ## Open questions
 Anything shown to the user for a choice with no answer recorded, and where it lives. Write "None"
-if there are none.
+if there are none. A question you asked about the user's own instruction ("what does 'that' refer
+to?") that got no answer: write their words and your most likely reading here, and put that reading
+under "Decisions already made", marked unconfirmed. Never add a hold ("do not change X until
+answered"): the next session never sees the answer arrive, so the hold outlives the question and
+blocks what the user asks next.
 
 ## Also read
 Other handovers or records on the same task, and what each still holds open.
@@ -113,10 +124,18 @@ Choices the user settled that the next session must not reopen. One line each,
 with the reason if the decision looks arbitrary without it. Restate every standing rule from the
 handover you started from, even when the next action is narrow: saving carries forward any line of
 this section or "Do not" that you drop.
+When the user picks by position ("the second one"), write the value they picked as this session's own
+list showed it, not the order their request named the options in. Restate a carried ruling with its
+value unchanged: change it only when the user said so in this session, and quote their words.
 
 ## Do not
 Traps, approaches already tried and failed, anything off-limits. Say what happened,
-so it is not retried in a slightly different form.
+so it is not retried in a slightly different form. A limit the user put on one job ("stop there",
+"don't go on to step 4") is not a "Do not": it goes with that job under State. Something the user
+said to leave alone for good (a stub they wrote by hand) stays here. When one message holds both
+("don't commit it and don't go on to step 4"), split it: "do not commit unless asked" here, the step
+under State. A line in the handover you started from that waits on the user ("until told to carry
+on") moves to State; do not restate it here.
 
 ## Key files
 - path/to/file - why it matters
@@ -137,7 +156,12 @@ Leave out sections that would be empty, except "Read first", "Decided, not yet a
 Saving checks your work: any "Read first", "Decided, not yet applied", "Open questions" or
 "Progress" line in the handover you started from that yours does not mention is appended under
 "Carried forward from the previous handover", and the save prints the list. If one is really done
-or dropped, save again saying so; otherwise leave it.
+or dropped, save again saying so; otherwise leave it. The save also names any "Do not", "Open
+questions" or "Decisions already made" line that waits on the user ("until told to carry on", "until
+answered"); save again with each one moved as above. It also names any "Read first" file that changed
+since the previous handover; move work output to "Key files" and save again. And it names any
+"Decisions already made" line that says it corrects an earlier handover, beside the earlier version;
+unless the user changed it in this session, restore the earlier version and save again.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it
