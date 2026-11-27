@@ -124,6 +124,9 @@ Choices the user settled that the next session must not reopen. One line each,
 with the reason if the decision looks arbitrary without it. Restate every standing rule from the
 handover you started from, even when the next action is narrow: saving carries forward any line of
 this section or "Do not" that you drop.
+When the user picks by position ("the second one"), write the value they picked as this session's own
+list showed it, not the order their request named the options in. Restate a carried ruling with its
+value unchanged: change it only when the user said so in this session, and quote their words.
 
 ## Do not
 Traps, approaches already tried and failed, anything off-limits. Say what happened,
@@ -156,7 +159,9 @@ Saving checks your work: any "Read first", "Decided, not yet applied", "Open que
 or dropped, save again saying so; otherwise leave it. The save also names any "Do not", "Open
 questions" or "Decisions already made" line that waits on the user ("until told to carry on", "until
 answered"); save again with each one moved as above. It also names any "Read first" file that changed
-since the previous handover; move work output to "Key files" and save again.
+since the previous handover; move work output to "Key files" and save again. And it names any
+"Decisions already made" line that says it corrects an earlier handover, beside the earlier version;
+unless the user changed it in this session, restore the earlier version and save again.
 Do not include secrets, tokens or passwords: the file is plain text on disk.
 
 ## 3. Save it

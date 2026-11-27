@@ -8,7 +8,7 @@
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { listLoaded, listWaiting, repoInfo, repoKey, saveHandover, storeRoot } from "./lib/store.mjs";
-import { carryForward, growingReads, missingSections, previousHandover, waitingHolds } from "./lib/carry.mjs";
+import { carryForward, growingReads, missingSections, previousHandover, revisedRulings, waitingHolds } from "./lib/carry.mjs";
 import { addRulings, replacedRulings } from "./lib/rulings.mjs";
 import { claimedAt } from "./lib/select.mjs";
 import { sessionRoot, sessionTranscript } from "./lib/session.mjs";
@@ -147,6 +147,16 @@ try {
         growing.map((p) => `  - ${p}`).join("\n") +
         `\nThe next session opens every Read first file before it acts. Keep a record there (a decision log, a do-not list); ` +
         `move work output (notes or a log the work appends to, a doc this session wrote) to "Key files" and save again.`,
+    );
+  // A ruling the writer changed on its own say outlives the mistake: every later handover carries it
+  // (lib/carry.mjs, revisedRulings).
+  const revised = revisedRulings(body, previous);
+  if (revised.length)
+    console.log(
+      `Note: ${revised.length} line${revised.length === 1 ? " says it corrects" : "s say they correct"} an earlier handover:\n` +
+        revised.map((r) => `  - now: ${r.text}${r.was ? `\n    was: ${r.was}` : ""}`).join("\n") +
+        `\nChange a carried ruling only when the user said so in this session; quote their words. A pick by position ("the second one") ` +
+        `means that item in the list as this session showed it, not as the request named them. Otherwise restore the earlier version and save again.`,
     );
   // Only when the folders really differ: the same folder in another spelling is no surprise.
   if (!sameFolder(startedIn, process.cwd()))

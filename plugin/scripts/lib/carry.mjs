@@ -281,6 +281,32 @@ export function growingReads(body, previous, top) {
   return out;
 }
 
+// A ruling the writer changed on its own say. Development trial 6 of the cornerman-eval stress test
+// (seed 105, 2026-11-26): the session listed "1. all lower case, 2. all upper case", the user picked "the
+// second one", and handover 5 recorded upper case. Handover 6 wrote "all LOWER case ... The previous
+// handover wrongly said upper case; corrected here", taking the order from the user's request, not the
+// session's list, with no new user message; every later handover kept it and the probe built lower case.
+// A Decisions line that says it corrects an earlier handover is named at save time, beside the earlier
+// version, so the writer changes a carried ruling only on the user's word.
+const CORRECTS = /\b(?:previous|earlier|last|prior)\s+handover\b[^.]*\b(?:wrong|wrongly|mistaken|incorrect|corrected|was\s+wrong)\b|\bcorrected\s+here\b/i;
+
+/** The session's own Decisions and Decided lines that say they correct an earlier handover: [{ text, was }]. */
+export function revisedRulings(body, previous) {
+  if (!previous?.body) return [];
+  const RULED = new Set(["rule", "decided"]);
+  const before = openItems(previous.body).filter((it) => RULED.has(it.tag));
+  const overlap = (a, b) => {
+    const have = new Set(words(b));
+    return [...new Set(words(a))].filter((w) => have.has(w)).length;
+  };
+  return openItems(withoutCarried(body))
+    .filter((it) => RULED.has(it.tag) && CORRECTS.test(it.text))
+    .map((it) => {
+      const best = before.map((p) => [overlap(p.text, it.text), p.text]).sort((a, b) => b[0] - a[0])[0];
+      return { text: it.text, was: best && best[0] > 0 ? best[1] : null };
+    });
+}
+
 /** Whether a body states both always-present sections, even as "None". */
 export function missingSections(body) {
   const heads = sections(body).map((s) => s.heading);
