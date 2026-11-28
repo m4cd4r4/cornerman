@@ -6,7 +6,8 @@ import { join } from "node:path";
 import { writeLoadedCopy } from "../../packages/store/loaded.mjs";
 import { captureDir, readCapture, summary } from "../../packages/store/artifacts.mjs";
 import { age } from "./select.mjs";
-import { tildePath } from "./display.mjs";
+import { shownPath, tildePath } from "./display.mjs";
+import { pathProblems } from "./paths.mjs";
 import { handoverId } from "./web.mjs";
 
 // A handover's title and branch are whatever the repo says, so control characters
@@ -44,6 +45,24 @@ function artifactsNote(root, load) {
   } catch {
     return null;
   }
+}
+
+/**
+ * The paths in the handover that do not open from `top`, with where each really is (lib/paths.mjs),
+ * or "". Without it the next session opens the path it is given, finds nothing, and guesses or goes
+ * on without the file (field audit, 2026-11-28). The handover's text is never changed. At most 10.
+ */
+function pathsNote(body, top) {
+  const wrong = pathProblems(body, top);
+  if (!wrong.length) return "";
+  const max = 10;
+  const line = (w) =>
+    w.found ? `- ${clean(w.path, 200)}: open ${shownPath(w.found)}` : `- ${clean(w.path, 200)} (Read first): not found anywhere; tell the user rather than guess what it held`;
+  return (
+    `cornerman: ${wrong.length} path${wrong.length === 1 ? "" : "s"} in this handover do${wrong.length === 1 ? "es" : ""} not open from ${shownPath(top)}. Use these instead:\n` +
+    wrong.slice(0, max).map(line).join("\n") +
+    (wrong.length > max ? `\n- and ${wrong.length - max} more` : "")
+  );
 }
 
 /**
@@ -109,6 +128,8 @@ export function loadedParts({ root, load, top, branch, now, loadedAt = now, sess
       OPENER(load.meta.title);
   const body = load.body.trim();
   const context = [`${preamble}\n\n${body}`];
+  const paths = pathsNote(load.body, top);
+  if (paths) context.push(paths);
   const shown = `cornerman: loaded handover "${load.meta.title}" (saved ${age(load.meta.created, now)}${from}).`;
   const note = artifactsNote(root, load);
   if (note) context.push(note.context);

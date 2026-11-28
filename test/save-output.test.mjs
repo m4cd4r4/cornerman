@@ -4,7 +4,7 @@
 // check that every line names it the long way, forward slashes, the same each time.
 // tdd-guard:allow - written against the save.mjs change and checked to fail on the old save.mjs first.
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, realpathSync, symlinkSync } from "node:fs";
+import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -70,5 +70,42 @@ describe("save.mjs output", () => {
     const out = run(otherSpelling(), repo);
     expect(out).not.toContain("Filed against");
     expect(spellings(out)).toEqual([fwd(repo)]);
+  }, GIT_TEST_TIMEOUT);
+});
+
+// Field audit, 2026-11-28: 922 relative paths in 14 days of handovers did not open from the repo the
+// handover was filed against. The save names each one, and where it really is, so the saving session
+// can fix it while it still knows.
+describe("save.mjs path note", () => {
+  const saveBody = (body) => {
+    const env = { ...process.env, HOME: home, USERPROFILE: home, CLAUDE_CODE_SESSION_ID: "", CORNERMAN_AUTO: "", CORNERMAN_HEADLESS: "", CORNERMAN_WEB: "" };
+    return execFileSync("node", [save, "--title", "Cart totals rounding", "--cwd", repo], { cwd: repo, input: body, env, encoding: "utf8" });
+  };
+  const sectionsFor = (next, readFirst) =>
+    ["# T", "", "## Goal", "g", "", "## Next action", next, "", "## Read first", ...readFirst, "", "## State", "s", "", "## Open questions", "None.", ""].join("\n");
+
+  it("names a path that opens only from the repo the handover names, and a read-first file found nowhere", () => {
+    const orders = join(base, "work", "orders-app");
+    mkdirSync(join(orders, "docs"), { recursive: true });
+    execFileSync("git", ["init", "-q"], { cwd: orders });
+    writeFileSync(join(orders, "docs", "plan.md"), "x");
+    const out = saveBody(sectionsFor(`In ${fwd(orders)}, run the tests.`, ["- docs/plan.md - the plan", "- docs/gone/OLD.md - last week"]));
+    const lines = out.trim().split("\n");
+    const at = lines.indexOf(`Note: 2 paths in this handover do not open from ${fwd(repo)}:`);
+    expect(at).toBeGreaterThan(-1);
+    expect(lines.slice(at + 1, at + 4)).toEqual([
+      `  - docs/plan.md is at ${fwd(orders)}/docs/plan.md`,
+      "  - docs/gone/OLD.md (Read first) was not found",
+      "Save again with the full paths, and drop or fix any not found.",
+    ]);
+  }, GIT_TEST_TIMEOUT);
+
+  // The replay's worst handover had 17: the note stays short enough to read.
+  it("lists at most 10 paths, then how many more", () => {
+    const missing = Array.from({ length: 12 }, (_, i) => `- docs/gone/F${i}.md - old`);
+    const out = saveBody(sectionsFor("Carry on.", missing));
+    expect(out).toContain(`Note: 12 paths in this handover do not open from ${fwd(repo)}:`);
+    expect(out.match(/^ {2}- docs\/gone\/F\d+\.md \(Read first\) was not found$/gm)).toHaveLength(10);
+    expect(out).toContain("\n  +2 more\n");
   }, GIT_TEST_TIMEOUT);
 });
