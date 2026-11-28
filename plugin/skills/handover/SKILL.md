@@ -105,6 +105,12 @@ This is work to do, not background: the next session applies these, not only the
 Anything shown to the user for a choice with no answer recorded, and where it lives. Write "None"
 if there are none.
 
+## Done or dropped from earlier handovers
+Only when an item the previous handover listed as open (decided, open question, read first or
+carried forward) is now done or no longer needed. Copy its line as it was, then add done or
+dropped and why. Saving carries forward any open item this handover does not mention, so an item
+closed only in other words comes back to the next session as open work.
+
 ## Also read
 Other handovers or records on the same task, and what each still holds open.
 
