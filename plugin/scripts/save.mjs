@@ -17,6 +17,7 @@ import { commitHandover, webEnabled } from "./lib/web.mjs";
 import { isOwnHandover, ownerId, PATIENT_TIMEOUT_MS, sameOwner } from "./lib/owner.mjs";
 import { sameFolder, shellPath, shownPath } from "./lib/display.mjs";
 import { headless } from "./lib/auto-flag.mjs";
+import { pathProblems } from "./lib/paths.mjs";
 
 function arg(name) {
   const i = process.argv.indexOf(name);
@@ -130,6 +131,28 @@ try {
   const gaps = missingSections(body);
   if (gaps.length && !process.argv.includes("--open-question"))
     console.log(`Note: this handover has no ${gaps.map((g) => `"${g}"`).join(" or ")} section. If there is anything there, save again with it (write "None" if empty).`);
+  // Paths the next session would open from `top` and not find (lib/paths.mjs). Named now, while the
+  // saving session still knows where each file is. The current directory's repo is one more place to
+  // look: a Bash `cd` there is where the work happened.
+  let here = [];
+  try {
+    here = [repoInfo(process.cwd()).top];
+  } catch {
+    // not in a repo
+  }
+  const wrong = pathProblems(body, top, { roots: here });
+  if (wrong.length) {
+    const shownMax = 10;
+    console.log(
+      `Note: ${wrong.length} path${wrong.length === 1 ? "" : "s"} in this handover do${wrong.length === 1 ? "es" : ""} not open from ${shownPath(top)}:\n` +
+        wrong
+          .slice(0, shownMax)
+          .map((w) => (w.found ? `  - ${w.path} is at ${shownPath(w.found)}` : `  - ${w.path} (Read first) was not found`))
+          .join("\n") +
+        (wrong.length > shownMax ? `\n  +${wrong.length - shownMax} more` : "") +
+        `\nSave again with the full paths${wrong.some((w) => !w.found) ? ", and drop or fix any not found" : ""}.`,
+    );
+  }
   // Only when the folders really differ: the same folder in another spelling is no surprise.
   if (!sameFolder(startedIn, process.cwd()))
     console.log(`Filed against the session root ${shownPath(startedIn)}, not the current directory.`);
