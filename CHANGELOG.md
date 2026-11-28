@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.7.4
+
+- **Rulings hold only what you typed.** Background-task notices and other text Claude Code sends
+  in your place were saved in "Rulings from the user" as if you had typed them, crowding out your
+  own rules. They are now skipped (#222).
+- **Finished work stops coming back.** A handover could carry forward an item from the previous
+  one that it had itself closed, so the next session treated finished work as open. An item is now
+  dropped when a closing line in the new handover names its file, and the handover skill has a
+  "Done or dropped from earlier handovers" section: copy the carried line there with done or
+  dropped and why (#223).
+- **Paths that will not open are named.** When a path under Next action, Read first or Key files
+  does not open from the folder the handover is filed against, saving lists each one with where the
+  file really is, so you can save again with full paths, and the next session is told the real
+  location. A Read first file found nowhere is named too, and the session is told to say so rather
+  than guess (#224).
+
 ## 0.7.3
 
 - **A cancelled session start no longer loses your handover.** A `/clear` fires many
