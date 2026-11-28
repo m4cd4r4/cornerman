@@ -70,13 +70,24 @@ function withoutHarness(text) {
 // A word that makes a short prompt a ruling rather than an acknowledgement.
 const CUE = /\b(never|always|don'?t|do not|must|should|only|instead|prefer|use|keep|avoid|stop|no|not|rule|ruled|decided?|remember|without)\b/i;
 
-/** The user's words in a prompt, or "" when it holds none worth a handover line. */
-export function userWords(prompt) {
+/** A prompt cornerman itself submitted (resume, handover ask), whitespace flattened, or "". */
+export function ownPrompt(prompt) {
+  const text = String(prompt ?? "").replace(/\s+/g, " ").trim();
+  return OWN_PROMPTS.some((re) => re.test(text)) ? text : "";
+}
+
+/** What the user typed in a prompt, whitespace flattened: "" for harness text and cornerman's own prompts. */
+export function typedText(prompt) {
   const raw = String(prompt ?? "");
   const cut = RUNNER_CUT.exec(raw);
   const text = withoutHarness((cut ? raw.slice(0, cut.index) : raw).replace(/\s+/g, " ").trim());
+  return !text || OWN_PROMPTS.some((re) => re.test(text)) ? "" : text;
+}
+
+/** The user's words in a prompt, or "" when it holds none worth a handover line. */
+export function userWords(prompt) {
+  const text = typedText(prompt);
   if (!text || text.startsWith("/") || text.startsWith("<command-")) return "";
-  if (OWN_PROMPTS.some((re) => re.test(text))) return "";
   // "ok", "yes go", "continue": an answer whose question is not in the log says nothing.
   if (text.split(" ").length < 3 && !CUE.test(text)) return "";
   return text.length > ENTRY_MAX ? shorten(text) : text;

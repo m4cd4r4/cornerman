@@ -197,6 +197,19 @@ turns the capture off.
 A session cleared with no handover still leaves its folder, which you can open or @-mention, but there
 is no sidebar row to hang it on.
 
+### The last answer, shown again after a clear
+
+A session often clears, by hand or by a relay, before you have read its last answer. So when a
+`/clear` loads a handover, cornerman reads the saving session's transcript (in the same folder as the
+new session's) and takes the final message of each of the last 2 turns that answered a prompt. A turn
+split by a Stop hook or a background-task notice keeps the finals of its last 3 stretches, so a reply
+to the hook never stands in for the answer. It goes to Claude as its own hook output, a third
+`SessionStart` command, with up to 6,000 characters of text, and Claude is asked to print it verbatim
+under "Before the clear", after the opener line, with bold labels (Answer, Why, Links, To paste,
+Question for you). It is never added to the handover, its copy or the rulings. Only a load from
+`/clear` carries it; a startup or compact load does not. Design and field data:
+[design/LAST-REPLY.md](design/LAST-REPLY.md).
+
 ## Settings
 
 All optional. Set them as environment variables, for example in the `env` block of

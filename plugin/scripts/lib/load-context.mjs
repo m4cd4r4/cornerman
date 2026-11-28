@@ -2,9 +2,10 @@
 // the one line the user sees, the note about what the old session left on screen
 // and the readable copy. Shared by the SessionStart hook and the first-prompt
 // second chance (second-chance.mjs), so a handover reads the same either way.
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { writeLoadedCopy } from "../../packages/store/loaded.mjs";
-import { captureDir, readCapture, summary } from "../../packages/store/artifacts.mjs";
+import { captureDir, readCapture, summary, validSessionId } from "../../packages/store/artifacts.mjs";
+import { lastTurns, replyBlock } from "./last-reply.mjs";
 import { age } from "./select.mjs";
 import { shownPath, tildePath } from "./display.mjs";
 import { pathProblems } from "./paths.mjs";
@@ -106,7 +107,7 @@ function copyLine(root, load, top, loadedAt, sessionId) {
  * last in what the user sees. `preamble`, `body` and `copyPath` are context[0]'s
  * pieces, for a context that has to be split (start-parts.mjs).
  */
-export function loadedParts({ root, load, top, branch, now, loadedAt = now, sessionId }) {
+export function loadedParts({ root, load, top, branch, now, loadedAt = now, sessionId, source, transcriptPath }) {
   const { line: copy, path: copyPath } = copyLine(root, load, top, loadedAt, sessionId);
   // A branch mismatch is the one thing about a loaded handover the user should
   // notice, so it goes in both strings rather than only in Claude's copy.
@@ -133,5 +134,22 @@ export function loadedParts({ root, load, top, branch, now, loadedAt = now, sess
   const shown = `cornerman: loaded handover "${load.meta.title}" (saved ${age(load.meta.created, now)}${from}).`;
   const note = artifactsNote(root, load);
   if (note) context.push(note.context);
-  return { context, shown, assets: note?.shown ?? "", copy, preamble, body, copyPath };
+  const reply = source === "clear" ? replyNote(load, transcriptPath) : "";
+  return { context, shown, assets: note?.shown ?? "", copy, preamble, body, copyPath, reply };
+}
+
+/**
+ * What the handover's session last said, for the load after a /clear (lib/last-reply.mjs), or "".
+ * Read from that session's transcript, which Claude Code keeps in the same folder as the new
+ * session's: no wait on the SessionEnd capture, which lands after the load in 6% of loads. Its own
+ * hook output, never part of `context`, so it cannot push the handover over the cap. Best effort.
+ */
+function replyNote(load, transcriptPath) {
+  try {
+    const sid = load.meta.sessionId;
+    if (!transcriptPath || !validSessionId(sid)) return "";
+    return replyBlock(lastTurns(join(dirname(String(transcriptPath)), `${sid}.jsonl`)));
+  } catch {
+    return "";
+  }
 }

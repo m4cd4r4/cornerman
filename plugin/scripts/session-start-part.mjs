@@ -11,9 +11,12 @@ import { takeSpool } from "./lib/start-parts.mjs";
 // A spool written before this hook started belongs to an earlier start; the main hook starts
 // with this one, and the slack covers a clock read a moment apart.
 const since = Date.now() - 5_000;
+// Run with "reply" (the third SessionStart command), it prints what the loaded handover's session
+// last said before a /clear instead (lib/last-reply.mjs), from its own spool.
+const part = process.argv[3] === "reply" ? "reply" : "";
 try {
   const input = JSON.parse(readFileSync(0, "utf8") || "{}");
-  const text = takeSpool(storeRoot(), input, { since });
+  const text = takeSpool(storeRoot(), input, { since, part });
   if (text) process.stdout.write(JSON.stringify({ hookSpecificOutput: { hookEventName: "SessionStart", additionalContext: text } }));
 } catch {
   // never block a session

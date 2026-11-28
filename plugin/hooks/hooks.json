@@ -1,5 +1,5 @@
 {
-  "description": "Load the waiting handover for this repo when a session starts, is cleared or is compacted (in two outputs when it is over Claude Code's 10,000-character cap on one hook output, the second command printing the part the first could not fit), and on the first prompt load this window's own handover if that start hook was cancelled or failed; in auto mode, nudge once to hand over and clear when context grows large - mid-turn as well as at a turn end, because compaction does not wait for a turn to end. Claude Code runs each command with /bin/sh, or Git Bash on Windows, so they are POSIX sh. PreToolUse on the Skill tool allows the handover skill once, only right after the idle handover asked for it, because nobody is at the keyboard to answer its permission prompt. Each checks for node first: without it, SessionStart prints one line saying so and the others exit quietly.",
+  "description": "Load the waiting handover for this repo when a session starts, is cleared or is compacted (in two outputs when it is over Claude Code's 10,000-character cap on one hook output, the second command printing the part the first could not fit; after a /clear a third command prints what the handover's session last said, so the user sees it again), and on the first prompt load this window's own handover if that start hook was cancelled or failed; in auto mode, nudge once to hand over and clear when context grows large - mid-turn as well as at a turn end, because compaction does not wait for a turn to end. Claude Code runs each command with /bin/sh, or Git Bash on Windows, so they are POSIX sh. PreToolUse on the Skill tool allows the handover skill once, only right after the idle handover asked for it, because nobody is at the keyboard to answer its permission prompt. Each checks for node first: without it, SessionStart prints one line saying so and the others exit quietly.",
   "modules": [
     "./relay.ts"
   ],
@@ -72,6 +72,11 @@
           {
             "type": "command",
             "command": "command -v node >/dev/null 2>&1 || exit 0; node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-entry.cjs\" session-start-part",
+            "timeout": 20
+          },
+          {
+            "type": "command",
+            "command": "command -v node >/dev/null 2>&1 || exit 0; node \"${CLAUDE_PLUGIN_ROOT}/scripts/hook-entry.cjs\" session-start-part reply",
             "timeout": 20
           }
         ]

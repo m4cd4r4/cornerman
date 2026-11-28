@@ -26,6 +26,8 @@ let out = null;
 let ran = false;
 let input = {};
 let extra = "";
+// What the loaded handover's session last said, after a /clear: the third command prints it.
+let reply = "";
 // Tells the first prompt that this session start got through, so it does not load
 // again (lib/second-chance.mjs, issue #204). Only a run that finished and whose
 // output, if any, was written counts.
@@ -37,6 +39,9 @@ const delivered = () => {
 const spool = () => {
   try {
     writeSpool(storeRoot(), input, extra);
+  } catch {}
+  try {
+    writeSpool(storeRoot(), input, reply, Date.now(), "reply");
   } catch {}
 };
 try {
@@ -64,6 +69,10 @@ try {
     if (ctx.length > BUDGET) out.hookSpecificOutput.additionalContext = fit([{ text: ctx, rank: Infinity }], BUDGET, out.pack?.handover?.copyPath);
   } catch {}
 }
+try {
+  const text = out?.pack?.reply ?? "";
+  reply = text.length > BUDGET ? fit([{ text, rank: Infinity }], BUDGET, out.pack?.handover?.copyPath) : text;
+} catch {}
 spool();
 if (!out) {
   if (ran) delivered();

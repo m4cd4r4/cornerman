@@ -211,15 +211,18 @@ export function packStart({ parts, handover }, { budget = BUDGET } = {}) {
 // SessionStart twice (startup and clear), each with its own pair of hooks.
 const SPOOL = ".start-parts";
 const safe = (s) => String(s ?? "").replace(/[^A-Za-z0-9_-]/g, "");
-const spoolFile = (root, input) => join(root, SPOOL, `${safe(input?.session_id)}-${safe(input?.source || "startup")}.json`);
+// `part` names a spool besides the standing rules: "reply", what the handover's session last said
+// (last-reply.mjs), printed by a third SessionStart command so it never shares a budget.
+const spoolFile = (root, input, part = "") =>
+  join(root, SPOOL, `${safe(input?.session_id)}-${safe(input?.source || "startup")}${part ? `-${safe(part)}` : ""}.json`);
 const STALE_MS = 3_600_000;
 
 /** Leave `text` ("" for nothing) for the second hook. Written on every path, so it never waits long. Never throws. */
-export function writeSpool(root, input, text, now = Date.now()) {
+export function writeSpool(root, input, text, now = Date.now(), part = "") {
   try {
     const dir = join(root, SPOOL);
     mkdirSync(dir, { recursive: true });
-    const file = spoolFile(root, input);
+    const file = spoolFile(root, input, part);
     const tmp = `${file}.${process.pid}.tmp`;
     writeFileSync(tmp, JSON.stringify({ at: now, text: String(text ?? "") }), "utf8");
     renameSync(tmp, file);
@@ -238,8 +241,8 @@ const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 
  * written at or after `since` counts: an older one belongs to an earlier start. "" when none came.
  */
 // 17s of the hook's 20s timeout: the main hook can spend 13s on a slow process table and a pull.
-export function takeSpool(root, input, { since, waitMs = 17_000, stepMs = 50 } = {}) {
-  const file = spoolFile(root, input);
+export function takeSpool(root, input, { since, waitMs = 17_000, stepMs = 50, part = "" } = {}) {
+  const file = spoolFile(root, input, part);
   const until = Date.now() + waitMs;
   for (;;) {
     try {

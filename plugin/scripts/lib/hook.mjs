@@ -310,12 +310,19 @@ function start(input, { env, now, me: knownMe }) {
   let copy = "";
   let assets = "";
   let handover = null;
+  let reply = "";
 
   if (load) {
-    const p = loadedParts({ root, load, top, branch, now, loadedAt: echo ? load.archivedAt || now : now, sessionId: input.session_id });
+    const p = loadedParts({
+      root, load, top, branch, now,
+      loadedAt: echo ? load.archivedAt || now : now,
+      sessionId: input.session_id,
+      source: input.source,
+      transcriptPath: input.transcript_path,
+    });
     handover = { at: parts.length, preamble: p.preamble, body: p.body, title: load.meta.title, copyPath: p.copyPath };
     parts.push(...p.context);
-    ({ shown, assets, copy } = p);
+    ({ shown, assets, copy, reply } = p);
   }
 
   if (list.length) {
@@ -374,7 +381,8 @@ function start(input, { env, now, me: knownMe }) {
   };
   // The pieces the context was joined from, for session-start.mjs to split it when it is over
   // Claude Code's cap on one hook output (start-parts.mjs). Non-enumerable, like afterOutput.
-  Object.defineProperty(out, "pack", { value: { parts, handover }, writable: true });
+  // `reply` is what the handover's session last said, for its own output after a /clear (last-reply.mjs).
+  Object.defineProperty(out, "pack", { value: { parts, handover, reply }, writable: true });
   // The handover is archived, marked consumed and (for an untracked copy) deleted
   // only once this output has been written successfully (session-start.mjs calls
   // it), so a hook that dies first, or whose reader has gone, leaves it waiting to
