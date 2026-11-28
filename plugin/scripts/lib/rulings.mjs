@@ -128,7 +128,10 @@ export function readLog(store, session) {
     for (const line of readFileSync(logPath(store, session), "utf8").split("\n")) {
       try {
         const row = JSON.parse(line);
-        if (row && typeof row.text === "string" && row.text) out.push({ at: String(row.at ?? ""), text: row.text });
+        // A log written before the harness filter (#222), or by a window still on an older
+        // build, holds injected turns: drop them on the way out, as sectionEntries does.
+        const text = row && typeof row.text === "string" ? withoutHarness(row.text) : "";
+        if (text) out.push({ at: String(row.at ?? ""), text });
       } catch {
         // a blank or half-written line
       }

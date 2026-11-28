@@ -5,7 +5,7 @@
 // section from that log and from the previous handover's, so the whole chain keeps them.
 // Fixture rulings are neutral and new (a bakery order app), never the quality-1m plants.
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, mkdtempSync, realpathSync, statSync, utimesSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, realpathSync, statSync, utimesSync, writeFileSync } from "node:fs";
 import { prune } from "../plugin/packages/store/store.mjs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -61,6 +61,28 @@ describe("the rulings log", () => {
     expect(body).toContain('"Keep the pickup window at 30 minutes."');
     expect(body).not.toContain("whole cents");
     expect(body).not.toContain("loaf");
+  }, GIT_TEST_TIMEOUT);
+
+  // Field audit, 2026-11-28: 367 of 861 logged entries were machine text, written before #222
+  // (or by a window still on an older build). The filter ran only at record time, so a save
+  // read them straight back out of the log into "Rulings from the user".
+  it("drops machine text a log already holds from an older build", () => {
+    const note = '<task-notification> <task-id>b1</task-id> <status>completed</status> <summary>Background command "Run the suite" completed (exit code 0)</summary> </task-notification>';
+    mkdirSync(join(root, "rulings"), { recursive: true });
+    writeFileSync(
+      logPath(root, "old-log"),
+      [note, "Never email the customer before the baker confirms the order.", `${note} Keep the pickup window at 30 minutes.`]
+        .map((text, i) => JSON.stringify({ at: `2026-11-27T0${i}:00:00.000Z`, text }) + "\n")
+        .join(""),
+      "utf8",
+    );
+    expect(readLog(root, "old-log").map((e) => e.text)).toEqual(["Never email the customer before the baker confirms the order.", "Keep the pickup window at 30 minutes."]);
+
+    save("old-log", "Orders old", BODY);
+    const body = saved("Orders old");
+    expect(body).toContain('"Never email the customer before the baker confirms the order."');
+    expect(body).toContain('"Keep the pickup window at 30 minutes."');
+    expect(body).not.toContain("task-notification");
   }, GIT_TEST_TIMEOUT);
 
   it("carries the rulings down the chain: the second and third clear still list them", () => {
