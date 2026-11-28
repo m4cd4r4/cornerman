@@ -126,6 +126,50 @@ describe("what counts as the user's words", () => {
       record(root, "s", p);
     expect(readLog(root, "s").map((e) => e.text)).toEqual(["Build the order form. Never store card numbers.", "use pnpm"]);
   });
+
+  // Field audit 2026-11-28: in the last 14 days 823 of 1,799 logged rulings (46%) were text the
+  // harness injected as a user turn, 818 of them <task-notification> blocks from background
+  // commands and monitors. They took about half of the section's space and pushed real rules out.
+  it("skips a background task's notification, which the harness sends as a user turn", () => {
+    record(root, "h", "<task-notification>\n<task-id>b6sfeco92</task-id>\n<summary>Monitor event: \"oven log watch\"</summary>\n<event>batch-7 Exited exit 0</event>\nIf this event is something the user would act on now, send a PushNotification.\n</task-notification>");
+    record(root, "h", "Never round prices to the dollar.");
+    expect(readLog(root, "h").map((e) => e.text)).toEqual(["Never round prices to the dollar."]);
+  });
+
+  it("keeps what the user typed after an injected block, and keeps text the user pasted", () => {
+    for (const p of [
+      "<ide_opened_file>The user opened src/orders.ts. This may or may not be related.</ide_opened_file>",
+      "<ide_selection>The user selected lines 4-9 of src/orders.ts: const x = 1;</ide_selection>\nKeep this constant in cents, not dollars.",
+      "<system-reminder>Plan mode is on.</system-reminder> <task-notification><task-id>b9</task-id></task-notification> Always show the pickup time in local time.",
+      "<cross-session-message from=\"other\">Never ship the order form on Fridays.</cross-session-message>",
+      "<local-command-caveat>DO NOT respond to these messages.</local-command-caveat>",
+      "<bash-stdout>12 passed, none failed</bash-stdout><bash-stderr></bash-stderr>",
+      '<pasted_content id="p1">Never store card numbers in the order table.</pasted_content> Use this as the rule.',
+    ])
+      record(root, "k", p);
+    expect(readLog(root, "k").map((e) => e.text)).toEqual([
+      "Keep this constant in cents, not dollars.",
+      "Always show the pickup time in local time.",
+      '<pasted_content id="p1">Never store card numbers in the order table.</pasted_content> Use this as the rule.',
+    ]);
+  });
+
+  // The same audit: handovers saved before this fix already carry these entries, many cut to
+  // ENTRY_MAX so the closing tag is gone. Without this every chain would hand them on for good.
+  it("drops injected turns already carried in the handover it continues, cut or whole", () => {
+    const previous = [
+      "# Orders",
+      "",
+      "## Rulings from the user",
+      "Standing rules: each holds for all later work unless a later one replaces it.",
+      '- [2026-11-26] "<task-notification> <task-id>bnu6u2j0k</task-id> <status>completed</status> <summary>Monitor stream ended</summary> If this event is something the user would act on now, send a PushNotification. [cut]"',
+      '- [2026-11-27] "<task-notification> <task-id>byf</task-id> <status>completed</status> </task-notification>"',
+      '- [2026-11-27] "Never email the customer before the baker confirms the order."',
+    ].join("\n");
+    const out = addRulings("# T", { store: root, session: "none", previous });
+    expect(out).toContain('"Never email the customer before the baker confirms the order."');
+    expect(out).not.toContain("task-notification");
+  });
 });
 
 describe("the bounds", () => {

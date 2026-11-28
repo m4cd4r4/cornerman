@@ -39,6 +39,34 @@ const OWN_PROMPTS = [
 // The headless runner resends the task with the handover after this line
 // (lib/run.mjs resumePrompt, unfinishedPrompt): only the task before it is the user's.
 const RUNNER_CUT = /\n\n---\n\ncornerman: this is segment \d+/;
+// Blocks the harness puts in a user turn that the user did not type: background task and monitor
+// notifications, reminders, another session's message, local command output, the IDE's open file
+// or selection. The field audit of 2026-11-28 found 823 of 1,799 logged rulings (46%) were these,
+// 818 of them <task-notification>. Text the user typed after a leading block is still theirs.
+// Not listed, so kept: <pasted_content>, which is text the user pasted themselves.
+const HARNESS_TAGS = [
+  "task-notification",
+  "system-reminder",
+  "cross-session-message",
+  "local-command-stdout",
+  "local-command-caveat",
+  "command-name",
+  "command-message",
+  "command-args",
+  "bash-input",
+  "bash-stdout",
+  "bash-stderr",
+  "ide_opened_file",
+  "ide_selection",
+].join("|");
+const HARNESS_BLOCK = new RegExp(`^<(${HARNESS_TAGS})\\b[^>]*>[\\s\\S]*?</\\1>\\s*`, "i");
+const HARNESS_OPEN = new RegExp(`^<(?:${HARNESS_TAGS})\\b`, "i");
+/** The text after any leading harness blocks; "" when one is left open (cut before its close). */
+function withoutHarness(text) {
+  let t = text;
+  for (let m; (m = HARNESS_BLOCK.exec(t)); ) t = t.slice(m[0].length);
+  return HARNESS_OPEN.test(t) ? "" : t;
+}
 // A word that makes a short prompt a ruling rather than an acknowledgement.
 const CUE = /\b(never|always|don'?t|do not|must|should|only|instead|prefer|use|keep|avoid|stop|no|not|rule|ruled|decided?|remember|without)\b/i;
 
@@ -46,7 +74,7 @@ const CUE = /\b(never|always|don'?t|do not|must|should|only|instead|prefer|use|k
 export function userWords(prompt) {
   const raw = String(prompt ?? "");
   const cut = RUNNER_CUT.exec(raw);
-  const text = (cut ? raw.slice(0, cut.index) : raw).replace(/\s+/g, " ").trim();
+  const text = withoutHarness((cut ? raw.slice(0, cut.index) : raw).replace(/\s+/g, " ").trim());
   if (!text || text.startsWith("/") || text.startsWith("<command-")) return "";
   if (OWN_PROMPTS.some((re) => re.test(text))) return "";
   // "ok", "yes go", "continue": an answer whose question is not in the log says nothing.
@@ -250,7 +278,9 @@ export function sectionEntries(body) {
     }
     // The replaced mark is worked out again on every save, so it is not part of the text.
     const m = inside && /^- (?:\[([0-9-]+)\] )?"(.*)"(?: \((?:partly )?replaced by a later one\))?\s*$/.exec(line);
-    if (m) out.push({ at: m[1] ?? "", text: m[2] });
+    // Handovers saved before the harness filter carry injected turns: drop them on the way in.
+    const text = m && withoutHarness(m[2]);
+    if (text) out.push({ at: m[1] ?? "", text });
   }
   return out;
 }
