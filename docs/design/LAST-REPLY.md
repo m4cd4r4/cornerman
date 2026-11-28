@@ -1,6 +1,7 @@
 # Design: show the last reply after a clear
 
-Status: design, not built. Tracks Vikunja #4217. Written 2026-11-28 against main 0a08b62.
+Status: design approved 2026-11-28 (D1-D4: the recommended option each), build in progress.
+Tracks Vikunja #4217. Written 2026-11-28 against main 0a08b62.
 
 ## Problem
 
@@ -46,20 +47,24 @@ What this says:
 
 ### 1. What is kept: the last 2 answered turns
 
-A turn starts at a typed user prompt (harness turns such as `<task-notification>`, the load's own
-"Continue from the cornerman handover" prompt and sidechains do not start one) and ends at the next.
-Keep the final assistant text of each of the last 2 turns, with the first 120 chars of the prompt it
-answered. A turn cut off by the clear (its last row is a tool call, not text) is marked "cut off by
-the clear".
+A turn starts at a typed user prompt, a slash command, or one of cornerman's own prompts (a
+relay-resumed session works under "Continue from the cornerman handover" with no typed prompt at all:
+155 of 357 replayed sessions had only that one turn). Tool results, meta rows, compaction summaries
+and sidechains do not start one. Harness text (a `<task-notification>`) and Stop hook feedback split
+a turn into stretches without ending it; the turn keeps the finals of its last 3 stretches, oldest
+first, so neither the reply to a hook nor the reply to a notification stands in for the answer.
+Each turn carries the first 120 chars of its prompt. A turn cut off by the clear (its last row is a
+tool call, not text) is marked.
 
-Written at SessionEnd to `last-reply.json` beside `last-screen.md` (kept as is for the sidebar), and
-written even when the session left no other item.
+Built as found 2026-11-28: the first version took only the final message of a turn, and a replay on
+the previous session showed its answer replaced by a two-line reply to a Stop hook block.
 
 ### 2. Delivery gaps
 
-- At load, if the handover's session has no `last-reply.json`, build it from that session's
-  transcript (`<projects dir>/<session>.jsonl`, the same folder as the new session's
-  `transcript_path`). This closes the race and the items gate. Bounded by the trail reader's byte cap.
+- Read at load from the saving session's transcript (`<session>.jsonl` in the same folder as the
+  new session's `transcript_path`), not from a SessionEnd file. The transcript is complete when
+  `/clear` runs and lives on the same machine as the capture folder would, so this closes the race
+  and the items gate in one path. Bounded by the trail reader's byte cap and 20,000 rows.
 - The reply goes out as its own hook output: a third SessionStart command,
   `session-start-part reply`, fed through the same spool as part 2 and keyed by source, so the
   VS Code double start shows it once per start. It never competes with the handover or the rules
@@ -82,14 +87,26 @@ Why, Links, To paste, Question for you. It may split paragraphs between labels; 
 The reply is assistant text and is never written to the rulings log, the handover body or the
 trail. The next handover may mention it like any other context; it is not copied mechanically.
 
-## Decisions for Macdara
+## Decisions (ruled 2026-11-28: the Recommended column, all four)
 
-| ID | Question | Recommended | Others |
+| ID | Question | Recommended (chosen) | Others |
 |---|---|---|---|
 | D1 | Where the user sees it | Claude prints it in its first reply after the opener line | VS Code opens `last-screen.md` in a preview tab on load (verbatim, no labels, VS Code only); both |
 | D2 | Who labels it | The resumed Claude adds labels between verbatim parts | Labels made at save by rules (links, paths, code blocks as To paste, lines ending in ? as Question; the rest Answer; no Why); no labels |
 | D3 | Which text | Final message of each of the last 2 answered turns, each under the prompt it answered | Today's last 2 messages; everything said since the last typed prompt |
 | D4 | Which loads show it | Loads from a /clear or a relay (source `clear`) | Every load, with its age; only when the handover is under a day old |
+
+## Replay of the build (2026-11-28, 357 saving sessions with a transcript)
+
+| Measure | Result |
+|---|---|
+| Sessions that get a block | 357 of 357 |
+| Block chars (instruction + prompts + text) | p50 3,019, p90 4,989, p99 6,746, max 6,929 |
+| 6,000-char text cap hit | 3 |
+| Newest turn cut off by the clear | 1 |
+| Time to build one block | p50 26 ms, p99 149 ms, max 268 ms |
+
+Every block is under the 9,000-char budget of one hook output.
 
 ## Test plan
 

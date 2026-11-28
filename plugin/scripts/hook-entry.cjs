@@ -1,4 +1,4 @@
-// Entry point for the six hooks (SessionStart runs two commands): node hook-entry.cjs <session-start|session-start-part|prompt-submit|session-end|pre-tool|post-tool|stop>.
+// Entry point for the six hooks (SessionStart runs three commands): node hook-entry.cjs <session-start|session-start-part [reply]|prompt-submit|session-end|pre-tool|post-tool|stop>.
 //
 // The scripts it runs are ES modules that use syntax an old Node cannot parse, and a
 // parse error is a stack trace under "hook error" on every tool call and every turn.

@@ -15,10 +15,10 @@ writes. F90 to F97 are written by buildstats.mjs.
 ## index.html: hero and install commands
 
 F1 | page: "claude plugin marketplace add https://github.com/m4cd4r4/cornerman" | source: "claude plugin marketplace add https://github.com/m4cd4r4/cornerman" | README.md:18
-F2 | page: "claude plugin install cornerman@cornerman --config relay=10" | source: "claude plugin install cornerman@cornerman" | README.md:19 | source: "for example `--config relay=10`" | docs/HOW-IT-WORKS.md:225
+F2 | page: "claude plugin install cornerman@cornerman --config relay=10" | source: "claude plugin install cornerman@cornerman" | README.md:19 | source: "for example `--config relay=10`" | docs/HOW-IT-WORKS.md:238
 F3 | page: "claude plugin install cornerman@cornerman" | source: "claude plugin install cornerman@cornerman" | README.md:19
 F4 | page: "A free, open-source Claude Code plugin." | source: "A free, open-source plugin for Claude Code" | docs/media/src/cards.html:117
-F5 | page: "Relay on, in your terminal:" | source: "Plugin (in your terminal):" | README.md:15 | source: "claude plugin install cornerman@cornerman" | README.md:19 | source: "for example `--config relay=10`" | docs/HOW-IT-WORKS.md:225
+F5 | page: "Relay on, in your terminal:" | source: "Plugin (in your terminal):" | README.md:15 | source: "claude plugin install cornerman@cornerman" | README.md:19 | source: "for example `--config relay=10`" | docs/HOW-IT-WORKS.md:238
 
 ## Build stats (written by site/buildstats.mjs; `value:` is the figure it wrote)
 
@@ -50,15 +50,15 @@ F18 | page: "Three steps: save a handover, /clear, carry on." | source: "By hand
 ## index.html: fallback feed in the media box (with the relay on)
 
 F62 | page: "# with the relay on, context passes the nudge size" | source: "past a size you choose, Claude is asked to save a handover." | README.md:122
-F63 | page: "cornerman: context is about 182k tokens (nudge at 180k)." | source: "cornerman: context is about 182k tokens (nudge at 180k)." | docs/HOW-IT-WORKS.md:263
+F63 | page: "cornerman: context is about 182k tokens (nudge at 180k)." | source: "cornerman: context is about 182k tokens (nudge at 180k)." | docs/HOW-IT-WORKS.md:276
 F64 | page: "# Claude is asked to save a handover" | source: "Claude is asked to save a handover" | README.md:122
-F65 | page: "# the plugin runs /clear when the turn ends" | source: "cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:273
+F65 | page: "# the plugin runs /clear when the turn ends" | source: "cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:286
 F60 | page: "Replay of the run that built this page." | source: "Caption under the box: "Replay of the run that built this page."" | TASK.md: Media box
 
 ## index.html: the relay
 
-F20 | page: "Past a size you choose, Claude saves a handover and the plugin runs /clear when the turn ends." | source: "past a size you choose, Claude is asked to save a handover." | README.md:122 | source: "After Claude saves a handover, cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:272
-F21 | page: "On by default. Needs Claude Code 2.1.275 or later; works in a terminal and in the VS Code chat panel." | source: "They belong to the nudge, the relay and the idle handover, which are all on by default." | docs/HOW-IT-WORKS.md:233 | source: "It needs Claude Code 2.1.275 or later; an older build ignores it" | docs/HOW-IT-WORKS.md:279 | source: "It works in a terminal and in the VS Code chat panel." | docs/HOW-IT-WORKS.md:280
+F20 | page: "Past a size you choose, Claude saves a handover and the plugin runs /clear when the turn ends." | source: "past a size you choose, Claude is asked to save a handover." | README.md:122 | source: "After Claude saves a handover, cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:285
+F21 | page: "On by default. Needs Claude Code 2.1.275 or later; works in a terminal and in the VS Code chat panel." | source: "They belong to the nudge, the relay and the idle handover, which are all on by default." | docs/HOW-IT-WORKS.md:246 | source: "It needs Claude Code 2.1.275 or later; an older build ignores it" | docs/HOW-IT-WORKS.md:292 | source: "It works in a terminal and in the VS Code chat panel." | docs/HOW-IT-WORKS.md:293
 F23 | page: "plugin default, 180k (this run's setting is not recorded)" | source: "The default nudge size is now 250k tokens (was 180k)." | CHANGELOG.md:164
 F25 | page: "{sessions} sessions. Peaks: {peakLo} to {peakHi} tokens." | source: "var vals = { sessions: String(run.sessions.length), peakLo: kTok(Math.min.apply(null, peaks)), peakHi: kTok(Math.max.apply(null, peaks)) };" | site/app.js:185
 F26 | page: "nudge at {nudge} (this run's setting)" | source: "const m = nudgeText.match(/threshold (\d+)k/);" | site/buildstats.mjs:113
@@ -78,20 +78,20 @@ F40 | page: "Source: STATUS.md. As of 2026-10-05, scripts/measure.mjs is on the 
 
 ## index.html: install and FAQ
 
-F42 | page: "Manual, relay and nudge off: /cornerman:handover, /clear, go." | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17 | source: "--config auto_nudge=false" | docs/HOW-IT-WORKS.md:219
-F413 | page: "claude plugin install cornerman@cornerman --config auto_nudge=false --config relay=off" | source: "claude plugin install cornerman@cornerman --config auto_nudge=false" | docs/HOW-IT-WORKS.md:219 | source: "The third plugin option, `relay`, is `off`" | docs/HOW-IT-WORKS.md:224
-F43 | page: "Optional: VS Code extension; needs the plugin." | source: "## The VS Code sidebar (optional)" | docs/HOW-IT-WORKS.md:443 | source: "It needs that plugin." | extension/README.md:12
+F42 | page: "Manual, relay and nudge off: /cornerman:handover, /clear, go." | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17 | source: "--config auto_nudge=false" | docs/HOW-IT-WORKS.md:232
+F413 | page: "claude plugin install cornerman@cornerman --config auto_nudge=false --config relay=off" | source: "claude plugin install cornerman@cornerman --config auto_nudge=false" | docs/HOW-IT-WORKS.md:232 | source: "The third plugin option, `relay`, is `off`" | docs/HOW-IT-WORKS.md:237
+F43 | page: "Optional: VS Code extension; needs the plugin." | source: "## The VS Code sidebar (optional)" | docs/HOW-IT-WORKS.md:456 | source: "It needs that plugin." | extension/README.md:12
 F44 | page: "code --install-extension macdara.cornerman" | source: "code --install-extension macdara.cornerman" | README.md:27
-F256 | page: "Marketplace, Open VSX, releases." | source: "Install it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=macdara.cornerman)" | docs/HOW-IT-WORKS.md:461 | source: "or [Open VSX](https://open-vsx.org/extension/macdara/cornerman):" | docs/HOW-IT-WORKS.md:462 | source: "# Changelog" | CHANGELOG.md:1
+F256 | page: "Marketplace, Open VSX, releases." | source: "Install it from the [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=macdara.cornerman)" | docs/HOW-IT-WORKS.md:474 | source: "or [Open VSX](https://open-vsx.org/extension/macdara/cornerman):" | docs/HOW-IT-WORKS.md:475 | source: "# Changelog" | CHANGELOG.md:1
 F46 | page: "Handovers are plain text files on your disk, in ~/.cornerman. Nothing is sent anywhere unless you turn on sync (to your own private git remote) or web mode (for Claude Code on the web). Keep secrets out of them." | source: "Handovers are plain text files on your disk, in `~/.cornerman`." | plugin/README.md:29 | source: "**Network: nothing by default.**" | plugin/README.md:30 | source: "pushes and pulls the store to a private git remote that you set up" | plugin/README.md:31 | source: "for Claude Code on the web" | plugin/README.md:32 | source: "Keep secrets out of them." | plugin/README.md:29
 F47 | page: "Node 18 or later and git. On Windows, Claude Code runs plugin hooks through Git Bash, which comes with Git for Windows." | source: "You need Node 18 or later and git." | README.md:22 | source: "On Windows, Claude Code runs plugin hooks through Git Bash, which comes with Git for Windows." | README.md:22
-F48 | page: "The relay needs Claude Code 2.1.275 or later and works in a terminal and in the VS Code chat panel." | source: "It needs Claude Code 2.1.275 or later; an older build ignores it" | docs/HOW-IT-WORKS.md:279 | source: "It works in a terminal and in the VS Code chat panel." | docs/HOW-IT-WORKS.md:280
-F49 | page: "When it uses up its clears for that Claude Code window, or when two continued sessions in a row make no new commit (outside a git repo, only the count applies). It says why. When the task is finished, Claude ends without a handover, so there is nothing to continue." | source: "It stops, and says so, at its count, or when two continued sessions in a row make no new commit (outside a git repo, only the count applies)." | docs/HOW-IT-WORKS.md:275 | source: "end without a handover when the task is finished, so there is nothing to continue." | docs/HOW-IT-WORKS.md:277
+F48 | page: "The relay needs Claude Code 2.1.275 or later and works in a terminal and in the VS Code chat panel." | source: "It needs Claude Code 2.1.275 or later; an older build ignores it" | docs/HOW-IT-WORKS.md:292 | source: "It works in a terminal and in the VS Code chat panel." | docs/HOW-IT-WORKS.md:293
+F49 | page: "When it uses up its clears for that Claude Code window, or when two continued sessions in a row make no new commit (outside a git repo, only the count applies). It says why. When the task is finished, Claude ends without a handover, so there is nothing to continue." | source: "It stops, and says so, at its count, or when two continued sessions in a row make no new commit (outside a git repo, only the count applies)." | docs/HOW-IT-WORKS.md:288 | source: "end without a handover when the task is finished, so there is nothing to continue." | docs/HOW-IT-WORKS.md:290
 F45 | page: "It stays out of the way for a subagent's save, a failed save, an interrupted turn and headless runs." | source: "It stays out of the way for a subagent's save, a failed save, an interrupted turn and headless runs" | CHANGELOG.md:265
 
 ## Nudge default and settings
 
-F24 | page: "The nudge is on by default. Past 250k tokens of context (the default; Nudge at changes it), the plugin asks Claude to save a handover." | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21
+F24 | page: "The nudge is on by default. Past 250k tokens of context (the default; Nudge at changes it), the plugin asks Claude to save a handover." | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:256 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21
 
 ## Comparison (README.md:115 to 122)
 
@@ -126,21 +126,21 @@ F126 | page: "What it holds" | source: "A handover is a short note about the wor
 
 F130 | page: "work" | source: "The fresh chat loads the handover and carries on." | plugin/README.md:15
 F131 | page: "the chat grows" | source: "When a Claude Code chat gets long" | README.md:9
-F132 | page: "nudge" | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243
-F133 | page: "with the nudge on" | source: "`auto_nudge` or `CORNERMAN_AUTO` turns it off" | docs/HOW-IT-WORKS.md:243
+F132 | page: "nudge" | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:256
+F133 | page: "with the nudge on" | source: "`auto_nudge` or `CORNERMAN_AUTO` turns it off" | docs/HOW-IT-WORKS.md:256
 F134 | page: "asks Claude to save" | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21
 F135 | page: "save" | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17
 F136 | page: "Claude writes a handover" | source: "A handover is a short note about the work" | plugin/README.md:5
 F137 | page: "you ask, or the nudge does" | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21
 F138 | page: "you type it" | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17
-F139 | page: "or the plugin, with the relay on" | source: "cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:273
+F139 | page: "or the plugin, with the relay on" | source: "cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:286
 F140 | page: "load" | source: "The fresh session loads the note after `/clear`." | README.md:121
 F141 | page: "the fresh session loads it" | source: "The fresh session loads the note after `/clear`." | README.md:121
 F142 | page: "carry on" | source: "The fresh chat loads the handover and carries on." | plugin/README.md:15
 F143 | page: "Claude works and the chat grows." | source: "When a Claude Code chat gets long" | README.md:9
 F144 | page: "With the nudge on, past the size you set, the plugin asks Claude to save a handover." | source: "past a size you choose, Claude is asked to save a handover." | README.md:122 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21
 F145 | page: "Claude saves a handover: you type /cornerman:handover, or the nudge asks." | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17 | source: "Claude is asked to save a handover" | README.md:122
-F146 | page: "/clear: you type it, or the plugin runs it when the turn ends, with the relay on." | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17 | source: "cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:273
+F146 | page: "/clear: you type it, or the plugin runs it when the turn ends, with the relay on." | source: "By hand, with the relay off: `/cornerman:handover`, `/clear`, `go`." | plugin/README.md:17 | source: "cornerman runs `/clear` when the turn ends" | docs/HOW-IT-WORKS.md:286
 F147 | page: "The fresh session loads the handover, and Claude carries on." | source: "The fresh session loads the note after `/clear`." | README.md:121 | source: "The fresh chat loads the handover and carries on." | plugin/README.md:15
 F148 | page: "The loop" | source: "The loop runs on `/clear`." | CHANGELOG.md:357
 
@@ -174,23 +174,23 @@ F158 | page: "Decisions already made: Round once, at the total, never per line: 
 
 F173 | page: "The model" | source: "cornerman cost model." | site/model.js:1
 F174 | page: "A model, not a measurement. Claude rereads the whole context for every reply: set a task and see how much it rereads with cornerman and without it." | source: "A model, not a measurement." | site/model.js:1 | source: "because Claude reads the whole chat again every time" | README.md:7
-F175 | page: "Context window" | source: "The author uses a 1M-token context window." | docs/HOW-IT-WORKS.md:249
-F176 | page: "1M" | source: "The author uses a 1M-token context window" | docs/HOW-IT-WORKS.md:249
-F177 | page: "200k" | source: "On a 200k window" | docs/HOW-IT-WORKS.md:249
-F178 | page: "Start size {mStart}" | source: "the size your sessions start at" | docs/HOW-IT-WORKS.md:249 | source: "mStart: tok(start)" | site/app.js:243
-F179 | page: "Typical values: see Start size below" | source: "keep it well above the size your sessions start at" | docs/HOW-IT-WORKS.md:249
+F175 | page: "Context window" | source: "The author uses a 1M-token context window." | docs/HOW-IT-WORKS.md:262
+F176 | page: "1M" | source: "The author uses a 1M-token context window" | docs/HOW-IT-WORKS.md:262
+F177 | page: "200k" | source: "On a 200k window" | docs/HOW-IT-WORKS.md:262
+F178 | page: "Start size {mStart}" | source: "the size your sessions start at" | docs/HOW-IT-WORKS.md:262 | source: "mStart: tok(start)" | site/app.js:243
+F179 | page: "Typical values: see Start size below" | source: "keep it well above the size your sessions start at" | docs/HOW-IT-WORKS.md:262
 F180 | page: "Clear at {mClearAt}" | source: "past a size you choose, Claude is asked to save a handover." | README.md:122 | source: "mClearAt: tok(clearAt)" | site/app.js:243
 F181 | page: "Task size {mWork}" | source: "mWork: tok(work)" | site/app.js:243 | source: "var add = Math.min(STEP, work - done);" | site/model.js:19
-F182 | page: "On a 200k window, the run without cornerman compacts on its own at {mCompact} (assumed)." | source: "On a 200k window, set **Nudge at** below the size where Claude Code compacts on its own" | docs/HOW-IT-WORKS.md:249 | source: "mCompact: tok(M.compactAt(win))" | site/app.js:243
+F182 | page: "On a 200k window, the run without cornerman compacts on its own at {mCompact} (assumed)." | source: "On a 200k window, set **Nudge at** below the size where Claude Code compacts on its own" | docs/HOW-IT-WORKS.md:262 | source: "mCompact: tok(M.compactAt(win))" | site/app.js:243
 F183 | page: "Reread over the task: {mClearReread} with cornerman, {mBaseReread} without it." | source: "because Claude reads the whole chat again every time" | README.md:7 | source: "vals.mClearReread = tok(r.clear.reread);" | site/app.js:244 | source: "vals.mBaseReread = tok(r.base.reread);" | site/app.js:245
-F184 | page: "without it: Claude Code compacts on its own" | source: "the size where Claude Code compacts on its own" | docs/HOW-IT-WORKS.md:249
+F184 | page: "without it: Claude Code compacts on its own" | source: "the size where Claude Code compacts on its own" | docs/HOW-IT-WORKS.md:262
 F185 | page: "Resets" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32
 F186 | page: "Peak context" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32
 F187 | page: "Context reread" | source: "return { resets: resets, peak: peak, reread: reread" | site/model.js:32 | source: "because Claude reads the whole chat again every time" | README.md:7
 F188 | page: "{mClearResets}" | source: "vals.mClearResets = String(r.clear.resets);" | site/app.js:244
 F189 | page: "{mClearPeak}" | source: "vals.mClearPeak = tok(r.clear.peak);" | site/app.js:244
 F190 | page: "{mClearReread}" | source: "vals.mClearReread = tok(r.clear.reread);" | site/app.js:244
-F191 | page: "without it" | source: "the size where Claude Code compacts on its own" | docs/HOW-IT-WORKS.md:249
+F191 | page: "without it" | source: "the size where Claude Code compacts on its own" | docs/HOW-IT-WORKS.md:262
 F192 | page: "{mBaseResets}" | source: "vals.mBaseResets = String(r.base.resets);" | site/app.js:245
 F193 | page: "{mBasePeak}" | source: "vals.mBasePeak = tok(r.base.peak);" | site/app.js:245
 F194 | page: "{mBaseReread}" | source: "vals.mBaseReread = tok(r.base.reread);" | site/app.js:245
@@ -218,18 +218,18 @@ F205 | page: "Source: the author's own sessions." | source: "The author's sessio
 
 ## how-it-works.html: settings (option names only as the sources write them)
 
-F206 | page: "Settings" | source: "seven options that are not set yet" | docs/HOW-IT-WORKS.md:233
-F207 | page: "After install, Claude Code says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default." | source: "Claude Code says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default." | docs/HOW-IT-WORKS.md:233
+F206 | page: "Settings" | source: "seven options that are not set yet" | docs/HOW-IT-WORKS.md:246
+F207 | page: "After install, Claude Code says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default." | source: "Claude Code says, or asks about, seven options that are not set yet. They belong to the nudge, the relay and the idle handover, which are all on by default." | docs/HOW-IT-WORKS.md:246
 F208 | page: "Nudge to save a handover" | source: "Nudge to save a handover" | plugin/.claude-plugin/plugin.json:17
-F209 | page: "Default: on" | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243
-F210 | page: "Turns the nudge on. Past the Nudge at size, the plugin asks Claude to save a handover, and prints a status line saying so." | source: "Nudge to save a handover" | plugin/.claude-plugin/plugin.json:17 | source: "`auto_nudge` or `CORNERMAN_AUTO` turns it off" | docs/HOW-IT-WORKS.md:243 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21 | source: "You see one status line" | docs/HOW-IT-WORKS.md:263
-F211 | page: "Source: How it works." | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:243
+F209 | page: "Default: on" | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:256
+F210 | page: "Turns the nudge on. Past the Nudge at size, the plugin asks Claude to save a handover, and prints a status line saying so." | source: "Nudge to save a handover" | plugin/.claude-plugin/plugin.json:17 | source: "`auto_nudge` or `CORNERMAN_AUTO` turns it off" | docs/HOW-IT-WORKS.md:256 | source: "when the chat's context passes **Nudge at** (250k tokens by default), Claude is asked to save a handover" | plugin/README.md:21 | source: "You see one status line" | docs/HOW-IT-WORKS.md:276
+F211 | page: "Source: How it works." | source: "With the nudge on (the default;" | docs/HOW-IT-WORKS.md:256
 F212 | page: "Nudge at" | source: "(the default; change it with **Nudge at**" | plugin/README.md:11
 F213 | page: "Default: 250k tokens" | source: "When a chat passes 250k tokens (the default;" | plugin/README.md:11
 F214 | page: "The context size the nudge waits for. Claude Code keeps it between 50000 and 1000000 tokens." | source: "When a chat passes 250k tokens (the default; change it with **Nudge at**" | plugin/README.md:11 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:287
-F215 | page: "Source: How it works (default), the CHANGELOG (range)." | source: "Context size, in tokens, that triggers the nudge." | docs/HOW-IT-WORKS.md:208 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:287
+F215 | page: "Source: How it works (default), the CHANGELOG (range)." | source: "Context size, in tokens, that triggers the nudge." | docs/HOW-IT-WORKS.md:221 | source: "Claude Code keeps the Nudge at setting between 50000 and 1000000 tokens." | CHANGELOG.md:287
 F216 | page: "relay" | source: "Set the `relay` option" | CHANGELOG.md:261
-F217 | page: "Default: 3 clears" | source: "`relay` is a number of clears per Claude Code window (3 by default)" | docs/HOW-IT-WORKS.md:269
+F217 | page: "Default: 3 clears" | source: "`relay` is a number of clears per Claude Code window (3 by default)" | docs/HOW-IT-WORKS.md:282
 F218 | page: "A number of clears per Claude Code window, or unlimited. After Claude saves a handover, cornerman runs /clear when the turn ends and submits the prompt that continues from it. Needs Claude Code 2.1.275 or later; an older build ignores it." | source: "to a number of clears per Claude Code window, or `unlimited`. After Claude saves a handover, clear-resume runs `/clear` when the turn ends and submits the prompt that continues from it." | CHANGELOG.md:264 | source: "Needs Claude Code 2.1.275 or later; an older build ignores it" | CHANGELOG.md:266
 F219 | page: "Source: the CHANGELOG." | source: "Set the `relay` option (in `/config` or `/plugin configure`)" | CHANGELOG.md:262
 F220 | page: "Set them with /plugin configure cornerman@cornerman, or in /config: the nudge settings need Claude Code 2.1.269 or later there. In the Claude Code panel in VS Code, set them from a terminal with claude plugin install cornerman@cornerman --config." | source: "Turn it on and set its size with `/plugin configure clear-resume@clear-resume`, or in `/config` in Claude Code 2.1.269 or later." | CHANGELOG.md:286 | source: "In the Claude Code panel in VS Code, set them from a terminal with `claude plugin install clear-resume@clear-resume --config`." | CHANGELOG.md:288 | source: "Set the `relay` option (in `/config` or `/plugin configure`)" | CHANGELOG.md:262
@@ -277,22 +277,22 @@ F255 | page: "VS Code extension 0.4.0: a context pie in the status bar, a relay 
 
 ## how-it-works.html: what's inside
 
-F257 | page: "What's inside" | source: "## What's inside" | docs/HOW-IT-WORKS.md:568
-F258 | page: "Two skills" | source: "two skills, six hooks, one Claude Code mod and a shared" | docs/HOW-IT-WORKS.md:570
+F257 | page: "What's inside" | source: "## What's inside" | docs/HOW-IT-WORKS.md:581
+F258 | page: "Two skills" | source: "two skills, six hooks, one Claude Code mod and a shared" | docs/HOW-IT-WORKS.md:583
 F259 | page: "Claude writes the handover and saves it with save.mjs, which reads it on stdin." | source: "Save a handover for the current repo. The body is read from stdin." | plugin/scripts/save.mjs:2
 F414 | page: "/cornerman:stats prints this month's relay windows, sessions and relays by repo, and last month's totals. It writes nothing." | source: "`/cornerman:stats` prints this month's relay windows, sessions and relays by repo, and last month's totals." | plugin/README.md:19 | source: "and writes nothing." | plugin/README.md:19
 F260 | page: "Six hooks" | source: "Entry point for the six hooks" | plugin/scripts/hook-entry.cjs:1
 F261 | page: "SessionStart loads the waiting handover at startup, /clear and compaction, then archives it so it loads once. PostToolUse and Stop check the context size for the nudge and the relay." | source: "`SessionStart` (startup, clear and compact) loads a waiting handover." | plugin/README.md:27 | source: "then archives it so it loads exactly once." | plugin/scripts/session-start.mjs:3 | source: "`PostToolUse` and `Stop` check the context size for the nudge and the relay." | plugin/README.md:27
 F262 | page: "Any failure exits 0 with no output: a broken plugin must never block a session." | source: "Any failure exits 0 with no output: a broken plugin must never block a session." | plugin/scripts/session-start.mjs:4
 F412 | page: "SessionEnd keeps the tables, lists, links and paths the session left on screen, so a list read just before /clear is not lost." | source: "SessionEnd hook: keeps what the session left on screen" | plugin/scripts/session-end.mjs:2
-F263 | page: "One Claude Code mod" | source: "### The relay mod (`hooks/relay.ts`)" | plugin/README.md:34 | source: "two skills, six hooks, one Claude Code mod and a shared" | docs/HOW-IT-WORKS.md:570
+F263 | page: "One Claude Code mod" | source: "### The relay mod (`hooks/relay.ts`)" | plugin/README.md:34 | source: "two skills, six hooks, one Claude Code mod and a shared" | docs/HOW-IT-WORKS.md:583
 F264 | page: "A mod is a function-hooks module that runs inside Claude Code. This one is the relay: after Claude saves a handover, it runs /clear and submits the prompt that continues from it." | source: "A mod is a function-hooks module that runs inside Claude Code. This one runs the relay." | plugin/README.md:36 | source: "`/clear`, once after Claude saves a handover" | plugin/README.md:40 | source: "After the clear, as if you typed it:" | plugin/README.md:41
 F265 | page: "By default the one program it starts is git rev-parse HEAD, for the stall guard. It sends nothing anywhere." | source: "One by default: `git rev-parse HEAD` in the current repo" | plugin/README.md:39 | source: "The stall guard compares the commit before and after each continued session" | plugin/README.md:39 | source: "It sends nothing anywhere." | plugin/README.md:45
 F266 | page: "One store" | source: "Reader and writer for the unified handover store." | plugin/packages/store/store.mjs:1
 F267 | page: "One record schema, shared by the plugin and the VS Code extension. Every reader and writer goes through it, so the files on disk are defined in one place." | source: "ONE schema shared by the plugin" | plugin/packages/store/schema.mjs:1 | source: "and the VS Code extension." | plugin/packages/store/schema.mjs:2 | source: "so every reader and writer goes through here." | plugin/packages/store/schema.mjs:3 | source: "shape is defined in exactly one place." | plugin/packages/store/store.mjs:3
 F268 | page: "Sync, when you turn it on, is a git transport on top of it." | source: "Git transport for the handover store." | plugin/packages/store/sync.mjs:1
-F269 | page: "An install copies plugin/ and nothing else. It has no package.json, so an install runs no npm." | source: "An install copies `plugin/` and nothing else." | docs/HOW-IT-WORKS.md:682 | source: "`plugin/` has no `package.json`, so an install runs no `npm`," | docs/HOW-IT-WORKS.md:683
-F270 | page: "Source: the source files, the plugin README and How it works." | source: "### The relay mod (`hooks/relay.ts`)" | plugin/README.md:34 | source: "## What's inside" | docs/HOW-IT-WORKS.md:568
+F269 | page: "An install copies plugin/ and nothing else. It has no package.json, so an install runs no npm." | source: "An install copies `plugin/` and nothing else." | docs/HOW-IT-WORKS.md:695 | source: "`plugin/` has no `package.json`, so an install runs no `npm`," | docs/HOW-IT-WORKS.md:696
+F270 | page: "Source: the source files, the plugin README and How it works." | source: "### The relay mod (`hooks/relay.ts`)" | plugin/README.md:34 | source: "## What's inside" | docs/HOW-IT-WORKS.md:581
 
 ## Footer
 
@@ -334,4 +334,4 @@ F407 | page: "API-equivalent; runs used a subscription." | source: "Figures are 
 F408 | page: "Predicted before the runs: {predictions.inside} of {predictions.total} results inside the range, {predictions.outside} outside." | source: "predictions written BEFORE the runs" | FACTS.md: Results method | source: "5" | results.json: predictions.inside | source: "8" | results.json: predictions.total | source: "3" | results.json: predictions.outside
 F409 | page: "Written {predictions.writtenTime} AWST on {predictions.dateLabel}, before the first test." | source: "drafted 2026-10-10 14:55 AWST" | FACTS.md: Results method | source: "P3 started 15:16 AWST" | FACTS.md: Results method | source: "14:55" | results.json: predictions.writtenTime | source: "10 Oct" | results.json: predictions.dateLabel
 F410 | page: "Idle test: cold return after {idle.latest.idleMin} minutes idle; handover written at {idle.latest.warmAtMin} minutes, then read by a fresh session. Sonnet 5.5. Compare cost within one date: cache reads were priced lower on {idle.latest.dateLabel} than {idle.earlier.dateLabel}." | source: "cold return at +65 min; warm handover at +55 min with identical prompt, then fresh read" | FACTS.md: Results method | source: "Sonnet 5.5, the same 390k-token site session" | FACTS.md: Results method | source: "65" | results.json: idle.latest.idleMin | source: "55" | results.json: idle.latest.warmAtMin | source: "The CLI priced the 2026-10-10 runs lower per token than the 10-07/10-08 runs: H11 read the same 780,784 cached tokens as the 10-09 H1" | FACTS.md: Results method | source: "10 Oct" | results.json: idle.latest.dateLabel | source: "9 Oct" | results.json: idle.earlier.dateLabel
-F411 | page: "After the 60-minute prompt cache expires, a cold return rewrites the whole chat. A handover saved before then lets a fresh session start from a short note." | source: "prompt cache lasts 60 minutes" | docs/RESEARCH.md:21 | source: "the first message back rewrites the whole context" | docs/RESEARCH.md:21 | source: "a fresh session reading it" | docs/HOW-IT-WORKS.md:324 | source: "short note about the work" | plugin/README.md:5 | source: "cold return at +65 min" | FACTS.md: Results method
+F411 | page: "After the 60-minute prompt cache expires, a cold return rewrites the whole chat. A handover saved before then lets a fresh session start from a short note." | source: "prompt cache lasts 60 minutes" | docs/RESEARCH.md:21 | source: "the first message back rewrites the whole context" | docs/RESEARCH.md:21 | source: "a fresh session reading it" | docs/HOW-IT-WORKS.md:337 | source: "short note about the work" | plugin/README.md:5 | source: "cold return at +65 min" | FACTS.md: Results method
