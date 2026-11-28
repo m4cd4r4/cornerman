@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.7.5
+
+- **Your last answer is still there after a clear.** After a `/clear` (by hand or by a relay),
+  the first reply now shows what Claude said in the last two exchanges before it, word for word,
+  each under the prompt it answered, with labels such as Answer, Links and To paste. An answer you
+  had not read before clearing is no longer lost (#228).
+- **Rulings skip machine text from older saves too.** Background-task notices already saved in
+  "Rulings from the user" by an earlier version are dropped when a handover is saved again (#227).
+- **No wrong worktree line outside a repo.** Saving in a folder that is not a git repo no longer
+  says the handover "loads only in this worktree" right after saying it loads there (#229).
+
 ## 0.7.4
 
 - **Rulings hold only what you typed.** Background-task notices and other text Claude Code sends
