@@ -115,7 +115,8 @@ try {
   else if (found && process.argv.includes("--open-question"))
     console.log(`After /clear, the handover is offered in ${shownPath(top)}; confirm it if it is an hour old or more.`);
   else if (found) console.log(`After /clear, the next session in ${shownPath(top)} loads it automatically.`);
-  if (top !== main) console.log(`It loads only in this worktree, not in ${shownPath(main)}.`);
+  // sameFolder, not !==: outside a repo `top` is path.resolve's spelling and `main` git's (#229).
+  if (!sameFolder(top, main)) console.log(`It loads only in this worktree, not in ${shownPath(main)}.`);
   for (const r of replaced) console.log(`Archived the older handover it replaces: "${r.title}" (id ${r.short}).`);
   if (carried.length) {
     // Printed so the saving session sees what it dropped and can correct it now.

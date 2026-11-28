@@ -58,6 +58,16 @@ describe("save.mjs output", () => {
     expect(lines).toHaveLength(4);
   }, GIT_TEST_TIMEOUT);
 
+  // #229: outside a repo the session root came back with backslashes and the main checkout with
+  // forward slashes, so one folder read as two and the save denied the load it had just promised.
+  it("says nothing about worktrees in a folder that is not a git repo", () => {
+    const plain = join(base, "plain");
+    mkdirSync(plain);
+    const out = run(plain, plain);
+    expect(out).toContain(`After /clear, the next session in ${fwd(plain)} loads it automatically.`);
+    expect(out).not.toContain("loads only in this worktree");
+  }, GIT_TEST_TIMEOUT);
+
   it("names the folder one way when it is handed in another spelling", () => {
     // From a subfolder, so the "Filed against" line names the folder too.
     const out = run(join(otherSpelling(), "src"), repo);
