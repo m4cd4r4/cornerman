@@ -121,7 +121,10 @@ try {
     console.log(
       `Carried forward ${carried.length} open item${carried.length === 1 ? "" : "s"} from "${previous.meta.title}" that this handover did not mention:\n` +
         carried.map((it) => `  - [${it.tag}] ${it.text}`).join("\n") +
-        `\nIf any is done or dropped, save again and say so in the handover; otherwise leave it, the next session sees it.`,
+        // "Say so" in other words was not matched, so the item came back on every save (field
+        // audit, 2026-11-28: 5 of 518 handovers had a section for it). A copied line always matches.
+        `\nIf any is done or dropped, save again with its line copied under "## Done or dropped from earlier handovers", ` +
+        `followed by done or dropped and why; otherwise leave it, the next session sees it.`,
     );
   }
   const gaps = missingSections(body);

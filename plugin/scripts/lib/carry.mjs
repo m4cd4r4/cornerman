@@ -140,6 +140,53 @@ export function mentioned(item, body) {
   return head.length >= 3 && head.every((w) => have.has(w));
 }
 
+// Closed by file. The field audit of 2026-11-28 found about 1 in 5 handovers carrying forward
+// work the same handover closed: "DONE: stress/PREDICTIONS-DEV-TRIAL-6.md written, committed,
+// pushed" names the item's file in far fewer words than the item, so the word match above misses
+// it, and the next session is told to treat finished work as open. An item whose head names a
+// file is closed when a closing line names the same file. Hand-checked on 14 real hits, 12 were
+// closings; the other 2 pointed at a file the new handover still names. A looser test (3 shared
+// words with any done-ish line) was right about 4 times in 10, so it is not used: a wrong match
+// drops live work silently. Standing rules are never closed this way: a rule is not finished.
+const CLOSE_WORD = /\b(?:done|dropped|closed|merged|shipped|resolved|finished|completed|superseded|retired|cancelled|moot|no longer (?:needed|open))\b/i;
+// A goal ("Done = every test passes") or a step still to come ("once #22 is merged") closes nothing.
+// "(?:[^.]|\.\S)*": a file name's dot ("oven-log.mjs") does not end the clause, a full stop does.
+const NOT_CLOSE =
+  /\b(?:done|finished|completed?)\s*(?:=|when|means|if)\b|\bwhen (?:\w+ ){0,3}(?:finished|done)\b|\b(?:once|until|after|before|if)\b(?:[^.]|\.\S)*\b(?:done|merged|finished|shipped)\b/i;
+const FILE = /[\w./~:\\-]*[\w-]+\.(?:mjs|cjs|mts|js|jsx|ts|tsx|md|json|jsonl|sh|ps1|py|css|scss|html|astro|svelte|vue|sql|toml|txt|yml|yaml)\b/gi;
+const normPath = (p) => p.toLowerCase().replace(/\\/g, "/").replace(/^[a-z]:\//, "/").replace(/^~\//, "/");
+const filesIn = (s) => (String(s).match(FILE) || []).map(normPath);
+// The same file: equal, or one path ends the other at a folder boundary. A bare name never
+// matches a longer path: PROJECT-PLAN.md is a different file in every folder.
+const sameFile = (a, b) => {
+  if (a === b) return true;
+  const [short, long] = a.length < b.length ? [a, b] : [b, a];
+  return short.includes("/") && long.endsWith(`/${short.replace(/^\//, "")}`);
+};
+const NOT_CLOSING_SECTION = /^(?:goal|rulings from the user|recent trail)/i;
+/** The sentences of a body that close something: all of a "Done or dropped" section, and done-marked ones elsewhere. */
+function closingLines(body) {
+  return sections(body)
+    .filter((s) => !NOT_CLOSING_SECTION.test(s.heading))
+    .flatMap((s) => {
+      const all = /^done or dropped/i.test(s.heading);
+      return s.lines.flatMap((l) => l.split(/;|\.\s/)).filter((l) => (all || CLOSE_WORD.test(l)) && !NOT_CLOSE.test(l));
+    });
+}
+const itemHead = (text) => String(text).replace(/\([^)]*\)/g, " ").split(/,|\s[-:]\s|;/)[0];
+/** Whether a closing line in `body` names the file the item's head names. */
+export function closedByFile(item, body) {
+  if (item.tag === "rule" || item.tag === "do not") return false;
+  const want = filesIn(itemHead(item.text));
+  if (!want.length) return false;
+  return closingLines(body).some((l) => filesIn(l).some((f) => want.some((w) => sameFile(f, w))));
+}
+
+// Not done: dropping a read-first item because the new handover names its file again. Replayed on
+// 14 days of real handovers (2026-11-28) it dropped 104 carried items, and its gloss was often work
+// the bare pointer does not hold ("lines 286-287, 368 are the ones to edit", "written, not wired
+// into any game"). A repeated pointer costs a line; a lost instruction costs the work.
+
 /** Remove a previous carried section from a body, so a save never stacks two. */
 function withoutCarried(body) {
   const lines = String(body).replace(/\r\n/g, "\n").split("\n");
@@ -173,7 +220,7 @@ export function carryForward(body, previous, { replaced = [] } = {}) {
       if (seen.has(k)) return false;
       seen.add(k);
       if ((it.tag === "rule" || it.tag === "do not") && replaced.some((t) => mentioned(it, t))) return false;
-      return !mentioned(it, own);
+      return !mentioned(it, own) && !closedByFile(it, own);
     });
     if (!carried.length) return { body: own, carried };
     const from = previous.title ? ` "${previous.title}"` : "";

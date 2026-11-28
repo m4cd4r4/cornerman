@@ -101,6 +101,32 @@ describe("carryForward", () => {
     const { carried } = carryForward("# T\n\n## Goal\ng\n", { body: prev });
     expect(carried.map((c) => c.text)).toEqual(["Every commit message starts with the ticket id, like this:"]);
   });
+
+  // Field audit 2026-11-28: about 1 in 5 handovers carried forward work the same handover closed.
+  // The closing line names the item's file but in fewer words, so the 60% word match missed it and
+  // the next session was told to treat finished work as open (seen live on a cornerman-eval chain).
+  it("does not carry an item whose file a closing line in the new handover names", () => {
+    const prev = "# T\n\n## Decided, not yet applied\n- After fix 12 is committed: write stress/PREDICTIONS-DEV-TRIAL-6.md (seed 105, cm on the fix 12 sha, hybrid unchanged), commit and push to research BEFORE launching `stress/run-dev-trial.sh 6 105 <full sha>` on the VPS (scp stress/ and rig/ first, compare sha256).\n- Bake the rye loaves at 230 degrees.\n";
+    const next = "# T\n\n## Goal\nShip fix 13.\n\n## Done or dropped from earlier handovers\n- DONE: stress/PREDICTIONS-DEV-TRIAL-6.md written, committed, pushed, trial 6 launched (2026-11-26).\n";
+    const texts = carryForward(next, { body: prev }).carried.map((c) => c.text);
+    expect(texts).toEqual(["Bake the rye loaves at 230 degrees."]);
+  });
+
+  // The two shapes that made a looser match wrong on real handovers: a goal that says what done
+  // will mean, and a file of the same name in another folder.
+  it("is not closed by a goal line, a step still to come, or a same-named file elsewhere", () => {
+    const prev = "# T\n\n## Decided, not yet applied\n- tests/village.mjs sleeps at the island door in many places: rewrite them to enter the house\n- docs/bakery/PROJECT-PLAN.md - add the rye row\n- scripts/oven-log.mjs - add the batch id column\n";
+    const next = "# T\n\n## Goal\nDone = every bot block in tests/village.mjs passes.\n\n## Next action\nOnce scripts/oven-log.mjs is merged, run it.\n\n## State\n- docs/shop/PROJECT-PLAN.md: done, merged in #4.\n";
+    expect(carryForward(next, { body: prev }).carried).toHaveLength(3);
+  });
+
+  // A read-first item is not closed because the new handover names its file again: its gloss can
+  // hold work the bare pointer does not (replay on real handovers, 2026-11-28).
+  it("still carries a read-first item whose file the new handover only names", () => {
+    const prev = "# T\n\n## Read first\n- docs/bakery/notes.md - lines 28-31 and 59 are the ones to edit\n";
+    const next = "# T\n\n## Read first\n- docs/bakery/notes.md\n";
+    expect(carryForward(next, { body: prev }).carried.map((c) => c.text)).toEqual(["docs/bakery/notes.md - lines 28-31 and 59 are the ones to edit"]);
+  });
 });
 
 describe("previousHandover", () => {
