@@ -26,6 +26,11 @@ const MUST_EXIST = /^read first/i;
 // Windows checking one makes a network call that can hand over the user's credentials.
 // A brace list or a glob is a pattern, not a path, so the path stops before it.
 const ABS = /(?<![\w/\\])(?:[A-Za-z]:[\\/]|~[\\/])[^\s`'"()<>,;|*?{}]+/g;
+// A POSIX absolute path, on Linux and macOS only: at least two segments, so "/clear" and "/relay off"
+// (slash commands) are not paths, and the first segment starts with a word character, so a UNC
+// "//server/share" is not one either. On Windows "/tmp/x" names a folder on another machine (a VPS)
+// as often as one here, so it is left alone.
+const POSIX_ABS = /(?<![\w/\\.:~-])\/[\w.-]+\/[^\s`'"()<>,;|*?{}]+/g;
 const URL = /\b[a-z][a-z0-9+.-]*:\/\/\S+/gi;
 // A relative path with at least one folder and a file extension: "docs/plan.md", "src/a/b.ts".
 // Not the tail of a brace list ("{a,b}-cheatsheet/X.md" is no path "-cheatsheet/X.md").
@@ -60,10 +65,12 @@ function checkoutOf(p) {
 }
 
 /** The absolute and relative paths a piece of text names, each once. */
-function pathsIn(text) {
+export function pathsIn(text, platform = process.platform) {
   const noUrls = String(text).replace(URL, " ");
-  const abs = [...new Set((noUrls.match(ABS) || []).map(trimEnd))];
-  const rest = noUrls.replace(ABS, " ");
+  const posix = platform === "win32" ? [] : noUrls.replace(ABS, " ").match(POSIX_ABS) || [];
+  const abs = [...new Set([...(noUrls.match(ABS) || []), ...posix].map(trimEnd))];
+  let rest = noUrls.replace(ABS, " ");
+  if (platform !== "win32") rest = rest.replace(POSIX_ABS, " ");
   const rel = [...new Set((rest.match(REL) || []).map(trimEnd))];
   return { abs, rel };
 }
