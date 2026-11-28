@@ -8,7 +8,7 @@ import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { pathProblems } from "../plugin/scripts/lib/paths.mjs";
+import { pathProblems, pathsIn } from "../plugin/scripts/lib/paths.mjs";
 import { GIT_TEST_TIMEOUT, removeTemp } from "./helpers/git-temp.mjs";
 
 let base;
@@ -28,6 +28,16 @@ beforeEach(() => {
   base = realpathSync.native(mkdtempSync(join(tmpdir(), "cr-paths-")));
 });
 afterEach(() => removeTemp(base));
+
+// CI, 2026-11-28: on Linux and macOS no absolute path was seen at all, so the repo a handover named
+// was never searched and every check passed silently. A slash command is never a path.
+describe("pathsIn", () => {
+  it("reads a POSIX absolute path on Linux and macOS, never a slash command, and not on Windows", () => {
+    const text = "In /home/pat/orders-app, run the tests. Then /clear, and see /relay off.";
+    expect(pathsIn(text, "linux").abs).toEqual(["/home/pat/orders-app"]);
+    expect(pathsIn(text, "win32").abs).toEqual([]);
+  });
+});
 
 describe("pathProblems", () => {
   it("finds a relative path in the repo the handover names, when it does not open from where it is filed", () => {
